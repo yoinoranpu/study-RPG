@@ -10,14 +10,23 @@ export const loginAsGuest = async () => {
 
 // データ保存
 export const savePlayerData = async (uid, data) => {
+  // 保存しないフィールドを除外
+  const saveData = { ...data };
+  delete saveData.uid;
+  delete saveData.isGuest;
+  delete saveData.isLoggedIn;
+
   try {
     await setDoc(doc(db, "players", uid), {
-      ...data,
+      ...saveData,
       updatedAt: new Date().toISOString(),
     });
+    // 成功したらローカルも更新
+    localStorage.setItem("sd_save", JSON.stringify(saveData));
   } catch (e) {
     // オフライン時はlocalStorageに一時保存
-    localStorage.setItem("sd_offline_save", JSON.stringify(data));
+    console.log("オフライン保存:", e.message);
+    localStorage.setItem("sd_save", JSON.stringify(saveData));
   }
 };
 
@@ -25,12 +34,17 @@ export const savePlayerData = async (uid, data) => {
 export const loadPlayerData = async (uid) => {
   try {
     const snap = await getDoc(doc(db, "players", uid));
-    if (snap.exists()) return snap.data();
+    if (snap.exists()) {
+      // Firestoreのデータを返す
+      return snap.data();
+    }
     // Firestoreにない場合はlocalStorageから復元
-    const local = localStorage.getItem("sd_offline_save");
+    const local = localStorage.getItem("sd_save");
     return local ? JSON.parse(local) : null;
   } catch (e) {
-    const local = localStorage.getItem("sd_offline_save");
+    // オフライン時はlocalStorageから復元
+    console.log("オフライン読み込み:", e.message);
+    const local = localStorage.getItem("sd_save");
     return local ? JSON.parse(local) : null;
   }
 };
