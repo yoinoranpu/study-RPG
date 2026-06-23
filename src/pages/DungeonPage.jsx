@@ -4,6 +4,7 @@ import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel } fro
 import { rollEventType, rollNpcEvent, rollChest } from "../systems/events";
 import { pickMonsters } from "../systems/monsters";
 import { simulateBattle } from "../systems/battle";
+import TimerSettings from "../components/TimerSettings";
 
 const EVENT_INTERVAL = 15000; // 15秒ごと（デモ用）
 const BASE_MAX_EVENTS = 4;
@@ -27,6 +28,7 @@ export default function DungeonPage({ onBack }) {
   const [logs, setLogs] = useState([{ id: 0, text: "ダンジョンに到着した…", color: "#86efac" }]);
   const [battlePopup, setBattlePopup] = useState(null);
   const [showResult, setShowResult] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const logId = useRef(1);
   const sessionExp = useRef(0);
@@ -226,7 +228,7 @@ export default function DungeonPage({ onBack }) {
     <div style={{ height:"100vh", background:"#000", fontFamily:"monospace", display:"flex", flexDirection:"column" }}>
       {/* ヘッダー */}
       <div style={{ padding:"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:12 }}>
-        <button onClick={onBack} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 10px", cursor:"pointer", fontSize:10 }}>← 街へ</button>
+        <button onClick={onBack} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 10px", cursor:"pointer", fontSize:10 }}>← 街へ</button><button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 10px", cursor:"pointer", fontSize:10 }}>⚙</button>
         <div style={{ color:"#60a5fa", fontSize:12, letterSpacing:2 }}>B{floor}F</div>
         <div style={{ flex:1 }} />
         <div style={{ color:"#86efac", fontSize:10 }}>Lv{lv}</div>
@@ -318,6 +320,23 @@ export default function DungeonPage({ onBack }) {
           </div>
         </div>
       )}
+      {showSettings && (
+ 　　　　<TimerSettings
+    　　　workMin={workMin}
+    　　　breakMin={breakMin}
+    　　　sets={totalSets}
+    　　　onApply={(w, b, s) => {
+      　　　setWorkMin(w);
+      　　　setBreakMin(b);
+      　　　setTotalSets(s);
+      　　　if (!isRunning) {
+        　　　setSeconds(w * 60);
+        　　　setTotalSec(w * 60);
+      　　}
+    　　}}
+    　　onClose={() => setShowSettings(false)}
+  　　/>
+　　)}
     </div>
   );
 }
