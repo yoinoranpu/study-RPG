@@ -6,6 +6,7 @@ import { pickMonsters } from "../systems/monsters";
 import { simulateBattle } from "../systems/battle";
 import TimerSettings from "../components/TimerSettings";
 
+
 const EVENT_INTERVAL = 15000; // 15秒ごと（デモ用）
 const BASE_MAX_EVENTS = 4;
 

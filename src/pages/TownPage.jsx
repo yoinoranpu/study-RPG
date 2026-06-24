@@ -1,6 +1,8 @@
 import { useState } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
+import ShopTab from "../components/ShopTab";
+import ItemBoxTab from "../components/ItemBoxTab";
 
 export default function TownPage({ onEnterDungeon }) {
   const [tab, setTab] = useState("home");
@@ -98,23 +100,11 @@ export default function TownPage({ onEnterDungeon }) {
         )}
 
         {/* ショップ（仮） */}
-        {tab === "shop" && (
-          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"60vh", gap:12 }}>
-            <div style={{ fontSize:24 }}>🏪</div>
-            <div style={{ color:"#4a4a6a", fontSize:12, letterSpacing:2 }}>COMING SOON</div>
-            <div style={{ color:"#2a2a3a", fontSize:10 }}>ショップは近日実装予定</div>
-          </div>
-        )}
+        {tab === "shop" && <ShopTab />}
 
         {/* アイテム（仮） */}
-        {tab === "items" && (
-          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"60vh", gap:12 }}>
-            <div style={{ fontSize:24 }}>🎒</div>
-            <div style={{ color:"#4a4a6a", fontSize:12, letterSpacing:2 }}>COMING SOON</div>
-            <div style={{ color:"#2a2a3a", fontSize:10 }}>アイテムボックスは近日実装予定</div>
-          </div>
-        )}
-
+        {tab === "items" && <ItemBoxTab />}
+        
         {/* スキル（仮） */}
         {tab === "skill" && (
           <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"60vh", gap:12 }}>
