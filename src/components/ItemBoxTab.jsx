@@ -14,12 +14,19 @@ export default function ItemBoxTab() {
   const item = sel ? (itemBox || []).find(it => it.uid === sel) : null;
 
   function equip(it) {
-    let key = "equippedWeapon";
-    if (it.type === "armor") key = "equippedArmor";
-    else if (it.type === "accessory") {
-      key = !equippedAcc1 ? "equippedAcc1" : "equippedAcc2";
+    if (it.type === "weapon") {
+      updatePlayer({ equippedWeapon: it });
+    } else if (it.type === "armor") {
+      updatePlayer({ equippedArmor: it });
+    } else if (it.type === "accessory") {
+      if (!equippedAcc1) {
+        updatePlayer({ equippedAcc1: it });
+      } else {
+        updatePlayer({ equippedAcc2: it });
+      }
+    } else {
+      updatePlayer({ equippedWeapon: it });
     }
-    updatePlayer({ [key]: it });
     setMsg(`${it.name}を装備した！`);
     setTimeout(() => setMsg(""), 3000);
   }
@@ -43,7 +50,6 @@ export default function ItemBoxTab() {
       </div>
 
       <div style={{ flex:1, overflowY:"auto", padding:10 }}>
-        {/* グリッド */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:4, marginBottom:12 }}>
           {(itemBox || []).map(it => {
             const tc = TYPE_COLOR[it.type] || "#888";
@@ -60,7 +66,6 @@ export default function ItemBoxTab() {
           ))}
         </div>
 
-        {/* 選択アイテム詳細 */}
         {item && (
           <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:12, marginBottom:10 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
@@ -70,7 +75,7 @@ export default function ItemBoxTab() {
                   {item.name} {item.upgradeLevel > 0 && <span style={{ color:"#fbbf24" }}>+{item.upgradeLevel}</span>}
                 </div>
                 <div style={{ fontSize:8, color: RARITY_COLOR[item.rarity] || "#888" }}>
-                  {TYPE_LABEL[item.type]} {RARITY_LABEL[item.rarity]}
+                  {TYPE_LABEL[item.type] || "不明"} {RARITY_LABEL[item.rarity]}
                 </div>
               </div>
             </div>
@@ -89,19 +94,18 @@ export default function ItemBoxTab() {
           </div>
         )}
 
-        {/* 装備中 */}
         <div style={{ background:"#080810", border:"1px solid #1a1a2a", borderRadius:6, padding:10 }}>
           <div style={{ fontSize:8, color:"#4a4a6a", letterSpacing:2, marginBottom:8 }}>装備中</div>
           {[
-            { key:"equippedWeapon", label:"武器",  val:equippedWeapon },
-            { key:"equippedArmor",  label:"防具",  val:equippedArmor  },
-            { key:"equippedAcc1",   label:"アクセ1", val:equippedAcc1 },
-            { key:"equippedAcc2",   label:"アクセ2", val:equippedAcc2 },
+            { label:"武器",   val:equippedWeapon },
+            { label:"防具",   val:equippedArmor  },
+            { label:"アクセ1",val:equippedAcc1   },
+            { label:"アクセ2",val:equippedAcc2   },
           ].map(({ label, val }) => (
             <div key={label} style={{ display:"flex", gap:8, marginBottom:4, fontSize:9 }}>
               <span style={{ color:"#4a4a6a", width:40 }}>{label}</span>
               <span style={{ color: val ? "#e8e0d0" : "#2a2a2a" }}>
-                {val ? `${val.icon}${val.name}${val.upgradeLevel > 0 ? ` +${val.upgradeLevel}` : ""}` : "なし"}
+                {val ? `${val.icon}${val.name}` : "なし"}
               </span>
             </div>
           ))}

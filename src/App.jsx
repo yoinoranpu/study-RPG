@@ -32,6 +32,13 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  function handleBackToTown() {
+    // 街に帰還したらHP全回復
+    const state = usePlayerStore.getState();
+    state.updatePlayer({ hp: state.maxHp || 100 });
+    setScreen(SCREENS.TOWN);
+  }
+
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", background:"#06060f", color:"#a78bfa", fontFamily:"monospace", fontSize:18, letterSpacing:4 }}>
       LOADING...
@@ -44,7 +51,7 @@ export default function App() {
         <TownPage onEnterDungeon={() => setScreen(SCREENS.DUNGEON)} />
       )}
       {screen === SCREENS.DUNGEON && (
-        <DungeonPage onBack={() => setScreen(SCREENS.TOWN)} />
+        <DungeonPage onBack={handleBackToTown} />
       )}
     </div>
   );

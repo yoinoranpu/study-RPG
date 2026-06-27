@@ -16,21 +16,41 @@ export const loginAsGuest = async () => {
 
 // データ保存
 export const savePlayerData = async (uid, data) => {
-  // 保存しないフィールドを除外
-  const saveData = { ...data };
-  delete saveData.uid;
-  delete saveData.isGuest;
-  delete saveData.isLoggedIn;
+  const saveData = {
+    totalExp: data.totalExp || 0,
+    gold: data.gold || 500,
+    floor: data.floor || 1,
+    maxFloor: data.maxFloor || 1,
+    floorMapping: data.floorMapping || 0,
+    hp: data.hp || 100,
+    maxHp: data.maxHp || 100,
+    equippedWeapon: data.equippedWeapon || null,
+    equippedArmor: data.equippedArmor || null,
+    equippedAcc1: data.equippedAcc1 || null,
+    equippedAcc2: data.equippedAcc2 || null,
+    specialSlots: data.specialSlots || [null,null,null],
+    itemBox: data.itemBox || [],
+    materials: data.materials || {},
+    learnedSkills: data.learnedSkills || ["start"],
+    spUsed: data.spUsed || 0,
+    activeSkillSlots: data.activeSkillSlots || [null,null,null,null],
+    passiveSkillSlots: data.passiveSkillSlots || [null,null,null,null,null,null],
+    battleStyle: data.battleStyle || "balanced",
+    timerWork: data.timerWork || 25,
+    timerBreak: data.timerBreak || 5,
+    timerSets: data.timerSets || 4,
+    studyMinutesTotal: data.studyMinutesTotal || 0,
+    studyMinutesToday: data.studyMinutesToday || 0,
+    studyMinutesWeek: data.studyMinutesWeek || 0,
+  };
 
   try {
     await setDoc(doc(db, "players", uid), {
       ...saveData,
       updatedAt: new Date().toISOString(),
     });
-    // 成功したらローカルも更新
     localStorage.setItem("sd_save", JSON.stringify(saveData));
   } catch (e) {
-    // オフライン時はlocalStorageに一時保存
     console.log("オフライン保存:", e.message);
     localStorage.setItem("sd_save", JSON.stringify(saveData));
   }

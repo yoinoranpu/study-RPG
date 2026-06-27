@@ -7,8 +7,35 @@ const debounceSave = (uid, data) => {
   if (!uid) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    savePlayerData(uid, data);
-  }, 2000); // 2秒後に保存
+    const saveData = {
+      totalExp: data.totalExp,
+      gold: data.gold,
+      floor: data.floor,
+      maxFloor: data.maxFloor,
+      floorMapping: data.floorMapping,
+      hp: data.hp,
+      maxHp: data.maxHp,
+      equippedWeapon: data.equippedWeapon,
+      equippedArmor: data.equippedArmor,
+      equippedAcc1: data.equippedAcc1,
+      equippedAcc2: data.equippedAcc2,
+      specialSlots: data.specialSlots,
+      itemBox: data.itemBox,
+      materials: data.materials,
+      learnedSkills: data.learnedSkills,
+      spUsed: data.spUsed,
+      activeSkillSlots: data.activeSkillSlots,
+      passiveSkillSlots: data.passiveSkillSlots,
+      battleStyle: data.battleStyle,
+      timerWork: data.timerWork,
+      timerBreak: data.timerBreak,
+      timerSets: data.timerSets,
+      studyMinutesTotal: data.studyMinutesTotal,
+      studyMinutesToday: data.studyMinutesToday,
+      studyMinutesWeek: data.studyMinutesWeek,
+    };
+    savePlayerData(uid, saveData);
+  }, 2000);
 };
 
 const usePlayerStore = create((set, get) => ({
