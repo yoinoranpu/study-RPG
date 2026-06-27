@@ -1,14 +1,3 @@
-export default function SkillTreeTab() {
-  return (
-    <div style={{
-      color: "red",
-      fontSize: "50px",
-      background: "black"
-    }}>
-      TEST
-    </div>
-  );
-}
 import { useState, useRef } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { expToLevel } from "../systems/timer";

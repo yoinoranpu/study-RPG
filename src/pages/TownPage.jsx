@@ -1,5 +1,3 @@
-export default function TownPage({ onEnterDungeon }) {
-  console.log("TownPage Loaded");
 import { useState } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
