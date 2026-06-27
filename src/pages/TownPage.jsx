@@ -5,6 +5,7 @@ import ShopTab from "../components/ShopTab";
 import ItemBoxTab from "../components/ItemBoxTab";
 import SkillTreeTab from "../components/SkillTreeTab";
 import SettingsPage from "./SettingsPage";
+import CharacterPage from "./CharacterPage";
 
 export default function TownPage({ onEnterDungeon }) {
 　const [showSettings, setShowSettings] = useState(false);
@@ -16,12 +17,12 @@ export default function TownPage({ onEnterDungeon }) {
   const lvPct = need > 0 ? Math.min(1, (player.totalExp - used) / need) : 1;
 
   const tabs = [
-    { id:"home",   icon:"🏰", label:"街"    },
-    { id:"shop",   icon:"🏪", label:"ショップ"},
-    { id:"items",  icon:"🎒", label:"アイテム"},
-    { id:"skill",  icon:"🌳", label:"スキル"  },
-    { id:"record", icon:"📊", label:"記録"   },
-  ];
+  { id:"home",      icon:"🏰", label:"街"      },
+  { id:"character", icon:"🧙", label:"キャラ"  },
+  { id:"shop",      icon:"🏪", label:"ショップ" },
+  { id:"skill",     icon:"🌳", label:"スキル"  },
+  { id:"forge",     icon:"🔨", label:"鍛冶屋"  },
+];
 
   return (
     <div style={{ height:"100vh", background:"#06060f", fontFamily:"monospace", display:"flex", flexDirection:"column", overflow:"hidden" }}>
@@ -56,6 +57,7 @@ export default function TownPage({ onEnterDungeon }) {
 
       {/* コンテンツ */}
       <div style={{ flex:1, overflowY:"auto", padding:14 }}>
+        {tab === "character" && <CharacterPage />}
 
         {/* ホーム */}
         {tab === "home" && (
