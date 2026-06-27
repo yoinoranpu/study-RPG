@@ -1,6 +1,12 @@
 import { db, auth } from "./config";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { 
+  signInAnonymously, 
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  linkWithPopup,
+} from "firebase/auth";
 
 // ゲストログイン
 export const loginAsGuest = async () => {
@@ -52,4 +58,31 @@ export const loadPlayerData = async (uid) => {
 // 認証状態の監視
 export const watchAuthState = (callback) => {
   return onAuthStateChanged(auth, callback);
+};
+// Googleログイン
+export const loginWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  const result = await signInWithPopup(auth, provider);
+  return result.user;
+};
+
+// ゲストアカウントをGoogleと連携
+export const linkGuestToGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await linkWithPopup(auth.currentUser, provider);
+    return result.user;
+  } catch (e) {
+    // すでにGoogleアカウントが存在する場合はそちらでログイン
+    if (e.code === "auth/credential-already-in-use") {
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    }
+    throw e;
+  }
+};
+
+// ログアウト
+export const logout = async () => {
+  await auth.signOut();
 };

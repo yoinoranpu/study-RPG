@@ -4,8 +4,10 @@ import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
 import ShopTab from "../components/ShopTab";
 import ItemBoxTab from "../components/ItemBoxTab";
 import SkillTreeTab from "../components/SkillTreeTab";
+import SettingsPage from "./SettingsPage";
 
 export default function TownPage({ onEnterDungeon }) {
+　const [showSettings, setShowSettings] = useState(false);
   const [tab, setTab] = useState("home");
   const player = usePlayerStore();
   const lv = expToLevel(player.totalExp);
@@ -23,14 +25,14 @@ export default function TownPage({ onEnterDungeon }) {
 
   return (
     <div style={{ height:"100vh", background:"#06060f", fontFamily:"monospace", display:"flex", flexDirection:"column", overflow:"hidden" }}>
-
       {/* ヘッダー */}
       <div style={{ background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", padding:"14px 16px 10px", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
         <div style={{ fontSize:7, letterSpacing:5, color:"#a78bfa", marginBottom:2, opacity:0.7 }}>STUDY DUNGEON</div>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ fontSize:18, fontWeight:900, color:"#fff" }}>街</div>
           <div style={{ flex:1 }} />
-          <div style={{ textAlign:"right" }}>
+<button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 8px", cursor:"pointer", fontSize:12 }}>⚙</button>
+<div style={{ textAlign:"right" }}>
             <div style={{ display:"flex", alignItems:"center", gap:6, justifyContent:"flex-end" }}>
               <span style={{ fontSize:10, color:"#86efac" }}>Lv {lv}</span>
               <div style={{ width:44, height:4, background:"#0a1a0a", borderRadius:2, overflow:"hidden" }}>
@@ -131,6 +133,7 @@ export default function TownPage({ onEnterDungeon }) {
         )}
 
       </div>
+      {showSettings && <SettingsPage onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
