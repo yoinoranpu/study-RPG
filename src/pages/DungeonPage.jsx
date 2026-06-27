@@ -5,7 +5,7 @@ import { rollEventType, rollNpcEvent, rollChest } from "../systems/events";
 import { pickMonsters } from "../systems/monsters";
 import { simulateBattle } from "../systems/battle";
 import TimerSettings from "../components/TimerSettings";
-
+import { calcPlayerStats } from "../systems/playerStats";
 
 const EVENT_INTERVAL = 15000; // 15秒ごと（デモ用）
 const BASE_MAX_EVENTS = 4;
@@ -107,11 +107,13 @@ export default function DungeonPage({ onBack }) {
           const monsters = pickMonsters(floorRef.current);
           const names = monsters.map(m => m.displayName).join("と");
           addLog(`⚔ ${names}が現れた！`, "#f87171");
-          const playerStats = {
-            hp: hpRef.current, maxHp: player.maxHp || 100,
-            atk: 10, mag: 10, def: 10, mdef: 10, eva: 5, crit: 5,
-          };
-          const result = simulateBattle(playerStats, monsters);
+          const baseStats = calcPlayerStats(player);
+const currentPlayerStats = {
+  ...baseStats,
+  hp: hpRef.current,
+  maxHp: baseStats.maxHp,
+};
+const result = simulateBattle(currentPlayerStats, monsters);
           hpRef.current = Math.max(1, result.playerHpAfter);
           setHp(hpRef.current);
           result.logs.slice(-3).forEach(l => addLog(l.text, l.color));
@@ -161,25 +163,31 @@ export default function DungeonPage({ onBack }) {
 
   // リザルト確定
   const handleResultClose = () => {
-    const newMats = { ...(player.materials || {}) };
-    Object.entries(sessionMats.current).forEach(([k, v]) => {
-      newMats[k] = (newMats[k] || 0) + v;
-    });
-    updatePlayer({
-      totalExp: player.totalExp + sessionExp.current,
-      gold: player.gold + sessionGold.current,
-      floor: floorRef.current,
-      maxFloor: Math.max(player.maxFloor || 1, floorRef.current),
-      floorMapping: mappingRef.current,
-      hp: hpRef.current,
-      materials: newMats,
-      timerWork: workMin,
-      timerBreak: breakMin,
-      timerSets: totalSets,
-    });
-    setShowResult(false);
-    onBack();
-  };
+  const newMats = { ...(player.materials || {}) };
+  Object.entries(sessionMats.current).forEach(([k, v]) => {
+    newMats[k] = (newMats[k] || 0) + v;
+  });
+  
+  const studiedMinutes = workMin * currentSet;
+  
+  updatePlayer({
+    totalExp: player.totalExp + sessionExp.current,
+    gold: player.gold + sessionGold.current,
+    floor: floorRef.current,
+    maxFloor: Math.max(player.maxFloor || 1, floorRef.current),
+    floorMapping: mappingRef.current,
+    hp: hpRef.current,
+    materials: newMats,
+    timerWork: workMin,
+    timerBreak: breakMin,
+    timerSets: totalSets,
+    studyMinutesTotal: (player.studyMinutesTotal || 0) + studiedMinutes,
+    studyMinutesToday: (player.studyMinutesToday || 0) + studiedMinutes,
+    studyMinutesWeek:  (player.studyMinutesWeek  || 0) + studiedMinutes,
+  });
+  setShowResult(false);
+  onBack();
+};
 
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
