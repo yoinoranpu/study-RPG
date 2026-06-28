@@ -6,6 +6,7 @@ import { pickMonsters } from "../systems/monsters";
 import { simulateBattle } from "../systems/battle";
 import TimerSettings from "../components/TimerSettings";
 import { calcPlayerStats } from "../systems/playerStats";
+import DungeonCanvas from "../components/DungeonCanvas";
 
 const EVENT_INTERVAL = 15000; // 15秒ごと（デモ用）
 const BASE_MAX_EVENTS = 4;
@@ -234,9 +235,10 @@ const result = simulateBattle(currentPlayerStats, monsters);
   );
 
   return (
-    <div style={{ height:"100vh", background:"#000", fontFamily:"monospace", display:"flex", flexDirection:"column" }}>
+    <div style={{ height:"100vh", background:"#000", fontFamily:"monospace", display:"flex", flexDirection:"column", position:"relative" }}>
+        <DungeonCanvas isRunning={isRunning} isBreak={phase === "break"} />
       {/* ヘッダー */}
-      <div style={{ padding:"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:12 }}>
+      <div style={{ padding:"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:12, position:"relative", zIndex:1 }}>
         <button onClick={onBack} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 10px", cursor:"pointer", fontSize:10 }}>← 街へ</button><button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 10px", cursor:"pointer", fontSize:10 }}>⚙</button>
         <div style={{ color:"#60a5fa", fontSize:12, letterSpacing:2 }}>B{floor}F</div>
         <div style={{ flex:1 }} />
@@ -253,7 +255,7 @@ const result = simulateBattle(currentPlayerStats, monsters);
       </div>
 
       {/* メイン */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, padding:16 }}>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, padding:16, position:"relative", zIndex:1 }}>
         {/* 円形タイマー */}
         <div style={{ position:"relative", width:180, height:180 }}>
           <svg width={180} height={180} style={{ transform:"rotate(-90deg)" }}>
