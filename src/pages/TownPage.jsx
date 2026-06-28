@@ -6,6 +6,7 @@ import ItemBoxTab from "../components/ItemBoxTab";
 import SkillTreeTab from "../components/SkillTreeTab";
 import SettingsPage from "./SettingsPage";
 import CharacterPage from "./CharacterPage";
+import ForgeTab from "../components/ForgeTab";
 
 export default function TownPage({ onEnterDungeon }) {
 　const [showSettings, setShowSettings] = useState(false);
@@ -58,6 +59,7 @@ export default function TownPage({ onEnterDungeon }) {
       {/* コンテンツ */}
       <div style={{ flex:1, overflowY:"auto", padding:14 }}>
         {tab === "character" && <CharacterPage />}
+        {tab === "forge" && <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}><ForgeTab /></div>}
 
         {/* ホーム */}
         {tab === "home" && (
