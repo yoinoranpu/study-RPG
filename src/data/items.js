@@ -58,19 +58,23 @@ export const generateShopStock = (dateStr) => {
   const rng = (s) => { let x = Math.sin(s) * 10000; return x - Math.floor(x); };
 
   const pick = (items, count, off) => {
-    const pool = items.filter(it => !it.dropOnly && (it.shopWeight || 0) > 0);
-    const picked = [];
-    for (let i = 0; i < count; i++) {
-      const tw = pool.reduce((s, it) => s + (it.shopWeight || 1) * (RARITY_SHOP_W[it.rarity] || 1), 0);
-      let r = rng(seed + off + i * 7) * tw;
-      for (const it of pool) {
-        r -= (it.shopWeight || 1) * (RARITY_SHOP_W[it.rarity] || 1);
-        if (r <= 0 && !picked.find(p => p.id === it.id)) { picked.push(it); break; }
+  const pool = items.filter(it => !it.dropOnly && (it.shopWeight || 0) > 0);
+  const picked = [];
+  for (let i = 0; i < count; i++) {
+    const tw = pool.reduce((s, it) => s + (it.shopWeight || 1) * (RARITY_SHOP_W[it.rarity] || 1), 0);
+    let r = rng(seed + off + i * 7) * tw;
+    for (const it of pool) {
+      r -= (it.shopWeight || 1) * (RARITY_SHOP_W[it.rarity] || 1);
+      if (r <= 0 && !picked.find(p => p.id === it.id)) {
+        // ここで個体差を付けた商品を生成
+        picked.push(makeItem(it));
+        break;
       }
-      if (picked.length <= i) picked.push(pool[Math.floor(rng(seed + i) * pool.length)] || pool[0]);
     }
-    return picked.filter(Boolean);
-  };
+    if (picked.length <= i) picked.push(makeItem(pool[Math.floor(rng(seed + i) * pool.length)] || pool[0]));
+  }
+  return picked.filter(Boolean);
+};
 
   return {
     weapon:    pick(ITEM_DB.weapon,    3, 0),
@@ -80,9 +84,47 @@ export const generateShopStock = (dateStr) => {
 };
 
 // アイテムインスタンス生成
+
+const VARIANCE = 0.15;
+
+const applyVariance = (val) => {
+  if (!val || val === 0) return 0;
+  
+  const r = Math.random();
+  
+  // 60%: 基本値そのまま
+  if (r < 0.60) return val;
+  
+  // 20%: ±1
+  if (r < 0.80) {
+    return val + (Math.random() < 0.5 ? 1 : -1);
+  }
+  
+  // 10%: ±2
+  if (r < 0.90) {
+    return val + (Math.random() < 0.5 ? 2 : -2);
+  }
+  
+  // 5%: ±3
+  if (r < 0.95) {
+    return val + (Math.random() < 0.5 ? 3 : -3);
+  }
+  
+  // 5%: ±4〜5（レアな大外れ・大当たり）
+  const big = 4 + Math.floor(Math.random() * 2);
+  return val + (Math.random() < 0.5 ? big : -big);
+};
+
 let _uid = 0;
 export const makeItem = (tmpl) => ({
   ...tmpl,
+  atk:  applyVariance(tmpl.atk),
+  mag:  applyVariance(tmpl.mag),
+  def:  applyVariance(tmpl.def),
+  mdef: applyVariance(tmpl.mdef),
+  hp:   applyVariance(tmpl.hp),
+  eva:  applyVariance(tmpl.eva),
+  crit: applyVariance(tmpl.crit),
   uid: `i${Date.now()}_${_uid++}`,
   upgradeLevel: 0,
   bonuses: {},
