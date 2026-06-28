@@ -11,7 +11,7 @@ const THEMES = {
   },
 };
 
-export default function DungeonCanvas({ isRunning, isBreak }) {
+export default function DungeonCanvas({ isRunning, isBreak, isPaused }) {
   const canvasRef = useRef(null);
   const frameRef  = useRef(null);
   const stateRef  = useRef({ offset:0, torchPhase:0 });
@@ -32,9 +32,8 @@ export default function DungeonCanvas({ isRunning, isBreak }) {
         canvas.height = H;
       }
       const s = stateRef.current;
-      const speed = isRunning && !isBreak ? dt * 0.15 : 0;
-      // 右から左へ流れる
-     s.offset = ((s.offset - speed) % W + W) % W;
+      const speed = isRunning && !isBreak && !isPaused ? dt * 0.15 : 0;
+      s.offset = ((s.offset - speed) % W + W) % W;
       s.torchPhase = (s.torchPhase + dt * 0.006) % (Math.PI * 2);
       draw(ctx, W, H, s, THEMES.stone, isBreak);
       frameRef.current = requestAnimationFrame(loop);
@@ -42,7 +41,7 @@ export default function DungeonCanvas({ isRunning, isBreak }) {
 
     frameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [isRunning, isBreak]);
+  }, [isRunning, isBreak, isPaused]);
 
   return (
     <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%", zIndex:0 }} />
@@ -56,31 +55,16 @@ function draw(ctx, W, H, state, C, isBreak) {
 
   ctx.clearRect(0, 0, W, H);
 
-  // ─── 背景色 ───
+  // 背景色
   ctx.fillStyle = C.skyColor;
   ctx.fillRect(0, 0, W, H);
 
-  // ─── 壁（シームレス・全体同じ速度） ───
+  // 壁
   ctx.fillStyle = C.farColor;
   ctx.fillRect(0, CEIL_Y, W, FLOOR_Y - CEIL_Y);
 
-  // レンガパターン（右から左へ・シームレス）
+  // レンガパターン（1回だけ）
   const brickH = 28, brickW = 56;
-  ctx.strokeStyle = "#0d0a08";
-  ctx.lineWidth = 1;
-  for (let row = 0; row * brickH < FLOOR_Y - CEIL_Y; row++) {
-    const y = CEIL_Y + row * brickH;
-    const rowOff = row % 2 === 0 ? 0 : brickW / 2;
-    // シームレス：-W〜W+Wの範囲で描画
-    for (let col = -2; col * brickW < W + brickW * 2; col++) {
-      const x = col * brickW + rowOff + (W - offset % W);
-      if (x > -brickW && x < W + brickW) {
-        ctx.strokeRect(x % (brickW * (row % 2 === 0 ? 1 : 1)), y, brickW, brickH);
-      }
-    }
-  }
-
-  // ─── レンガシームレス描画（正しい版） ───
   ctx.strokeStyle = "#0d0a08";
   ctx.lineWidth = 1;
   for (let row = 0; row * brickH < FLOOR_Y - CEIL_Y; row++) {
@@ -93,14 +77,14 @@ function draw(ctx, W, H, state, C, isBreak) {
     }
   }
 
-  // ─── 天井 ───
+  // 天井
   const ceilGrad = ctx.createLinearGradient(0, 0, 0, CEIL_Y);
   ceilGrad.addColorStop(0, "#030205");
   ceilGrad.addColorStop(1, "#0a0810");
   ctx.fillStyle = ceilGrad;
   ctx.fillRect(0, 0, W, CEIL_Y);
 
-  // 天井石ブロック（シームレス）
+  // 天井石ブロック
   const blockW = 80;
   const blockOff = offset % blockW;
   for (let x = -blockOff; x < W + blockW; x += blockW) {
@@ -111,7 +95,7 @@ function draw(ctx, W, H, state, C, isBreak) {
     ctx.strokeRect(x, CEIL_Y - 20, blockW - 4, 20);
   }
 
-  // ─── 松明（シームレス・一定間隔） ───
+  // 松明
   const torchInterval = 280;
   const torchOff = offset % torchInterval;
   for (let x = -torchOff + torchInterval * 0.3; x < W + torchInterval; x += torchInterval) {
@@ -119,14 +103,14 @@ function draw(ctx, W, H, state, C, isBreak) {
     drawTorch(ctx, x, FLOOR_Y - 180, flicker, C);
   }
 
-  // ─── 床 ───
+  // 床
   const floorGrad = ctx.createLinearGradient(0, FLOOR_Y, 0, H);
   floorGrad.addColorStop(0, "#2a1e10");
   floorGrad.addColorStop(1, "#1a1208");
   ctx.fillStyle = floorGrad;
   ctx.fillRect(0, FLOOR_Y, W, H - FLOOR_Y);
 
-  // 床タイル（シームレス）
+  // 床タイル
   const tileW = 64;
   const tileOff = offset % tileW;
   ctx.strokeStyle = C.floorLine;
@@ -144,12 +128,12 @@ function draw(ctx, W, H, state, C, isBreak) {
     ctx.stroke();
   }
 
-  // ─── 境界線 ───
+  // 境界線
   ctx.fillStyle = "#0a0805";
   ctx.fillRect(0, FLOOR_Y - 4, W, 4);
   ctx.fillRect(0, CEIL_Y, W, 4);
 
-  // ─── 左右の暗闇 ───
+  // 左右の暗闇
   const leftFog = ctx.createLinearGradient(0, 0, W * 0.12, 0);
   leftFog.addColorStop(0, "rgba(0,0,0,0.9)");
   leftFog.addColorStop(1, "transparent");
@@ -182,10 +166,8 @@ function drawTorch(ctx, x, y, flicker, C) {
   glow.addColorStop(1, "transparent");
   ctx.fillStyle = glow;
   ctx.fillRect(x - 90, y - 90, 180, 180);
-
   ctx.fillStyle = "#5a3a10";
   ctx.fillRect(x - 3, y + 12, 6, 28);
-
   const fireGrad = ctx.createRadialGradient(x, y, 0, x, y, 18 * flicker);
   fireGrad.addColorStop(0, C.torchColor2 + "ff");
   fireGrad.addColorStop(0.5, C.torchColor + "bb");
