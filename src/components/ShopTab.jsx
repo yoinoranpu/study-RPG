@@ -24,10 +24,12 @@ export default function ShopTab() {
   }
 
   const tabs = [
-    { id:"weapon",    label:"⚔武器"  },
-    { id:"armor",     label:"🛡防具"  },
-    { id:"accessory", label:"💍アクセ"},
-  ];
+  { id:"weapon",    label:"⚔武器"   },
+  { id:"armor",     label:"🛡防具"   },
+  { id:"accessory", label:"💍アクセ" },
+  { id:"consumable",label:"🧪消耗品" },
+  { id:"special",   label:"✨特殊"   },
+];
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>

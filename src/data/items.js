@@ -40,6 +40,25 @@ export const ITEM_DB = {
     { id:"AC009", name:"竜の護符", type:"accessory",    rarity:3, icon:"🐉", atk:0, mag:0, def:0, mdef:0, hp:0,  eva:0, crit:3, sp1:"ボスドロップ+2%",desc:"中盤〜後半向け",      shopWeight:4  },
     { id:"AC010", name:"旅人の護符", type:"accessory",  rarity:1, icon:"📿", atk:0, mag:0, def:0, mdef:0, hp:0,  eva:0, crit:0, sp1:"EXP+3%",     desc:"バランス育成用",        shopWeight:10 },
   ],
+  consumable: [
+    { id:"C001", name:"小ポーション",   rarity:1, icon:"🧪", sp1:"HP+30%",      desc:"HPを30%回復",           shopWeight:15 },
+    { id:"C002", name:"中ポーション",   rarity:2, icon:"🧪", sp1:"HP+50%",      desc:"HPを50%回復",           shopWeight:10 },
+    { id:"C003", name:"大ポーション",   rarity:3, icon:"🧪", sp1:"HP+100%",     desc:"HPを全回復",            shopWeight:4  },
+    { id:"C004", name:"エリクサー",     rarity:4, icon:"✨", sp1:"HP+100%/EXP+10%",desc:"全回復＋EXP+10%",   shopWeight:1  },
+    { id:"C005", name:"攻撃の秘薬",     rarity:2, icon:"⚗", sp1:"ATK+20%(1セット)",desc:"1セット中ATK+20%",  shopWeight:6  },
+    { id:"C006", name:"防御の秘薬",     rarity:2, icon:"⚗", sp1:"DEF+20%(1セット)",desc:"1セット中DEF+20%",  shopWeight:6  },
+    { id:"C007", name:"帰還の巻物",     rarity:2, icon:"📜", sp1:"即帰還",       desc:"ダンジョンから即帰還",  shopWeight:5  },
+    { id:"C008", name:"経験値の書",     rarity:3, icon:"📖", sp1:"EXP+50%",     desc:"次のセットEXP+50%",    shopWeight:3  },
+    { id:"C009", name:"素材の水晶",     rarity:3, icon:"💎", sp1:"素材2倍",      desc:"次のセット素材ドロップ2倍",shopWeight:3},
+    { id:"C010", name:"幸運のお守り",   rarity:3, icon:"🍀", sp1:"レア率+20%",   desc:"次のセットレア率+20%", shopWeight:3  },
+  ],
+  special: [
+    { id:"S001", name:"スキルリセット石",rarity:3, icon:"🔮", sp1:"SP全還元",    desc:"習得スキルをリセット",  shopWeight:2  },
+    { id:"S002", name:"アイテム枠拡張",  rarity:4, icon:"🎒", sp1:"BOX+5",      desc:"アイテムボックス+5枠",  shopWeight:1  },
+    { id:"S003", name:"レア素材パック",  rarity:3, icon:"📦", sp1:"素材×5",     desc:"ランダム素材×5個",      shopWeight:3  },
+    { id:"S004", name:"強化の秘石",      rarity:4, icon:"💠", sp1:"強化+2",      desc:"選択装備を+2強化",      shopWeight:1  },
+    { id:"S005", name:"伝説の宝箱",      rarity:5, icon:"🌟", sp1:"伝説確定",    desc:"伝説アイテム確定入手",  shopWeight:0  },
+  ],
 };
 
 // ショップ価格
@@ -77,9 +96,11 @@ export const generateShopStock = (dateStr) => {
 };
 
   return {
-    weapon:    pick(ITEM_DB.weapon,    3, 0),
-    armor:     pick(ITEM_DB.armor,     3, 100),
-    accessory: pick(ITEM_DB.accessory, 3, 200),
+    weapon:     pick(ITEM_DB.weapon,    3, 0),
+    armor:      pick(ITEM_DB.armor,     3, 100),
+    accessory:  pick(ITEM_DB.accessory, 3, 200),
+    consumable: pick(ITEM_DB.consumable,4, 300),
+    special:    pick(ITEM_DB.special.filter(it=>it.shopWeight>0), 2, 400),
   };
 };
 
