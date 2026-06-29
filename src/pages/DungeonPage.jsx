@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import usePlayerStore from "../store/usePlayerStore";
-import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel } from "../systems/timer";
 import { rollEventType, rollNpcEvent, rollChest } from "../systems/events";
 import { pickMonsters } from "../systems/monsters";
 import { simulateBattle } from "../systems/battle";
@@ -10,6 +9,7 @@ import DungeonCanvas from "../components/DungeonCanvas";
 import PlayerSprite from "../components/PlayerSprite";
 import MonsterSprite from "../components/MonsterSprite";
 import EventSprite from "../components/EventSprite";
+import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
 
 const EVENT_INTERVAL = 15000;
 const BASE_MAX_EVENTS = 4;
@@ -189,8 +189,21 @@ export default function DungeonPage({ onBack }) {
     const newMats = { ...(player.materials||{}) };
     Object.entries(sessionMats.current).forEach(([k,v]) => { newMats[k] = (newMats[k]||0)+v; });
     const studiedMinutes = workMin * currentSet;
+    
+    const oldLv = expToLevel(player.totalExp);
+    const newTotalExp = player.totalExp + sessionExp.current;
+    const newLv = expToLevel(newTotalExp);
+
+    // レベルアップ時の解放メッセージ
+    if (newLv > oldLv) {
+      for (let lv = oldLv + 1; lv <= newLv; lv++) {
+        const unlock = LEVEL_UNLOCKS[lv];
+        if (unlock) addLog(`🎉 Lv${lv}到達！${unlock.label}`, "#fbbf24");
+      }
+    }
+
     updatePlayer({
-      totalExp: player.totalExp + sessionExp.current,
+      totalExp: newTotalExp,
       gold:     player.gold + sessionGold.current,
       floor:    floorRef.current,
       maxFloor: Math.max(player.maxFloor||1, floorRef.current),
