@@ -9,6 +9,7 @@ import DungeonCanvas from "../components/DungeonCanvas";
 import PlayerSprite from "../components/PlayerSprite";
 import MonsterSprite from "../components/MonsterSprite";
 import EventSprite from "../components/EventSprite";
+import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
 
 const EVENT_INTERVAL = 6 * 60 * 1000;
@@ -40,6 +41,8 @@ export default function DungeonPage({ onBack }) {
   const [currentEvent, setCurrentEvent]     = useState(null);
   const [eventVisible, setEventVisible]     = useState(false);
   const [monsterArrived, setMonsterArrived] = useState(false);
+  const [battleEffectActive, setBattleEffectActive] = useState(false);
+  const [battleTurns, setBattleTurns] = useState([]);
 
   const logId        = useRef(1);
   const sessionExp   = useRef(0);
@@ -51,6 +54,7 @@ export default function DungeonPage({ onBack }) {
   const mappingRef   = useRef(player.floorMapping || 0);
   const hpRef        = useRef(player.hp || 100);
   const eventCountRef = useRef(0);
+  const pendingBattleRef = useRef(null);
 
   const addLog = useCallback((text, color="#666") => {
     setLogs(l => [...l, { id:logId.current++, text, color }]);
@@ -81,17 +85,7 @@ export default function DungeonPage({ onBack }) {
       const baseStats = calcPlayerStats(player);
       const ps = { ...baseStats, hp:hpRef.current, maxHp:baseStats.maxHp };
       const result = simulateBattle(ps, monsters);
-      hpRef.current = Math.max(1, result.playerHpAfter); setHp(hpRef.current);
-      result.logs.slice(-3).forEach(l => addLog(l.text, l.color));
-      if (result.won) {
-        sessionExp.current += result.totalExp; sessionGold.current += result.totalGold;
-        result.materials.forEach(mat => { sessionMats.current[mat]=(sessionMats.current[mat]||0)+1; });
-        monsters.forEach(m => defeatedList.current.push(m));
-        if (Math.random()<0.25) sessionChests.current.push(rollChest());
-        addMapping(2);
-      }
-      setBattlePopup({ monsters, won:result.won, exp:result.totalExp, gold:result.totalGold, materials:result.materials, dangerStar:Math.max(...monsters.map(m=>m.dangerStar)) });
-      setTimeout(() => { setMonsterVisible(false); setCurrentMonster(null); setMonsterArrived(false); setBattlePopup(null); }, 8000);
+      pendingBattleRef.current = { result, monsters };
 
     } else if (evType === "chest") {
       const chest = rollChest(); sessionChests.current.push(chest);
@@ -246,8 +240,51 @@ export default function DungeonPage({ onBack }) {
 
       <DungeonCanvas isRunning={isRunning} isBreak={phase==="break"} isPaused={monsterArrived} />
       <PlayerSprite hp={hp} maxHp={maxHp} isRunning={isRunning} isBreak={phase==="break"} />
-      <MonsterSprite monster={currentMonster} isVisible={monsterVisible && !eventVisible} onReach={() => setMonsterArrived(true)} floorY={null} />
+      <MonsterSprite
+        monster={currentMonster}
+        isVisible={monsterVisible && !eventVisible}
+        onReach={() => {
+          setMonsterArrived(true);
+          const pending = pendingBattleRef.current;
+          if (!pending) return;
+          setBattleTurns(pending.result.turns);
+          setBattleEffectActive(true);
+        }}
+        floorY={null}
+      />
       <EventSprite eventType={currentEvent} isVisible={eventVisible && !monsterVisible} onReach={() => setMonsterArrived(true)} />
+      <BattleEffect
+        isActive={battleEffectActive}
+        turns={battleTurns}
+        onPlayerHpUpdate={(newHp) => { hpRef.current = newHp; setHp(newHp); }}
+  onMonsterHpUpdate={(idx, newHp) => {
+    setCurrentMonster(m => m ? { ...m, hp: newHp } : m);
+  }}
+        onComplete={() => {
+          const pending = pendingBattleRef.current;
+          if (!pending) return;
+          const { result, monsters } = pending;
+          hpRef.current = Math.max(1, result.playerHpAfter);
+          setHp(hpRef.current);
+          result.logs.slice(-3).forEach(l => addLog(l.text, l.color));
+          if (result.won) {
+            sessionExp.current += result.totalExp;
+            sessionGold.current += result.totalGold;
+            result.materials.forEach(mat => { sessionMats.current[mat]=(sessionMats.current[mat]||0)+1; });
+            monsters.forEach(m => defeatedList.current.push(m));
+            if (Math.random()<0.25) sessionChests.current.push(rollChest());
+            addMapping(2);
+          }
+          setBattlePopup({ monsters, won:result.won, exp:result.totalExp, gold:result.totalGold, materials:result.materials, dangerStar:Math.max(...monsters.map(m=>m.dangerStar)) });
+          setBattleEffectActive(false);
+          pendingBattleRef.current = null;
+          setTimeout(() => { setMonsterVisible(false); setCurrentMonster(null); setMonsterArrived(false); setBattlePopup(null); }, 3000);
+        }}
+        monsterX={0.35}
+        monsterY={0.72}
+        playerX={0.72}
+        playerY={0.72}
+      />
 
       {/* ヘッダー */}
       <div style={{ padding:"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:12, position:"relative", zIndex:1 }}>
