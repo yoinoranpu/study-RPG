@@ -11,8 +11,9 @@ import MonsterSprite from "../components/MonsterSprite";
 import EventSprite from "../components/EventSprite";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
 
-const EVENT_INTERVAL = 15000;
+const EVENT_INTERVAL = 6 * 60 * 1000;
 const BASE_MAX_EVENTS = 4;
+const DEBUG = true;
 
 export default function DungeonPage({ onBack }) {
   const player = usePlayerStore();
@@ -49,6 +50,7 @@ export default function DungeonPage({ onBack }) {
   const floorRef     = useRef(player.floor || 1);
   const mappingRef   = useRef(player.floorMapping || 0);
   const hpRef        = useRef(player.hp || 100);
+  const eventCountRef = useRef(0);
 
   const addLog = useCallback((text, color="#666") => {
     setLogs(l => [...l, { id:logId.current++, text, color }]);
@@ -64,6 +66,60 @@ export default function DungeonPage({ onBack }) {
     }
     setMapping(result.mapping);
   }, [addLog]);
+
+  const fireEvent = useCallback(() => {
+    if (eventCountRef.current >= BASE_MAX_EVENTS) return;
+    const evType = rollEventType();
+    eventCountRef.current += 1;
+    setEventCount(eventCountRef.current);
+
+    if (evType === "battle") {
+      const monsters = pickMonsters(floorRef.current);
+      addLog(`⚔ ${monsters.map(m=>m.displayName).join("と")}が現れた！`, "#f87171");
+      setCurrentEvent(null); setEventVisible(false);
+      setCurrentMonster(monsters[0]); setMonsterVisible(true); setMonsterArrived(false);
+      const baseStats = calcPlayerStats(player);
+      const ps = { ...baseStats, hp:hpRef.current, maxHp:baseStats.maxHp };
+      const result = simulateBattle(ps, monsters);
+      hpRef.current = Math.max(1, result.playerHpAfter); setHp(hpRef.current);
+      result.logs.slice(-3).forEach(l => addLog(l.text, l.color));
+      if (result.won) {
+        sessionExp.current += result.totalExp; sessionGold.current += result.totalGold;
+        result.materials.forEach(mat => { sessionMats.current[mat]=(sessionMats.current[mat]||0)+1; });
+        monsters.forEach(m => defeatedList.current.push(m));
+        if (Math.random()<0.25) sessionChests.current.push(rollChest());
+        addMapping(2);
+      }
+      setBattlePopup({ monsters, won:result.won, exp:result.totalExp, gold:result.totalGold, materials:result.materials, dangerStar:Math.max(...monsters.map(m=>m.dangerStar)) });
+      setTimeout(() => { setMonsterVisible(false); setCurrentMonster(null); setMonsterArrived(false); setBattlePopup(null); }, 8000);
+
+    } else if (evType === "chest") {
+      const chest = rollChest(); sessionChests.current.push(chest);
+      const gold = Math.floor(Math.random()*50+20); sessionGold.current += gold;
+      addLog(`📦 宝箱発見！（${chest.label}）+${gold}G`, "#fbbf24");
+      setMonsterVisible(false); setCurrentMonster(null);
+      setCurrentEvent("chest"); setEventVisible(true); setMonsterArrived(false);
+      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 6000);
+
+    } else if (evType === "trap") {
+      const dmg = Math.floor(Math.random()*15+5);
+      hpRef.current = Math.max(1, hpRef.current-dmg); setHp(hpRef.current);
+      addLog(`⚠ 罠発動！${dmg}ダメージ！`, "#fb923c");
+      setMonsterVisible(false); setCurrentMonster(null);
+      setCurrentEvent("trap"); setEventVisible(true); setMonsterArrived(false);
+      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 4000);
+
+    } else {
+      const ev = rollNpcEvent();
+      addLog(`${ev.icon} ${ev.text}`, ev.color);
+      if (ev.effect==="heal") { hpRef.current=player.maxHp||100; setHp(hpRef.current); }
+      if (ev.effect==="map") addMapping(5);
+      setMonsterVisible(false); setCurrentMonster(null);
+      setCurrentEvent(ev.effect==="heal"?"heal":ev.effect==="buff"?"fairy":"npc");
+      setEventVisible(true); setMonsterArrived(false);
+      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 5000);
+    }
+  }, [addLog, addMapping, player]);
 
   // タイマー
   useEffect(() => {
@@ -85,6 +141,7 @@ export default function DungeonPage({ onBack }) {
           }
           setPhase("break");
           setCurrentSet(c => c + 1);
+          eventCountRef.current = 0;
           setEventCount(0);
           const t = breakMin * 60;
           setTotalSec(t);
@@ -106,102 +163,26 @@ export default function DungeonPage({ onBack }) {
   useEffect(() => {
     if (!isRunning || phase !== "work") return;
     const id = setInterval(() => {
-      if (eventCount >= BASE_MAX_EVENTS) return;
+      if (eventCountRef.current >= BASE_MAX_EVENTS) return;
       if (Math.random() >= 0.70) return;
-
-      const evType = rollEventType();
-      setEventCount(c => c + 1);
-
-      if (evType === "battle") {
-        const monsters = pickMonsters(floorRef.current);
-        const names = monsters.map(m => m.displayName).join("と");
-        addLog(`⚔ ${names}が現れた！`, "#f87171");
-        setCurrentEvent(null);
-        setEventVisible(false);
-        setCurrentMonster(monsters[0]);
-        setMonsterVisible(true);
-        setMonsterArrived(false);
-        const baseStats = calcPlayerStats(player);
-        const ps = { ...baseStats, hp: hpRef.current, maxHp: baseStats.maxHp };
-        const result = simulateBattle(ps, monsters);
-        hpRef.current = Math.max(1, result.playerHpAfter);
-        setHp(hpRef.current);
-        result.logs.slice(-3).forEach(l => addLog(l.text, l.color));
-        if (result.won) {
-          sessionExp.current  += result.totalExp;
-          sessionGold.current += result.totalGold;
-          result.materials.forEach(mat => { sessionMats.current[mat] = (sessionMats.current[mat]||0)+1; });
-          monsters.forEach(m => defeatedList.current.push(m));
-          if (Math.random() < 0.25) sessionChests.current.push(rollChest());
-          addMapping(2);
-        }
-        setBattlePopup({ monsters, won:result.won, exp:result.totalExp, gold:result.totalGold, materials:result.materials, dangerStar:Math.max(...monsters.map(m=>m.dangerStar)) });
-        setTimeout(() => {
-          setMonsterVisible(false);
-          setCurrentMonster(null);
-          setMonsterArrived(false);
-          setBattlePopup(null);
-        }, 8000);
-
-      } else if (evType === "chest") {
-        const chest = rollChest();
-        sessionChests.current.push(chest);
-        const gold = Math.floor(Math.random() * 50 + 20);
-        sessionGold.current += gold;
-        addLog(`📦 宝箱発見！（${chest.label}）+${gold}G`, "#fbbf24");
-        setMonsterVisible(false);
-        setCurrentMonster(null);
-        setCurrentEvent("chest");
-        setEventVisible(true);
-        setMonsterArrived(false);
-        setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 6000);
-
-      } else if (evType === "trap") {
-        const dmg = Math.floor(Math.random() * 15 + 5);
-        hpRef.current = Math.max(1, hpRef.current - dmg);
-        setHp(hpRef.current);
-        addLog(`⚠ 罠発動！${dmg}ダメージ！`, "#fb923c");
-        setMonsterVisible(false);
-        setCurrentMonster(null);
-        setCurrentEvent("trap");
-        setEventVisible(true);
-        setMonsterArrived(false);
-        setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 4000);
-
-      } else {
-        const ev = rollNpcEvent();
-        addLog(`${ev.icon} ${ev.text}`, ev.color);
-        if (ev.effect === "heal") { hpRef.current = player.maxHp||100; setHp(hpRef.current); }
-        if (ev.effect === "map") addMapping(5);
-        setMonsterVisible(false);
-        setCurrentMonster(null);
-        setCurrentEvent(ev.effect==="heal"?"heal":ev.effect==="buff"?"fairy":"npc");
-        setEventVisible(true);
-        setMonsterArrived(false);
-        setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 5000);
-      }
-
+      fireEvent();
     }, EVENT_INTERVAL);
     return () => clearInterval(id);
-  }, [isRunning, phase, eventCount, addLog, addMapping]);
+  }, [isRunning, phase, fireEvent]);
 
   const handleResultClose = () => {
     const newMats = { ...(player.materials||{}) };
     Object.entries(sessionMats.current).forEach(([k,v]) => { newMats[k] = (newMats[k]||0)+v; });
     const studiedMinutes = workMin * currentSet;
-    
     const oldLv = expToLevel(player.totalExp);
     const newTotalExp = player.totalExp + sessionExp.current;
     const newLv = expToLevel(newTotalExp);
-
-    // レベルアップ時の解放メッセージ
     if (newLv > oldLv) {
       for (let lv = oldLv + 1; lv <= newLv; lv++) {
         const unlock = LEVEL_UNLOCKS[lv];
         if (unlock) addLog(`🎉 Lv${lv}到達！${unlock.label}`, "#fbbf24");
       }
     }
-
     updatePlayer({
       totalExp: newTotalExp,
       gold:     player.gold + sessionGold.current,
@@ -226,18 +207,17 @@ export default function DungeonPage({ onBack }) {
   const lv     = expToLevel(player.totalExp);
   const maxHp  = player.maxHp || 100;
 
-  // リザルト画面
   if (showResult) return (
     <div style={{ height:"100vh", background:"#06060f", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, fontFamily:"monospace", padding:20 }}>
       <div style={{ fontSize:9, letterSpacing:6, color:"#60a5fa" }}>EXPLORATION RESULT</div>
       <div style={{ fontSize:24, fontWeight:900, color:"#fff", letterSpacing:2 }}>探索終了</div>
       <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:"20px 28px", width:"100%", maxWidth:320 }}>
         {[
-          { label:"獲得EXP",  val:`+${sessionExp.current}`,          color:"#86efac" },
-          { label:"獲得G",    val:`+${sessionGold.current}`,         color:"#fbbf24" },
-          { label:"到達階層", val:`B${floorRef.current}F`,           color:"#60a5fa" },
+          { label:"獲得EXP",  val:`+${sessionExp.current}`,             color:"#86efac" },
+          { label:"獲得G",    val:`+${sessionGold.current}`,            color:"#fbbf24" },
+          { label:"到達階層", val:`B${floorRef.current}F`,              color:"#60a5fa" },
           { label:"マップ率", val:`${Math.floor(mappingRef.current)}%`, color:"#60a5fa" },
-          { label:"倒した敵", val:`${defeatedList.current.length}体`, color:"#f87171" },
+          { label:"倒した敵", val:`${defeatedList.current.length}体`,   color:"#f87171" },
         ].map(({ label, val, color }) => (
           <div key={label} style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
             <span style={{ color:"#4a4a6a", fontSize:11 }}>{label}</span>
@@ -264,29 +244,10 @@ export default function DungeonPage({ onBack }) {
   return (
     <div style={{ height:"100vh", background:"#000", fontFamily:"monospace", display:"flex", flexDirection:"column", position:"relative" }}>
 
-      {/* 背景・スプライト層 */}
-      <DungeonCanvas 
-  isRunning={isRunning} 
-  isBreak={phase === "break"}
-  isPaused={monsterArrived}
-/>
-      <PlayerSprite
-        hp={hp}
-        maxHp={maxHp}
-        isRunning={isRunning}
-        isBreak={phase === "break"}
-      />
-      <MonsterSprite
-        monster={currentMonster}
-        isVisible={monsterVisible && !eventVisible}
-        onReach={() => setMonsterArrived(true)}
-        floorY={null}
-      />
-      <EventSprite
-        eventType={currentEvent}
-        isVisible={eventVisible && !monsterVisible}
-        onReach={() => setMonsterArrived(true)}
-      />
+      <DungeonCanvas isRunning={isRunning} isBreak={phase==="break"} isPaused={monsterArrived} />
+      <PlayerSprite hp={hp} maxHp={maxHp} isRunning={isRunning} isBreak={phase==="break"} />
+      <MonsterSprite monster={currentMonster} isVisible={monsterVisible && !eventVisible} onReach={() => setMonsterArrived(true)} floorY={null} />
+      <EventSprite eventType={currentEvent} isVisible={eventVisible && !monsterVisible} onReach={() => setMonsterArrived(true)} />
 
       {/* ヘッダー */}
       <div style={{ padding:"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:12, position:"relative", zIndex:1 }}>
@@ -299,7 +260,7 @@ export default function DungeonPage({ onBack }) {
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <span style={{ color:"#f87171", fontSize:10 }}>♥</span>
           <div style={{ width:50, height:5, background:"#1a0a0a", borderRadius:3, overflow:"hidden" }}>
-            <div style={{ height:"100%", width:`${(hp/maxHp)*100}%`, background: hp/maxHp>0.5?"#4ade80":hp/maxHp>0.25?"#fbbf24":"#f87171", borderRadius:3, transition:"width 0.5s" }} />
+            <div style={{ height:"100%", width:`${(hp/maxHp)*100}%`, background:hp/maxHp>0.5?"#4ade80":hp/maxHp>0.25?"#fbbf24":"#f87171", borderRadius:3, transition:"width 0.5s" }} />
           </div>
           <span style={{ color:"#555", fontSize:8 }}>{hp}</span>
         </div>
@@ -345,6 +306,12 @@ export default function DungeonPage({ onBack }) {
           {isRunning ? "STOP" : "START"}
         </button>
 
+        {DEBUG && (
+          <button onClick={fireEvent} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #a78bfa44", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:9, fontFamily:"monospace" }}>
+            DEBUG: イベント発生
+          </button>
+        )}
+
         <div style={{ width:"100%", maxWidth:320, maxHeight:100, overflow:"hidden", display:"flex", flexDirection:"column", justifyContent:"flex-end", gap:2 }}>
           {logs.slice(-4).map((log,i) => (
             <div key={log.id} style={{ fontSize:11, color:log.color, opacity:0.4+(i/4)*0.6, padding:"2px 8px", background:"rgba(0,0,0,0.6)", borderLeft:`2px solid ${log.color}44`, borderRadius:"0 2px 2px 0" }}>
@@ -354,7 +321,6 @@ export default function DungeonPage({ onBack }) {
         </div>
       </div>
 
-      {/* 戦闘ポップアップ */}
       {battlePopup && (
         <div style={{ position:"absolute", bottom:20, left:16, right:16, background:"rgba(0,0,0,0.95)", border:"1px solid #2a2a3a", borderRadius:8, padding:"12px 14px", fontFamily:"monospace", zIndex:5 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
