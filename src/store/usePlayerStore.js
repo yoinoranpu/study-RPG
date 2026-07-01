@@ -59,7 +59,8 @@ const usePlayerStore = create((set, get) => ({
   equippedAcc1: null,
   equippedAcc2: null,
   specialSlots: [null, null, null],
-
+  // 消耗品スロット（3枠）
+consumableSlots: [null, null, null],
   // アイテム・素材
   itemBox: [],
   materials: {},
