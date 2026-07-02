@@ -1,23 +1,28 @@
 import { useState } from "react";
 import { generateShopStock, getShopPrice, makeItem, RARITY_COLOR, RARITY_LABEL, INNATE } from "../data/items";
 import usePlayerStore from "../store/usePlayerStore";
-import ItemDetail from "./ItemDetail";
 
 const ITEM_BOX_MAX = 30;
 
 export default function ShopTab() {
   const [sub, setSub] = useState("weapon");
   const [msg, setMsg] = useState("");
-  const [soldOut, setSoldOut] = useState(new Set());
   const { gold, itemBox, maxFloor, updatePlayer } = usePlayerStore();
 
   const today = new Date().toDateString();
+
+  const [soldOut, setSoldOut] = useState(() => {
+    const saved = localStorage.getItem(`shop_soldout_${today}`);
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
   const [fixedStock] = useState(() => {
     const rawStock = generateShopStock(today, maxFloor || 0);
     return Object.fromEntries(
       Object.entries(rawStock).map(([k, items]) => [k, items.map(makeItem)])
     );
   });
+
   const allItems = fixedStock[sub] || [];
 
   function buy(tmpl, index) {
@@ -26,7 +31,11 @@ export default function ShopTab() {
     if ((itemBox||[]).length >= ITEM_BOX_MAX) { setMsg("BOXが満杯！"); setTimeout(()=>setMsg(""),3000); return; }
     const newItem = makeItem(tmpl);
     updatePlayer({ gold: gold - price, itemBox: [...(itemBox||[]), newItem] });
-    setSoldOut(s => new Set([...s, `${sub}_${index}`]));
+    setSoldOut(s => {
+      const next = new Set([...s, `${sub}_${index}`]);
+      localStorage.setItem(`shop_soldout_${today}`, JSON.stringify([...next]));
+      return next;
+    });
     setMsg(`${tmpl.name}を購入！`);
     setTimeout(() => setMsg(""), 3000);
   }
@@ -78,7 +87,7 @@ export default function ShopTab() {
               </div>
 
               {/* 基礎ステータス */}
-              {[(tmpl.baseAtk||0),(tmpl.baseMag||0),(tmpl.baseDef||0),(tmpl.baseMdef||0),(tmpl.baseHp||0)].some(v=>v>0) && (
+              {[(tmpl.atk||0),(tmpl.mag||0),(tmpl.def||0),(tmpl.mdef||0),(tmpl.hp||0)].some(v=>v>0) && (
                 <div style={{ marginBottom:4 }}>
                   <div style={{ fontSize:7, color:"#3a3a5a", marginBottom:2 }}>基礎ステータス</div>
                   <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
@@ -103,13 +112,14 @@ export default function ShopTab() {
 
               {/* ランダム能力 */}
               {(tmpl.abilities||[]).length > 0 && (
-                <div style={{ padding:"3px 8px", background:"#0a000a", border:"1px solid #a78bfa33", borderRadius:4, marginBottom:4 }}>
+                <div style={{ marginBottom:4, padding:"3px 8px", background:"#0a000a", border:"1px solid #a78bfa33", borderRadius:4 }}>
                   <div style={{ fontSize:7, color:"#3a3a5a", marginBottom:1 }}>ランダム能力</div>
                   {tmpl.abilities.map((ab,j) => (
                     <div key={j} style={{ fontSize:9, color:"#a78bfa" }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
                   ))}
                 </div>
               )}
+
               <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:10, marginTop:6 }}>
                 <span style={{ fontSize:13, color:isSold?"#333":"#fbbf24", fontWeight:700 }}>{price.toLocaleString()}G</span>
                 <button onClick={() => buy(tmpl, i)} disabled={!canBuy} style={{ padding:"6px 16px", background:canBuy?"#1a1000":"#0a0a0a", border:`1px solid ${canBuy?"#fbbf24":"#333"}`, borderRadius:4, cursor:canBuy?"pointer":"default", color:canBuy?"#fbbf24":"#333", fontSize:10, fontFamily:"monospace" }}>

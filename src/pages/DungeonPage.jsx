@@ -67,10 +67,22 @@ export default function DungeonPage({ onBack }) {
       floorRef.current += 1;
       setFloor(floorRef.current);
       addLog(`🗺 B${floorRef.current}Fに到達！`, "#60a5fa");
+
+      // レアリティ解放チェック
+      const RARITY_UNLOCKS = {
+        10: "uncommon",
+        25: "rare",
+        50: "epic",
+        75: "legendary",
+      };
+      const unlocked = RARITY_UNLOCKS[floorRef.current];
+      if (unlocked) {
+        updatePlayer({ unlockedRarity: unlocked, maxFloor: floorRef.current });
+        addLog(`🎉 ${unlocked.toUpperCase()}装備が解放された！`, "#fbbf24");
+      }
     }
     setMapping(result.mapping);
-  }, [addLog]);
-
+  }, [addLog, updatePlayer]);
   const fireEvent = useCallback(() => {
     if (eventCountRef.current >= BASE_MAX_EVENTS) return;
     const evType = rollEventType();

@@ -33,6 +33,7 @@ const debounceSave = (uid, data) => {
       studyMinutesTotal: data.studyMinutesTotal,
       studyMinutesToday: data.studyMinutesToday,
       studyMinutesWeek: data.studyMinutesWeek,
+      unlockedRarity: data.unlockedRarity || "common",
     };
     savePlayerData(uid, saveData);
   }, 2000);
@@ -59,8 +60,7 @@ const usePlayerStore = create((set, get) => ({
   equippedAcc1: null,
   equippedAcc2: null,
   specialSlots: [null, null, null],
-  // 消耗品スロット（3枠）
-consumableSlots: [null, null, null],
+ 
   // アイテム・素材
   itemBox: [],
   materials: {},
@@ -100,6 +100,7 @@ consumableSlots: [null, null, null],
     const uid = get().uid;
     const resetData = {
       totalExp: 0, gold: 500, floor: 1, maxFloor: 1,
+      unlockedRarity: "common", // 解放済み最高レアリティ
       floorMapping: 0, hp: 100, maxHp: 100,
       equippedWeapon: null, equippedArmor: null,
       equippedAcc1: null, equippedAcc2: null,
@@ -110,6 +111,7 @@ consumableSlots: [null, null, null],
       passiveSkillSlots: [null, null, null, null, null, null],
       battleStyle: "balanced",
       studyMinutesTotal: 0, studyMinutesToday: 0, studyMinutesWeek: 0,
+      unlockedRarity: "common",
     };
     set(resetData);
     debounceSave(uid, resetData);

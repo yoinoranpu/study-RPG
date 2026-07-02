@@ -2,6 +2,15 @@ export const calcDamage = (atk, def) =>
   Math.max(1, Math.floor(atk * (100 / (100 + def))));
 
 export const simulateBattle = (player, monsters) => {
+  // 状態異常管理（将来実装・今は枠だけ）
+const STATUS = {
+  // poison: { turns: 0, dmgPerTurn: 0 },  // 毒：毎ターンダメージ
+  // burn:   { active: false, dmg: 0 },     // 火傷：1回追加ダメージ
+  // freeze: { turns: 0 },                  // 凍結：行動不能
+  // paralyze: { turns: 0 },                // 麻痺：行動不能
+};
+const playerStatus = { ...STATUS };
+const monsterStatus = monsters.map(() => ({ ...STATUS }));
   const logs = [];
   const turns = []; // ターンごとの詳細データ
   const monHps = monsters.map(m => m.hp);
