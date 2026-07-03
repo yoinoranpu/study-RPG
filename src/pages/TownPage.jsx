@@ -125,7 +125,9 @@ export default function TownPage({ onEnterDungeon }) {
 
         {/* スキル（仮） */}
         {tab === "skill" && <SkillTreeTab />}
-    
+    　　{tab === "character" && <CharacterPage />}
+
+　　　　{tab === "forge" && <ForgeTab />}
 
         {tab === "record" && (
   <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
