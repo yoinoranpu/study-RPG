@@ -3,19 +3,11 @@ import usePlayerStore from "../store/usePlayerStore";
 import { calcPlayerStats } from "../systems/playerStats";
 import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
 import { RARITY_COLOR, RARITY_LABEL, INNATE, getItemStats, getSellPrice } from "../data/items";
+import { SKILLS, SKILL_LIST } from "../data/skills";
 
-const SKILL_DATA = [
-  {id:"s001",name:"居合斬り",type:"active",icon:"⚡",effect:"ATK×1.5倍物理ダメ"},
-  {id:"s002",name:"毒霧",    type:"active",icon:"☠", effect:"全体ATK×0.5+毒"},
-  {id:"s003",name:"狼召喚",  type:"active",icon:"🐺",effect:"毎ターンATK×0.5"},
-  {id:"s004",name:"急所狙い",type:"passive",icon:"🎯",effect:"クリ率+5%"},
-  {id:"s005",name:"鉄壁",    type:"passive",icon:"🛡",effect:"DEF+10"},
-  {id:"s006",name:"探索眼",  type:"passive",icon:"🔍",effect:"宝箱+5%"},
-  {id:"s007",name:"火炎球",  type:"active",icon:"🔥",effect:"MAG×1.8倍魔法ダメ"},
-  {id:"s008",name:"吸血",    type:"passive",icon:"🩸",effect:"与ダメ5%回復"},
-  {id:"s009",name:"幸運の導き",type:"passive",icon:"🍀",effect:"レア+3%"},
-  {id:"s010",name:"狂戦士",  type:"passive",icon:"😈",effect:"低HP時ATK+30%"},
-];
+const activeSkills  = SKILL_LIST.filter(s => s.type === "active");
+const passiveSkills = SKILL_LIST.filter(s => s.type === "passive");
+
 
 const EQUIP_SLOTS = [
   { key:"equippedWeapon", label:"武器",    icon:"⚔" },
@@ -35,8 +27,6 @@ export default function CharacterPage() {
   const need = expForLevel(lv);
   const lvPct = need > 0 ? Math.min(1, (player.totalExp - used) / need) : 1;
   const learned = new Set(learnedSkills || []);
-  const activeSkills = SKILL_DATA.filter(s => s.type === "active");
-  const passiveSkills = SKILL_DATA.filter(s => s.type === "passive");
   const equippedUids = new Set(EQUIP_SLOTS.map(s => player[s.key]?.uid).filter(Boolean));
   const selItem = sel ? (itemBox||[]).find(it => it.uid === sel) : null;
 
@@ -268,18 +258,25 @@ export default function CharacterPage() {
         </>
       )}
 
-      {/* スキルタブ */}
       {tab === "skill" && (
         <div style={{ flex:1, overflowY:"auto", padding:12 }}>
+
+          {/* アクティブスキル */}
           <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:12, marginBottom:10 }}>
-            <div style={{ fontSize:8, color:"#f87171", letterSpacing:2, marginBottom:8 }}>アクティブスキル（最大4）</div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:10 }}>
+            <div style={{ fontSize:8, color:"#f87171", letterSpacing:2, marginBottom:8 }}>
+              アクティブスキル（最大4）<span style={{ color:"#3a3a3a", marginLeft:6 }}>将来実装</span>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:8 }}>
               {(activeSkillSlots||[null,null,null,null]).map((id,i)=>{
-                const sk=id?SKILL_DATA.find(s=>s.id===id):null;
+                const sk = id ? SKILLS[id] : null;
                 return (
                   <div key={i} style={{ background:"#080810", border:`1px solid ${sk?"#f87171":"#2a2a3a"}`, borderRadius:5, padding:"6px 8px", display:"flex", alignItems:"center", gap:6, minHeight:36 }}>
                     <span style={{ fontSize:9, color:"#3a3a5a" }}>S{i+1}</span>
-                    {sk?(<><span style={{ fontSize:12 }}>{sk.icon}</span><div style={{ flex:1 }}><div style={{ fontSize:9, color:"#f87171" }}>{sk.name}</div></div><button onClick={()=>setActiveSlot(i,null)} style={{ fontSize:8, background:"transparent", border:"none", color:"#555", cursor:"pointer" }}>×</button></>):<div style={{ flex:1, fontSize:8, color:"#2a2a2a" }}>空き</div>}
+                    {sk ? (
+                      <><span style={{ fontSize:12 }}>{sk.icon}</span>
+                      <div style={{ flex:1 }}><div style={{ fontSize:9, color:"#f87171" }}>{sk.name}</div></div>
+                      <button onClick={()=>setActiveSlot(i,null)} style={{ fontSize:8, background:"transparent", border:"none", color:"#555", cursor:"pointer" }}>×</button></>
+                    ) : <div style={{ flex:1, fontSize:8, color:"#2a2a2a" }}>空き</div>}
                   </div>
                 );
               })}
@@ -290,24 +287,34 @@ export default function CharacterPage() {
               return (
                 <div key={sk.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 8px", background:equipped?"#1a0a0a":"#080810", border:`1px solid ${equipped?"#f87171":"#1a1a2a"}`, borderRadius:4, marginBottom:4 }}>
                   <span style={{ fontSize:14 }}>{sk.icon}</span>
-                  <div style={{ flex:1 }}><div style={{ fontSize:10, color:"#e8e0d0" }}>{sk.name}</div><div style={{ fontSize:8, color:"#4a4a6a" }}>{sk.effect}</div></div>
-                  {!equipped&&empty>=0&&<button onClick={()=>setActiveSlot(empty,sk.id)} style={{ padding:"3px 8px", background:"#1a0800", border:"1px solid #f87171", borderRadius:3, cursor:"pointer", color:"#f87171", fontSize:8, fontFamily:"monospace" }}>装備</button>}
-                  {equipped&&<span style={{ fontSize:7, color:"#f87171", border:"1px solid #f8717144", padding:"1px 4px", borderRadius:2 }}>装備中</span>}
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:10, color:"#e8e0d0" }}>{sk.name}</div>
+                    <div style={{ fontSize:8, color:"#4a4a6a" }}>{sk.desc}</div>
+                  </div>
+                  {!equipped&&empty>=0&&<button onClick={()=>setActiveSlot(empty,sk.id)} style={{ padding:"3px 8px", background:"#1a0800", border:"1px solid #f87171", borderRadius:3, cursor:"pointer", color:"#f87171", fontSize:8, fontFamily:"monospace" }}>セット</button>}
+                  {equipped&&<span style={{ fontSize:7, color:"#f87171", border:"1px solid #f8717144", padding:"1px 4px", borderRadius:2 }}>セット中</span>}
                 </div>
               );
             })}
-            {activeSkills.filter(sk=>learned.has(sk.id)).length===0&&<div style={{ fontSize:9, color:"#2a2a2a", textAlign:"center", padding:8 }}>習得済みスキルなし</div>}
+            {activeSkills.filter(sk=>learned.has(sk.id)).length===0&&(
+              <div style={{ fontSize:9, color:"#2a2a2a", textAlign:"center", padding:8 }}>習得済みスキルなし</div>
+            )}
           </div>
 
-          <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:12 }}>
+          {/* パッシブスキル */}
+          <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:12, marginBottom:10 }}>
             <div style={{ fontSize:8, color:"#a78bfa", letterSpacing:2, marginBottom:8 }}>パッシブスキル（最大6）</div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:10 }}>
               {(passiveSkillSlots||[null,null,null,null,null,null]).map((id,i)=>{
-                const sk=id?SKILL_DATA.find(s=>s.id===id):null;
+                const sk = id ? SKILLS[id] : null;
                 return (
                   <div key={i} style={{ background:"#080810", border:`1px solid ${sk?"#a78bfa":"#2a2a3a"}`, borderRadius:4, padding:"4px 8px", fontSize:8, display:"flex", alignItems:"center", gap:4 }}>
                     <span style={{ color:"#3a3a5a" }}>P{i+1}</span>
-                    {sk?(<><span>{sk.icon}</span><span style={{ color:"#a78bfa" }}>{sk.name}</span><button onClick={()=>setPassiveSlot(i,null)} style={{ fontSize:8, background:"transparent", border:"none", color:"#555", cursor:"pointer" }}>×</button></>):<span style={{ color:"#2a2a2a" }}>空き</span>}
+                    {sk?(
+                      <><span>{sk.icon}</span>
+                      <span style={{ color:"#a78bfa" }}>{sk.name}</span>
+                      <button onClick={()=>setPassiveSlot(i,null)} style={{ fontSize:8, background:"transparent", border:"none", color:"#555", cursor:"pointer" }}>×</button></>
+                    ):<span style={{ color:"#2a2a2a" }}>空き</span>}
                   </div>
                 );
               })}
@@ -318,12 +325,36 @@ export default function CharacterPage() {
               return (
                 <div key={sk.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 8px", background:equipped?"#0a0a1a":"#080810", border:`1px solid ${equipped?"#a78bfa":"#1a1a2a"}`, borderRadius:4, marginBottom:4 }}>
                   <span style={{ fontSize:14 }}>{sk.icon}</span>
-                  <div style={{ flex:1 }}><div style={{ fontSize:10, color:"#e8e0d0" }}>{sk.name}</div><div style={{ fontSize:8, color:"#4a4a6a" }}>{sk.effect}</div></div>
-                  {!equipped&&empty>=0&&<button onClick={()=>setPassiveSlot(empty,sk.id)} style={{ padding:"3px 8px", background:"#0a0a1a", border:"1px solid #a78bfa", borderRadius:3, cursor:"pointer", color:"#a78bfa", fontSize:8, fontFamily:"monospace" }}>装備</button>}
-                  {equipped&&<span style={{ fontSize:7, color:"#a78bfa", border:"1px solid #a78bfa44", padding:"1px 4px", borderRadius:2 }}>装備中</span>}
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:10, color:"#e8e0d0" }}>{sk.name}</div>
+                    <div style={{ fontSize:8, color:"#4a4a6a" }}>{sk.desc}</div>
+                  </div>
+                  {!equipped&&empty>=0&&<button onClick={()=>setPassiveSlot(empty,sk.id)} style={{ padding:"3px 8px", background:"#0a0a1a", border:"1px solid #a78bfa", borderRadius:3, cursor:"pointer", color:"#a78bfa", fontSize:8, fontFamily:"monospace" }}>セット</button>}
+                  {equipped&&<span style={{ fontSize:7, color:"#a78bfa", border:"1px solid #a78bfa44", padding:"1px 4px", borderRadius:2 }}>セット中</span>}
                 </div>
               );
             })}
+            {passiveSkills.filter(sk=>learned.has(sk.id)).length===0&&(
+              <div style={{ fontSize:9, color:"#2a2a2a", textAlign:"center", padding:8 }}>習得済みスキルなし</div>
+            )}
+          </div>
+
+          {/* 習得済みステータス強化スキル */}
+          <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:12 }}>
+            <div style={{ fontSize:8, color:"#86efac", letterSpacing:2, marginBottom:8 }}>ステータス強化（習得で自動反映）</div>
+            {SKILL_LIST.filter(sk=>sk.type==="stat"&&sk.id!=="start"&&learned.has(sk.id)).map(sk=>(
+              <div key={sk.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 8px", background:"#080810", border:"1px solid #86efac22", borderRadius:4, marginBottom:4 }}>
+                <span style={{ fontSize:12 }}>{sk.icon}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:9, color:"#86efac" }}>{sk.name}</div>
+                  <div style={{ fontSize:8, color:"#4a4a6a" }}>{sk.desc}</div>
+                </div>
+                <span style={{ fontSize:7, color:"#4ade80", border:"1px solid #4ade8044", padding:"1px 4px", borderRadius:2 }}>反映中</span>
+              </div>
+            ))}
+            {SKILL_LIST.filter(sk=>sk.type==="stat"&&sk.id!=="start"&&learned.has(sk.id)).length===0&&(
+              <div style={{ fontSize:9, color:"#2a2a2a", textAlign:"center", padding:8 }}>習得済みスキルなし</div>
+            )}
           </div>
         </div>
       )}

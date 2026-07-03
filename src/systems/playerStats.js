@@ -1,10 +1,10 @@
 import { getItemStats } from "../data/items";
+import { calcStatBonus } from "../data/skills";
 
 export const calcPlayerStats = (player) => {
-  // 基本値は固定（レベルで変わらない）
   let atk=10, mag=10, def=10, mdef=10, hp=100, eva=5, crit=5;
 
-  // 装備が主役
+  // 装備反映
   [player.equippedWeapon, player.equippedArmor,
    player.equippedAcc1, player.equippedAcc2].forEach(eq => {
     if (!eq) return;
@@ -18,16 +18,20 @@ export const calcPlayerStats = (player) => {
     crit += s.crit || 0;
   });
 
-  // レベルは微量のボーナスだけ（装備の1/10程度）
-  const lv = player.totalExp ? Math.floor(Math.sqrt(player.totalExp / 15)) + 1 : 1;
-  hp   += lv * 2;   // Lv20でHP+40（装備の方が圧倒的に大きい）
-  def  += Math.floor(lv * 0.3); // Lv20でDEF+6
+  // スキル（ステータス強化系）反映
+  const statBonus = calcStatBonus(player.learnedSkills || []);
+  atk  += statBonus.atk;
+  mag  += statBonus.mag;
+  def  += statBonus.def;
+  mdef += statBonus.mdef;
+  hp   += statBonus.hp;
+  eva  += statBonus.eva;
+  crit += statBonus.crit;
 
-  // スキルパッシブ反映
-  const learned = new Set(player.learnedSkills || []);
-  if (learned.has("s004")) crit += 5;
-  if (learned.has("s005")) def  += 10;
-  if (learned.has("s008")) {} // 吸血（戦闘中のみ）
+  // レベルボーナス（微量）
+  const lv = player.totalExp ? Math.floor(Math.sqrt(player.totalExp / 15)) + 1 : 1;
+  hp  += lv * 2;
+  def += Math.floor(lv * 0.3);
 
   return { atk, mag, def, mdef, hp, maxHp: hp, eva, crit };
 };
