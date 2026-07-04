@@ -11,6 +11,7 @@ import MonsterSprite from "../components/MonsterSprite";
 import EventSprite from "../components/EventSprite";
 import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
+import { calcPassiveBonus } from "../data/skills";
 
 const EVENT_INTERVAL = 6 * 60 * 1000;
 const BASE_MAX_EVENTS = 4;
@@ -44,37 +45,38 @@ export default function DungeonPage({ onBack }) {
   const [battleEffectActive, setBattleEffectActive] = useState(false);
   const [battleTurns, setBattleTurns] = useState([]);
 
-  const logId        = useRef(1);
-  const sessionExp   = useRef(0);
-  const sessionGold  = useRef(0);
-  const sessionMats  = useRef({});
-  const sessionChests= useRef([]);
-  const defeatedList = useRef([]);
-  const floorRef     = useRef(player.floor || 1);
-  const mappingRef   = useRef(player.floorMapping || 0);
-  const hpRef        = useRef(player.hp || 100);
+  const logId         = useRef(1);
+  const sessionExp    = useRef(0);
+  const sessionGold   = useRef(0);
+  const sessionMats   = useRef({});
+  const sessionChests = useRef([]);
+  const defeatedList  = useRef([]);
+  const floorRef      = useRef(player.floor || 1);
+  const mappingRef    = useRef(player.floorMapping || 0);
+  const hpRef         = useRef(player.hp || 100);
   const eventCountRef = useRef(0);
   const pendingBattleRef = useRef(null);
+  const passiveBonusRef  = useRef({});
+
+  // パッシブボーナスを更新
+  useEffect(() => {
+    passiveBonusRef.current = calcPassiveBonus(player.passiveSkillSlots || []);
+  }, [player.passiveSkillSlots]);
 
   const addLog = useCallback((text, color="#666") => {
     setLogs(l => [...l, { id:logId.current++, text, color }]);
   }, []);
 
   const addMapping = useCallback((amount) => {
-    const result = calcFloorProgress(mappingRef.current, amount);
+    const bonus = passiveBonusRef.current.mapBonus || 0;
+    const actual = amount * (1 + bonus / 100);
+    const result = calcFloorProgress(mappingRef.current, actual);
     mappingRef.current = result.mapping;
     if (result.newFloor) {
       floorRef.current += 1;
       setFloor(floorRef.current);
       addLog(`🗺 B${floorRef.current}Fに到達！`, "#60a5fa");
-
-      // レアリティ解放チェック
-      const RARITY_UNLOCKS = {
-        10: "uncommon",
-        25: "rare",
-        50: "epic",
-        75: "legendary",
-      };
+      const RARITY_UNLOCKS = { 10:"uncommon", 25:"rare", 50:"epic", 75:"legendary" };
       const unlocked = RARITY_UNLOCKS[floorRef.current];
       if (unlocked) {
         updatePlayer({ unlockedRarity: unlocked, maxFloor: floorRef.current });
@@ -83,6 +85,7 @@ export default function DungeonPage({ onBack }) {
     }
     setMapping(result.mapping);
   }, [addLog, updatePlayer]);
+
   const fireEvent = useCallback(() => {
     if (eventCountRef.current >= BASE_MAX_EVENTS) return;
     const evType = rollEventType();
@@ -101,8 +104,10 @@ export default function DungeonPage({ onBack }) {
 
     } else if (evType === "chest") {
       const chest = rollChest(); sessionChests.current.push(chest);
-      const gold = Math.floor(Math.random()*50+20); sessionGold.current += gold;
-      addLog(`📦 宝箱発見！（${chest.label}）+${gold}G`, "#fbbf24");
+      const gold = Math.floor(Math.random()*50+20);
+      const bonusGold = Math.floor(gold * (1 + (passiveBonusRef.current.goldBonus||0)/100));
+      sessionGold.current += bonusGold;
+      addLog(`📦 宝箱発見！（${chest.label}）+${bonusGold}G`, "#fbbf24");
       setMonsterVisible(false); setCurrentMonster(null);
       setCurrentEvent("chest"); setEventVisible(true); setMonsterArrived(false);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 6000);
@@ -134,8 +139,10 @@ export default function DungeonPage({ onBack }) {
       setSeconds(s => {
         if (s > 1) return s - 1;
         if (phase === "work") {
-          const exp  = calcExp(workMin);
-          const gold = calcGold(workMin);
+          const expBonus  = passiveBonusRef.current.expBonus  || 0;
+          const goldBonus = passiveBonusRef.current.goldBonus || 0;
+          const exp  = Math.floor(calcExp(workMin)  * (1 + expBonus  / 100));
+          const gold = Math.floor(calcGold(workMin) * (1 + goldBonus / 100));
           sessionExp.current  += exp;
           sessionGold.current += gold;
           addMapping(MAPPING_PER_SET);
@@ -269,9 +276,7 @@ export default function DungeonPage({ onBack }) {
         isActive={battleEffectActive}
         turns={battleTurns}
         onPlayerHpUpdate={(newHp) => { hpRef.current = newHp; setHp(newHp); }}
-  onMonsterHpUpdate={(idx, newHp) => {
-    setCurrentMonster(m => m ? { ...m, hp: newHp } : m);
-  }}
+        onMonsterHpUpdate={(idx, newHp) => { setCurrentMonster(m => m ? { ...m, hp: newHp } : m); }}
         onComplete={() => {
           const pending = pendingBattleRef.current;
           if (!pending) return;
@@ -282,9 +287,16 @@ export default function DungeonPage({ onBack }) {
           if (result.won) {
             sessionExp.current += result.totalExp;
             sessionGold.current += result.totalGold;
-            result.materials.forEach(mat => { sessionMats.current[mat]=(sessionMats.current[mat]||0)+1; });
+            const dropBonus = passiveBonusRef.current.dropBonus || 0;
+            result.materials.forEach(mat => {
+              if (Math.random() < 0.60 * (1 + dropBonus/100)) {
+                sessionMats.current[mat]=(sessionMats.current[mat]||0)+1;
+              }
+            });
             monsters.forEach(m => defeatedList.current.push(m));
-            if (Math.random()<0.25) sessionChests.current.push(rollChest());
+            if (Math.random() < 0.25 * (1 + (passiveBonusRef.current.chestBonus||0)/100)) {
+              sessionChests.current.push(rollChest());
+            }
             addMapping(2);
           }
           setBattlePopup({ monsters, won:result.won, exp:result.totalExp, gold:result.totalGold, materials:result.materials, dangerStar:Math.max(...monsters.map(m=>m.dangerStar)) });
@@ -292,10 +304,8 @@ export default function DungeonPage({ onBack }) {
           pendingBattleRef.current = null;
           setTimeout(() => { setMonsterVisible(false); setCurrentMonster(null); setMonsterArrived(false); setBattlePopup(null); }, 3000);
         }}
-        monsterX={0.35}
-        monsterY={0.72}
-        playerX={0.72}
-        playerY={0.72}
+        monsterX={0.35} monsterY={0.72}
+        playerX={0.72}  playerY={0.72}
       />
 
       {/* ヘッダー */}
