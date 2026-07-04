@@ -231,20 +231,45 @@ export default function MonsterSprite({ monster, isVisible, onReach, floorY }) {
 
       if (drawFn) drawFn(ctx, s.x, py, size, design.color, s.animFrame);
 
-      ctx.font = `bold ${H*0.022}px monospace`;
+      if (monster.maxHp) {
+        const barW = size * 2.2;
+        const barH = 18;
+        const barY = py - size * 1.2 - 16;
+        const barX = s.x - barW/2;
+        
+        ctx.fillStyle = "#1a0a0a";
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW, barH, 3);
+        ctx.fill();
+        
+        const hpPct = Math.max(0, (monster.hp||0) / monster.maxHp);
+        ctx.fillStyle = hpPct > 0.5 ? "#4ade80" : hpPct > 0.25 ? "#fbbf24" : "#f87171";
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW * hpPct, barH, 3);
+        ctx.fill();
+        
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW, barH, 3);
+        ctx.stroke();
+
+        // HP数値をバーの中央に表示
+        ctx.font = `bold ${H * 0.016}px monospace`;
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#fff";
+        ctx.shadowBlur = 0;
+        ctx.fillText(`${monster.hp||0}/${monster.maxHp}`, s.x, barY + barH * 0.75);
+      }
+
+      // 名前（HPバーの上）
+      ctx.font = `bold ${H * 0.020}px monospace`;
       ctx.textAlign = "center";
       ctx.fillStyle = monster.rarity?.color || "#888";
-      ctx.fillText(monster.displayName, s.x, py - size*1.1 - 8);
-
-      if (monster.maxHp) {
-        const barW = size * 1.6;
-        const barY = py - size*1.1 - 4;
-        ctx.fillStyle = "#1a0a0a";
-        ctx.fillRect(s.x - barW/2, barY, barW, 5);
-        const hpPct = Math.max(0, (monster.hp||0) / monster.maxHp);
-        ctx.fillStyle = hpPct>0.5?"#4ade80":hpPct>0.25?"#fbbf24":"#f87171";
-        ctx.fillRect(s.x - barW/2, barY, barW*hpPct, 5);
-      }
+      ctx.shadowColor = monster.rarity?.color || "#888";
+      ctx.shadowBlur = 4;
+      ctx.fillText(monster.displayName, s.x, py - size * 1.2 - 22);
+      ctx.shadowBlur = 0;
 
       frameRef.current = requestAnimationFrame(loop);
     };

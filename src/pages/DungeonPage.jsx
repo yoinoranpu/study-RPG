@@ -58,7 +58,6 @@ export default function DungeonPage({ onBack }) {
   const pendingBattleRef = useRef(null);
   const passiveBonusRef  = useRef({});
 
-  // パッシブボーナスを更新
   useEffect(() => {
     passiveBonusRef.current = calcPassiveBonus(player.passiveSkillSlots || []);
   }, [player.passiveSkillSlots]);
@@ -79,7 +78,6 @@ export default function DungeonPage({ onBack }) {
       const RARITY_UNLOCKS = { 10:"uncommon", 25:"rare", 50:"epic", 75:"legendary" };
       const unlocked = RARITY_UNLOCKS[floorRef.current];
       if (unlocked) {
-        // updatePlayerをsetTimeoutで遅らせてレンダリング中の呼び出しを防ぐ
         setTimeout(() => {
           updatePlayer({ unlockedRarity: unlocked, maxFloor: floorRef.current });
         }, 0);
@@ -89,7 +87,8 @@ export default function DungeonPage({ onBack }) {
     setMapping(result.mapping);
   }, [addLog, updatePlayer]);
 
-  const fireEvent = useCallback(() => {
+  
+    const fireEvent = useCallback(() => {
     if (eventCountRef.current >= BASE_MAX_EVENTS) return;
     const evType = rollEventType();
     eventCountRef.current += 1;
@@ -101,7 +100,7 @@ export default function DungeonPage({ onBack }) {
       setCurrentEvent(null); setEventVisible(false);
       setCurrentMonster(monsters[0]); setMonsterVisible(true); setMonsterArrived(false);
       const baseStats = calcPlayerStats(player);
-      const ps = { ...baseStats, hp:hpRef.current, maxHp:baseStats.maxHp };
+      const ps = { ...baseStats, hp:Math.max(1, hpRef.current), maxHp:baseStats.maxHp };
       const result = simulateBattle(ps, monsters);
       pendingBattleRef.current = { result, monsters };
 
@@ -269,7 +268,10 @@ export default function DungeonPage({ onBack }) {
           setMonsterArrived(true);
           const pending = pendingBattleRef.current;
           if (!pending) return;
-          setBattleTurns(pending.result.turns);
+          const turnsToUse = pending.result.turns.length > 0
+            ? pending.result.turns
+            : [{ actor:"player", target:0, type:"skip" }];
+          setBattleTurns(turnsToUse);
           setBattleEffectActive(true);
         }}
         floorY={null}
@@ -284,25 +286,23 @@ export default function DungeonPage({ onBack }) {
           const pending = pendingBattleRef.current;
           if (!pending) return;
           const { result, monsters } = pending;
-          
+
           // ポーション自動使用
           const baseStats = calcPlayerStats(player);
-          const maxHp = baseStats.maxHp;
+          const maxHpVal = baseStats.maxHp;
           let currentHp = Math.max(1, result.playerHpAfter);
           const slots = [...(player.specialSlots||[null,null,null])];
           let newItemBox = [...(player.itemBox||[])];
-          
+
           slots.forEach((slot, i) => {
             if (!slot) return;
-            const hpPct = currentHp / maxHp;
-            let threshold = 0;
-            let healAmt = 0;
-            if (slot.effect === "heal_30")  { threshold = 0.30; healAmt = Math.floor(maxHp * 0.30); }
-            if (slot.effect === "heal_50")  { threshold = 0.40; healAmt = Math.floor(maxHp * 0.50); }
-            if (slot.effect === "heal_100") { threshold = 0.25; healAmt = maxHp; }
+            const hpPct = currentHp / maxHpVal;
+            let threshold = 0, healAmt = 0;
+            if (slot.effect === "heal_30")  { threshold = 0.30; healAmt = Math.floor(maxHpVal * 0.30); }
+            if (slot.effect === "heal_50")  { threshold = 0.40; healAmt = Math.floor(maxHpVal * 0.50); }
+            if (slot.effect === "heal_100") { threshold = 0.25; healAmt = maxHpVal; }
             if (threshold > 0 && hpPct <= threshold) {
-              currentHp = Math.min(maxHp, currentHp + healAmt);
-              // アイテムボックスからも削除
+              currentHp = Math.min(maxHpVal, currentHp + healAmt);
               newItemBox = newItemBox.filter(x => x.uid !== slot.uid);
               slots[i] = null;
               addLog(`💊 ${slot.name}を使用！HP+${healAmt}`, "#38bdf8");
@@ -330,12 +330,9 @@ export default function DungeonPage({ onBack }) {
             addMapping(2);
           }
           setBattlePopup({ monsters, won:result.won, exp:result.totalExp, gold:result.totalGold, materials:result.materials, dangerStar:Math.max(...monsters.map(m=>m.dangerStar)) });
-          hpRef.current = currentHp;
-          setHp(currentHp);
           setBattleEffectActive(false);
-          // HP表示を確実に更新
-          setTimeout(() => setHp(currentHp), 100);
           pendingBattleRef.current = null;
+          setTimeout(() => setHp(currentHp), 100);
           setTimeout(() => { setMonsterVisible(false); setCurrentMonster(null); setMonsterArrived(false); setBattlePopup(null); }, 3000);
         }}
         monsterX={0.35} monsterY={0.72}
