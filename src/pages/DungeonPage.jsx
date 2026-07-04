@@ -13,6 +13,7 @@ import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
 import { calcPassiveBonus } from "../data/skills";
 
+
 const EVENT_INTERVAL = 6 * 60 * 1000;
 const BASE_MAX_EVENTS = 4;
 const DEBUG = true;
@@ -44,6 +45,7 @@ export default function DungeonPage({ onBack }) {
   const [monsterArrived, setMonsterArrived] = useState(false);
   const [battleEffectActive, setBattleEffectActive] = useState(false);
   const [battleTurns, setBattleTurns] = useState([]);
+  const [playerDefeated, setPlayerDefeated] = useState(false);
 
   const logId         = useRef(1);
   const sessionExp    = useRef(0);
@@ -260,7 +262,13 @@ export default function DungeonPage({ onBack }) {
     <div style={{ height:"100vh", background:"#000", fontFamily:"monospace", display:"flex", flexDirection:"column", position:"relative" }}>
 
       <DungeonCanvas isRunning={isRunning} isBreak={phase==="break"} isPaused={monsterArrived} />
-      <PlayerSprite hp={hp} maxHp={maxHp} isRunning={isRunning} isBreak={phase==="break"} />
+      <PlayerSprite 
+  hp={hp} 
+  maxHp={maxHp} 
+  isRunning={isRunning} 
+  isBreak={phase==="break"}
+  isDefeated={playerDefeated}
+/>
       <MonsterSprite
         monster={currentMonster}
         isVisible={monsterVisible && !eventVisible}
@@ -293,6 +301,10 @@ export default function DungeonPage({ onBack }) {
           let currentHp = Math.max(1, result.playerHpAfter);
           const slots = [...(player.specialSlots||[null,null,null])];
           let newItemBox = [...(player.itemBox||[])];
+          if (!result.won && result.playerHpAfter <= 0) {
+            setPlayerDefeated(true);
+            setTimeout(() => setPlayerDefeated(false), 2000);
+          }
 
           slots.forEach((slot, i) => {
             if (!slot) return;
