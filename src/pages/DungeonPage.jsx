@@ -79,7 +79,10 @@ export default function DungeonPage({ onBack }) {
       const RARITY_UNLOCKS = { 10:"uncommon", 25:"rare", 50:"epic", 75:"legendary" };
       const unlocked = RARITY_UNLOCKS[floorRef.current];
       if (unlocked) {
-        updatePlayer({ unlockedRarity: unlocked, maxFloor: floorRef.current });
+        // updatePlayerをsetTimeoutで遅らせてレンダリング中の呼び出しを防ぐ
+        setTimeout(() => {
+          updatePlayer({ unlockedRarity: unlocked, maxFloor: floorRef.current });
+        }, 0);
         addLog(`🎉 ${unlocked.toUpperCase()}装備が解放された！`, "#fbbf24");
       }
     }
@@ -281,8 +284,35 @@ export default function DungeonPage({ onBack }) {
           const pending = pendingBattleRef.current;
           if (!pending) return;
           const { result, monsters } = pending;
-          hpRef.current = Math.max(1, result.playerHpAfter);
-          setHp(hpRef.current);
+          
+          // ポーション自動使用
+          const baseStats = calcPlayerStats(player);
+          const maxHp = baseStats.maxHp;
+          let currentHp = Math.max(1, result.playerHpAfter);
+          const slots = [...(player.specialSlots||[null,null,null])];
+          let newItemBox = [...(player.itemBox||[])];
+          
+          slots.forEach((slot, i) => {
+            if (!slot) return;
+            const hpPct = currentHp / maxHp;
+            let threshold = 0;
+            let healAmt = 0;
+            if (slot.effect === "heal_30")  { threshold = 0.30; healAmt = Math.floor(maxHp * 0.30); }
+            if (slot.effect === "heal_50")  { threshold = 0.40; healAmt = Math.floor(maxHp * 0.50); }
+            if (slot.effect === "heal_100") { threshold = 0.25; healAmt = maxHp; }
+            if (threshold > 0 && hpPct <= threshold) {
+              currentHp = Math.min(maxHp, currentHp + healAmt);
+              // アイテムボックスからも削除
+              newItemBox = newItemBox.filter(x => x.uid !== slot.uid);
+              slots[i] = null;
+              addLog(`💊 ${slot.name}を使用！HP+${healAmt}`, "#38bdf8");
+            }
+          });
+
+          hpRef.current = currentHp;
+          setHp(currentHp);
+          updatePlayer({ specialSlots: slots, itemBox: newItemBox });
+
           result.logs.slice(-3).forEach(l => addLog(l.text, l.color));
           if (result.won) {
             sessionExp.current += result.totalExp;
@@ -300,7 +330,11 @@ export default function DungeonPage({ onBack }) {
             addMapping(2);
           }
           setBattlePopup({ monsters, won:result.won, exp:result.totalExp, gold:result.totalGold, materials:result.materials, dangerStar:Math.max(...monsters.map(m=>m.dangerStar)) });
+          hpRef.current = currentHp;
+          setHp(currentHp);
           setBattleEffectActive(false);
+          // HP表示を確実に更新
+          setTimeout(() => setHp(currentHp), 100);
           pendingBattleRef.current = null;
           setTimeout(() => { setMonsterVisible(false); setCurrentMonster(null); setMonsterArrived(false); setBattlePopup(null); }, 3000);
         }}

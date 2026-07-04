@@ -30,17 +30,58 @@ export default function CharacterPage() {
   const equippedUids = new Set(EQUIP_SLOTS.map(s => player[s.key]?.uid).filter(Boolean));
   const selItem = sel ? (itemBox||[]).find(it => it.uid === sel) : null;
 
-  function unequip(key) { updatePlayer({ [key]: null }); setSel(null); }
+  function unequip(key) {
+    const eq = player[key];
+    if (!eq) return;
+    updatePlayer({ 
+      [key]: null,
+      itemBox: [...(itemBox||[]), eq]
+    });
+    setSel(null);
+  }
   function equipItem(it) {
-    if (it.type === "weapon") updatePlayer({ equippedWeapon: it });
-    else if (it.type === "armor") updatePlayer({ equippedArmor: it });
-    else if (it.type === "accessory") {
-      if (!player.equippedAcc1) updatePlayer({ equippedAcc1: it });
-      else updatePlayer({ equippedAcc2: it });
+    // 既に装備中かチェック
+    const alreadyEquipped = [
+      player.equippedWeapon, player.equippedArmor,
+      player.equippedAcc1, player.equippedAcc2,
+      ...(player.specialSlots||[])
+    ].some(eq => eq?.uid === it.uid);
+    
+    if (alreadyEquipped) return;
+
+    // アイテムボックスから削除
+    const newItemBox = (itemBox||[]).filter(x => x.uid !== it.uid);
+
+    if (it.type === "weapon") {
+      // 既存の武器をアイテムボックスに戻す
+      const old = player.equippedWeapon;
+      updatePlayer({ 
+        equippedWeapon: it, 
+        itemBox: old ? [...newItemBox, old] : newItemBox 
+      });
+    } else if (it.type === "armor") {
+      const old = player.equippedArmor;
+      updatePlayer({ 
+        equippedArmor: it, 
+        itemBox: old ? [...newItemBox, old] : newItemBox 
+      });
+    } else if (it.type === "accessory") {
+      if (!player.equippedAcc1) {
+        updatePlayer({ equippedAcc1: it, itemBox: newItemBox });
+      } else if (!player.equippedAcc2) {
+        updatePlayer({ equippedAcc2: it, itemBox: newItemBox });
+      } else {
+        // 両方埋まってたらAcc1と交換
+        const old = player.equippedAcc1;
+        updatePlayer({ equippedAcc1: it, itemBox: [...newItemBox, old] });
+      }
     } else if (["consumable","special"].includes(it.type)) {
       const slots = [...(player.specialSlots||[null,null,null])];
       const empty = slots.findIndex(s => !s);
-      if (empty >= 0) { slots[empty] = it; updatePlayer({ specialSlots: slots }); }
+      if (empty >= 0) {
+        slots[empty] = it;
+        updatePlayer({ specialSlots: slots, itemBox: newItemBox });
+      }
     }
     setSel(null);
   }
