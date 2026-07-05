@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { rollEventType, rollNpcEvent, rollChest } from "../systems/events";
-import { pickMonsters } from "../systems/monsters";
+import { pickMonsters, getBossData, generateBoss } from "../systems/monsters";
 import { simulateBattle } from "../systems/battle";
 import TimerSettings from "../components/TimerSettings";
 import { calcPlayerStats } from "../systems/playerStats";
@@ -12,8 +12,6 @@ import EventSprite from "../components/EventSprite";
 import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
 import { calcPassiveBonus } from "../data/skills";
-import { getBossData, generateBoss } from "../systems/monsters";
-
 
 const EVENT_INTERVAL = 6 * 60 * 1000;
 const BASE_MAX_EVENTS = 4;
@@ -48,7 +46,8 @@ export default function DungeonPage({ onBack }) {
   const [battleTurns, setBattleTurns] = useState([]);
   const [playerDefeated, setPlayerDefeated] = useState(false);
   const [showBossWarning, setShowBossWarning] = useState(false);
-const [bossAvailable, setBossAvailable] = useState(false);
+  const [bossFloor, setBossFloor] = useState(false);
+  const [bossMonster, setBossMonster] = useState(null);
 
   const logId         = useRef(1);
   const sessionExp    = useRef(0);
@@ -67,6 +66,25 @@ const [bossAvailable, setBossAvailable] = useState(false);
     passiveBonusRef.current = calcPassiveBonus(player.passiveSkillSlots || []);
   }, [player.passiveSkillSlots]);
 
+  // 鍵なしボス階層：自動退却
+  useEffect(() => {
+    if (!bossFloor) return;
+    const keyEffect = floor <= 35 ? "boss_key_1" : floor <= 70 ? "boss_key_2" : "boss_key_3";
+    const hasKey = (player.specialSlots||[]).some(s => s?.effect === keyEffect)
+      || (player.itemBox||[]).some(it => it.effect === keyEffect);
+    if (!hasKey) {
+      const timer = setTimeout(() => {
+        setBossFloor(false);
+        floorRef.current -= 1;
+        setFloor(floorRef.current);
+        mappingRef.current = 99;
+        setMapping(99);
+        addLog(`🔒 鍵がなく退却…B${floorRef.current}Fに戻った`, "#f87171");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [bossFloor, floor, player.specialSlots, player.itemBox]);
+
   const addLog = useCallback((text, color="#666") => {
     setLogs(l => [...l, { id:logId.current++, text, color }]);
   }, []);
@@ -81,11 +99,13 @@ const [bossAvailable, setBossAvailable] = useState(false);
       setFloor(floorRef.current);
       addLog(`🗺 B${floorRef.current}Fに到達！`, "#60a5fa");
 
-      // ボス階層チェック
       if (floorRef.current % 5 === 0) {
         setTimeout(() => {
           setShowBossWarning(true);
-          setTimeout(() => setShowBossWarning(false), 3000);
+          setTimeout(() => {
+            setShowBossWarning(false);
+            setBossFloor(true);
+          }, 3000);
         }, 500);
         addLog(`⚠ B${floorRef.current}F ボス階層！`, "#ef4444");
       }
@@ -102,8 +122,7 @@ const [bossAvailable, setBossAvailable] = useState(false);
     setMapping(result.mapping);
   }, [addLog, updatePlayer]);
 
-  
-    const fireEvent = useCallback(() => {
+  const fireEvent = useCallback(() => {
     if (eventCountRef.current >= BASE_MAX_EVENTS) return;
     const evType = rollEventType();
     eventCountRef.current += 1;
@@ -148,9 +167,7 @@ const [bossAvailable, setBossAvailable] = useState(false);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 5000);
     }
   }, [addLog, addMapping, player]);
- 
-      
-  // タイマー
+
   useEffect(() => {
     if (!isRunning) return;
     const id = setInterval(() => {
@@ -190,7 +207,6 @@ const [bossAvailable, setBossAvailable] = useState(false);
     return () => clearInterval(id);
   }, [isRunning, phase, workMin, breakMin, currentSet, totalSets, addLog, addMapping]);
 
-  // イベント判定
   useEffect(() => {
     if (!isRunning || phase !== "work") return;
     const id = setInterval(() => {
@@ -276,13 +292,7 @@ const [bossAvailable, setBossAvailable] = useState(false);
     <div style={{ height:"100vh", background:"#000", fontFamily:"monospace", display:"flex", flexDirection:"column", position:"relative" }}>
 
       <DungeonCanvas isRunning={isRunning} isBreak={phase==="break"} isPaused={monsterArrived} />
-      <PlayerSprite 
-  hp={hp} 
-  maxHp={maxHp} 
-  isRunning={isRunning} 
-  isBreak={phase==="break"}
-  isDefeated={playerDefeated}
-/>
+      <PlayerSprite hp={hp} maxHp={maxHp} isRunning={isRunning} isBreak={phase==="break"} isDefeated={playerDefeated} />
       <MonsterSprite
         monster={currentMonster}
         isVisible={monsterVisible && !eventVisible}
@@ -309,16 +319,11 @@ const [bossAvailable, setBossAvailable] = useState(false);
           if (!pending) return;
           const { result, monsters } = pending;
 
-          // ポーション自動使用
           const baseStats = calcPlayerStats(player);
           const maxHpVal = baseStats.maxHp;
           let currentHp = Math.max(1, result.playerHpAfter);
           const slots = [...(player.specialSlots||[null,null,null])];
           let newItemBox = [...(player.itemBox||[])];
-          if (!result.won && result.playerHpAfter <= 0) {
-            setPlayerDefeated(true);
-            setTimeout(() => setPlayerDefeated(false), 4500);
-          }
 
           slots.forEach((slot, i) => {
             if (!slot) return;
@@ -339,8 +344,23 @@ const [bossAvailable, setBossAvailable] = useState(false);
           setHp(currentHp);
           updatePlayer({ specialSlots: slots, itemBox: newItemBox });
 
+          if (!result.won && result.playerHpAfter <= 0) {
+            setPlayerDefeated(true);
+            setTimeout(() => setPlayerDefeated(false), 6000);
+          }
+
           result.logs.slice(-3).forEach(l => addLog(l.text, l.color));
           if (result.won) {
+            // ボス特別報酬
+            if (pending.isBoss) {
+              const bossGold = Math.floor(500 * (floor / 5));
+              const bossExp  = Math.floor(100 * (floor / 5));
+              sessionGold.current += bossGold;
+              sessionExp.current  += bossExp;
+              addLog(`🏆 ボス撃破！ +${bossExp}EXP +${bossGold}G`, "#fbbf24");
+              sessionChests.current.push(rollChest());
+              sessionChests.current.push(rollChest());
+            }
             sessionExp.current += result.totalExp;
             sessionGold.current += result.totalGold;
             const dropBonus = passiveBonusRef.current.dropBonus || 0;
@@ -350,13 +370,11 @@ const [bossAvailable, setBossAvailable] = useState(false);
               }
             });
             monsters.forEach(m => defeatedList.current.push(m));
-            
+
             // 図鑑更新
             const newBook = { ...(player.monsterBook||{}) };
             monsters.forEach(m => {
-              if (!newBook[m.id]) {
-                newBook[m.id] = { count:0, name:m.name, tribe:m.tribe, material:m.material };
-              }
+              if (!newBook[m.id]) newBook[m.id] = { count:0, name:m.name, tribe:m.tribe, material:m.material };
               newBook[m.id].count += 1;
             });
             updatePlayer({ monsterBook: newBook });
@@ -375,13 +393,66 @@ const [bossAvailable, setBossAvailable] = useState(false);
         monsterX={0.35} monsterY={0.72}
         playerX={0.72}  playerY={0.72}
       />
+
       {/* ボスWARNING演出 */}
       {showBossWarning && (
         <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", zIndex:10 }}>
-          <div style={{ fontSize:11, letterSpacing:8, color:"#ef4444", marginBottom:8, animation:"pulse 0.5s infinite" }}>⚠ WARNING ⚠</div>
+          <div style={{ fontSize:11, letterSpacing:8, color:"#ef4444", marginBottom:8 }}>⚠ WARNING ⚠</div>
           <div style={{ fontSize:28, fontWeight:900, color:"#ef4444", letterSpacing:4, textShadow:"0 0 20px #ef4444" }}>BOSS</div>
           <div style={{ fontSize:13, color:"#fbbf24", marginTop:8, letterSpacing:2 }}>B{floor}F ボスが出現した！</div>
           <div style={{ fontSize:9, color:"#666", marginTop:16 }}>準備はいいか？</div>
+        </div>
+      )}
+
+      {/* ボス部屋 */}
+      {bossFloor && !showBossWarning && (
+        <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.92)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", zIndex:9, gap:16 }}>
+          <div style={{ fontSize:9, letterSpacing:4, color:"#ef4444" }}>BOSS FLOOR</div>
+          <div style={{ fontSize:22, fontWeight:900, color:"#fff" }}>B{floor}F</div>
+          {(() => {
+            const keyEffect = floor <= 35 ? "boss_key_1" : floor <= 70 ? "boss_key_2" : "boss_key_3";
+            const keyItem = (player.specialSlots||[]).find(s => s?.effect === keyEffect)
+              || (player.itemBox||[]).find(it => it.effect === keyEffect);
+            const hasKey = !!keyItem;
+            return (
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
+                <div style={{ fontSize:10, color:hasKey?"#4ade80":"#f87171" }}>
+                  {hasKey ? `🗝 鍵あり: ${keyItem.name}` : "🔒 鍵がない！"}
+                </div>
+                {!hasKey && (
+                  <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+                    <div style={{ fontSize:8, color:"#4a4a6a", textAlign:"center" }}>
+                      {floor <= 35 ? "古びた鍵" : floor <= 70 ? "封印の鍵" : "禁忌の鍵"}を入手してください
+                    </div>
+                    <div style={{ fontSize:8, color:"#f87171" }}>自動的に前の階層に戻ります…</div>
+                  </div>
+                )}
+                {hasKey && (
+                  <button onClick={() => {
+                    const newSlots = (player.specialSlots||[]).map(s => s?.effect === keyEffect ? null : s);
+                    const newBox = (player.itemBox||[]).filter(it => it.uid !== keyItem.uid);
+                    updatePlayer({ specialSlots: newSlots, itemBox: newBox });
+                    const bossData = getBossData(floor);
+                    if (!bossData) return;
+                    const boss = generateBoss(bossData);
+                    if (!boss) return;
+                    setBossFloor(false);
+                    setBossMonster(boss);
+                    setCurrentMonster(boss);
+                    setMonsterVisible(true);
+                    setMonsterArrived(false);
+                    const baseStats = calcPlayerStats(player);
+                    const ps = { ...baseStats, hp:Math.max(1, hpRef.current), maxHp:baseStats.maxHp };
+                    const result = simulateBattle(ps, [boss]);
+                    pendingBattleRef.current = { result, monsters:[boss], isBoss:true };
+                    addLog(`🔥 ${boss.displayName}が現れた！`, "#ef4444");
+                  }} style={{ padding:"10px 24px", background:"#1a0000", border:"1px solid #ef4444", borderRadius:6, cursor:"pointer", color:"#ef4444", fontSize:10, fontFamily:"monospace", fontWeight:700 }}>
+                    ⚔ 挑戦！
+                  </button>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -443,26 +514,27 @@ const [bossAvailable, setBossAvailable] = useState(false);
         </button>
 
         {DEBUG && (
-          <button onClick={fireEvent} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #a78bfa44", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:9, fontFamily:"monospace" }}>
-            DEBUG: イベント発生
-          </button>
+          <div style={{ display:"flex", gap:6 }}>
+            <button onClick={fireEvent} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #a78bfa44", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:9, fontFamily:"monospace" }}>
+              DEBUG: イベント
+            </button>
+            <button onClick={() => addMapping(25)} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #60a5fa44", borderRadius:4, cursor:"pointer", color:"#60a5fa", fontSize:9, fontFamily:"monospace" }}>
+              DEBUG: マップ+25%
+            </button>
+          </div>
         )}
-{DEBUG && (
-  <button onClick={() => addMapping(25)} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #60a5fa44", borderRadius:4, cursor:"pointer", color:"#60a5fa", fontSize:9, fontFamily:"monospace" }}>
-    DEBUG: マップ+25%
-  </button>
-)}
+
         {/* 戦闘ログ（右上固定） */}
-      <div style={{ position:"absolute", top:60, right:8, width:180, maxHeight:"40vh", display:"flex", flexDirection:"column", gap:2, zIndex:2, pointerEvents:"none" }}>
-        <div style={{ fontSize:7, color:"#3a3a5a", letterSpacing:2, marginBottom:2, textAlign:"right" }}>BATTLE LOG</div>
-        <div style={{ display:"flex", flexDirection:"column-reverse", overflowY:"auto", gap:2, maxHeight:"38vh" }}>
-         {[...logs].reverse().slice(0, 8).map((log, i) => (
-            <div key={log.id} style={{ fontSize:9, color:log.color, opacity: i === 0 ? 1 : i < 3 ? 0.8 : 0.4, padding:"2px 6px", background:"rgba(0,0,0,0.7)", borderLeft:`2px solid ${log.color}44`, borderRadius:"0 2px 2px 0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-              {log.text}
-            </div>
-          ))}
+        <div style={{ position:"absolute", top:60, right:8, width:180, maxHeight:"40vh", display:"flex", flexDirection:"column", gap:2, zIndex:2, pointerEvents:"none" }}>
+          <div style={{ fontSize:7, color:"#3a3a5a", letterSpacing:2, marginBottom:2, textAlign:"right" }}>BATTLE LOG</div>
+          <div style={{ display:"flex", flexDirection:"column-reverse", overflowY:"auto", gap:2, maxHeight:"38vh" }}>
+            {[...logs].reverse().slice(0, 8).map((log, i) => (
+              <div key={log.id} style={{ fontSize:9, color:log.color, opacity: i === 0 ? 1 : i < 3 ? 0.8 : 0.4, padding:"2px 6px", background:"rgba(0,0,0,0.7)", borderLeft:`2px solid ${log.color}44`, borderRadius:"0 2px 2px 0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                {log.text}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
       </div>
 
       {battlePopup && (

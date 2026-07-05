@@ -38,7 +38,7 @@ export const MONSTER_BASE = [
 // ─── ボスモンスターデータ ───
 export const BOSS_DATA = [
   // B5F〜B35F（既存強化版）
-  { floor:5,  baseId:"slime",      name:"大スライム王",     hpMul:8,  atkMul:2.0, defMul:1.5 },
+  { floor:5,  baseId:"slime",      name:"大スライム",     hpMul:8,  atkMul:2.0, defMul:1.5 },
   { floor:10, baseId:"skeleton",   name:"骸骨の将",         hpMul:8,  atkMul:2.0, defMul:1.5 },
   { floor:15, baseId:"kobold",     name:"コボルト族長",     hpMul:8,  atkMul:2.0, defMul:1.5 },
   { floor:20, baseId:"moss_slime", name:"古代苔の巨躯",     hpMul:8,  atkMul:2.0, defMul:1.5 },
