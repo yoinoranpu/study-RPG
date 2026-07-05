@@ -12,11 +12,90 @@ import EventSprite from "../components/EventSprite";
 import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
 import { calcPassiveBonus } from "../data/skills";
+import { openChest } from "../data/chest_table";
+import { RARITY_COLOR } from "../data/items";
 
 const EVENT_INTERVAL = 6 * 60 * 1000;
 const BASE_MAX_EVENTS = 4;
-const DEBUG = true;
+const DEBUG = import.meta.env.DEV;
 
+// ─── 宝箱開封コンポーネント ───
+function ChestOpenSection({ chests, onAllOpened }) {
+  const [opened, setOpened] = useState([]);
+  const [current, setCurrent] = useState(0);
+
+  const allOpened = current >= chests.length;
+
+  useEffect(() => {
+    if (allOpened) onAllOpened && onAllOpened();
+  }, [allOpened]);
+
+  function openNext() {
+    if (current >= chests.length) return;
+    setOpened(o => [...o, chests[current]]);
+    setCurrent(c => c + 1);
+  }
+
+  function openAll() {
+    setOpened(chests);
+    setCurrent(chests.length);
+  }
+
+  return (
+    <div style={{ width:"100%", maxWidth:320 }}>
+      <div style={{ fontSize:8, color:"#fbbf24", letterSpacing:2, marginBottom:8 }}>
+        宝箱 {current}/{chests.length}
+      </div>
+
+      {/* 未開封の宝箱（大きく） */}
+      <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:10, justifyContent:"center" }}>
+        {chests.map((chest, i) => (
+          <div key={i} style={{ fontSize: i < current ? 24 : 36, opacity: i < current ? 0.3 : 1, transition:"all 0.3s" }}>
+            {i < current ? "📭" : chest.chestType?.icon || "📦"}
+          </div>
+        ))}
+      </div>
+
+      {/* 開封済みアイテム */}
+      {opened.length > 0 && (
+        <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:8 }}>
+          {opened.map((chest, i) => (
+            <div key={i} style={{ background:"#0d0d15", border:`1px solid ${chest.chestType?.color||"#2a2a3a"}44`, borderRadius:4, padding:"6px 10px", display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:18 }}>{chest.chestType?.icon || "📦"}</span>
+              <div style={{ flex:1 }}>
+                {chest.type === "gold" ? (
+                  <span style={{ fontSize:10, color:"#fbbf24" }}>+{chest.gold}G</span>
+                ) : (
+                  <span style={{ fontSize:10, color: RARITY_COLOR[chest.item?.rarity]||"#e8e0d0" }}>
+                    {chest.item?.icon} {chest.item?.name}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize:8, color:chest.chestType?.color||"#888" }}>
+                {chest.chestType?.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!allOpened ? (
+        <div style={{ display:"flex", gap:8 }}>
+          <button onClick={openNext} style={{ flex:2, padding:"12px 0", background:"#0a1a0a", border:"1px solid #fbbf24", borderRadius:4, cursor:"pointer", color:"#fbbf24", fontSize:13, fontFamily:"monospace", fontWeight:700 }}>
+            📦 開封！
+          </button>
+          <button onClick={openAll} style={{ flex:1, padding:"12px 0", background:"#080810", border:"1px solid #333", borderRadius:4, cursor:"pointer", color:"#555", fontSize:10, fontFamily:"monospace" }}>
+            全開封
+          </button>
+        </div>
+      ) : (
+        <div style={{ textAlign:"center", fontSize:9, color:"#4ade80" }}>全ての宝箱を開封した！</div>
+      )}
+    </div>
+  );
+}
+
+// ─── メインコンポーネント ───
 export default function DungeonPage({ onBack }) {
   const player = usePlayerStore();
   const { updatePlayer } = usePlayerStore();
@@ -48,6 +127,9 @@ export default function DungeonPage({ onBack }) {
   const [showBossWarning, setShowBossWarning] = useState(false);
   const [bossFloor, setBossFloor] = useState(false);
   const [bossMonster, setBossMonster] = useState(null);
+  const [chestsAllOpened, setChestsAllOpened] = useState(false);
+ 
+  
 
   const logId         = useRef(1);
   const sessionExp    = useRef(0);
@@ -66,24 +148,6 @@ export default function DungeonPage({ onBack }) {
     passiveBonusRef.current = calcPassiveBonus(player.passiveSkillSlots || []);
   }, [player.passiveSkillSlots]);
 
-  // 鍵なしボス階層：自動退却
-  useEffect(() => {
-    if (!bossFloor) return;
-    const keyEffect = floor <= 35 ? "boss_key_1" : floor <= 70 ? "boss_key_2" : "boss_key_3";
-    const hasKey = (player.specialSlots||[]).some(s => s?.effect === keyEffect)
-      || (player.itemBox||[]).some(it => it.effect === keyEffect);
-    if (!hasKey) {
-      const timer = setTimeout(() => {
-        setBossFloor(false);
-        floorRef.current -= 1;
-        setFloor(floorRef.current);
-        mappingRef.current = 99;
-        setMapping(99);
-        addLog(`🔒 鍵がなく退却…B${floorRef.current}Fに戻った`, "#f87171");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [bossFloor, floor, player.specialSlots, player.itemBox]);
   const addLog = useCallback((text, color="#666") => {
     setLogs(l => [...l, { id:logId.current++, text, color }]);
   }, []);
@@ -136,7 +200,6 @@ export default function DungeonPage({ onBack }) {
     return () => clearTimeout(timer);
   }, [bossFloor, floor, player.specialSlots, player.itemBox, addLog, updatePlayer]);
 
-
   const addMapping = useCallback((amount) => {
     const bonus = passiveBonusRef.current.mapBonus || 0;
     const actual = amount * (1 + bonus / 100);
@@ -146,24 +209,17 @@ export default function DungeonPage({ onBack }) {
       floorRef.current += 1;
       setFloor(floorRef.current);
       addLog(`🗺 B${floorRef.current}Fに到達！`, "#60a5fa");
-
       if (floorRef.current % 5 === 0) {
         setTimeout(() => {
           setShowBossWarning(true);
-          setTimeout(() => {
-            setShowBossWarning(false);
-            setBossFloor(true);
-          }, 3000);
+          setTimeout(() => { setShowBossWarning(false); setBossFloor(true); }, 3000);
         }, 500);
         addLog(`⚠ B${floorRef.current}F ボス階層！`, "#ef4444");
       }
-
       const RARITY_UNLOCKS = { 10:"uncommon", 25:"rare", 50:"epic", 75:"legendary" };
       const unlocked = RARITY_UNLOCKS[floorRef.current];
       if (unlocked) {
-        setTimeout(() => {
-          updatePlayer({ unlockedRarity: unlocked, maxFloor: floorRef.current });
-        }, 0);
+        setTimeout(() => { updatePlayer({ unlockedRarity: unlocked, maxFloor: floorRef.current }); }, 0);
         addLog(`🎉 ${unlocked.toUpperCase()}装備が解放された！`, "#fbbf24");
       }
     }
@@ -187,11 +243,17 @@ export default function DungeonPage({ onBack }) {
       pendingBattleRef.current = { result, monsters };
 
     } else if (evType === "chest") {
-      const chest = rollChest(); sessionChests.current.push(chest);
-      const gold = Math.floor(Math.random()*50+20);
-      const bonusGold = Math.floor(gold * (1 + (passiveBonusRef.current.goldBonus||0)/100));
-      sessionGold.current += bonusGold;
-      addLog(`📦 宝箱発見！（${chest.label}）+${bonusGold}G`, "#fbbf24");
+      const chestRarity = rollChest();
+      const result = openChest(chestRarity.id || "common", floorRef.current);
+      if (result.type === "gold") {
+        const bonusGold = Math.floor(result.gold * (1 + (passiveBonusRef.current.goldBonus||0)/100));
+        sessionGold.current += bonusGold;
+        result.gold = bonusGold;
+        addLog(`${result.chestType?.icon||"📦"} ${result.chestType?.label}を開けた！+${bonusGold}G`, "#fbbf24");
+      } else {
+        addLog(`${result.chestType?.icon||"📦"} ${result.chestType?.label}を発見！`, result.chestType?.color||"#fbbf24");
+      }
+      sessionChests.current.push(result);
       setMonsterVisible(false); setCurrentMonster(null);
       setCurrentEvent("chest"); setEventVisible(true); setMonsterArrived(false);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 6000);
@@ -278,6 +340,13 @@ export default function DungeonPage({ onBack }) {
         if (unlock) addLog(`🎉 Lv${lv}到達！${unlock.label}`, "#fbbf24");
       }
     }
+    // 宝箱アイテムをアイテムボックスに追加
+    const newItemBox = [...(player.itemBox||[])];
+    sessionChests.current.forEach(chest => {
+      if (chest.type === "item" && chest.item && newItemBox.length < 30) {
+        newItemBox.push(chest.item);
+      }
+    });
     updatePlayer({
       totalExp: newTotalExp,
       gold:     player.gold + sessionGold.current,
@@ -286,6 +355,7 @@ export default function DungeonPage({ onBack }) {
       floorMapping: mappingRef.current,
       hp:       hpRef.current,
       materials: newMats,
+      itemBox:  newItemBox,
       timerWork: workMin, timerBreak: breakMin, timerSets: totalSets,
       studyMinutesTotal: (player.studyMinutesTotal||0) + studiedMinutes,
       studyMinutesToday: (player.studyMinutesToday||0) + studiedMinutes,
@@ -302,11 +372,14 @@ export default function DungeonPage({ onBack }) {
   const lv     = expToLevel(player.totalExp);
   const maxHp  = player.maxHp || 100;
 
+
+
   if (showResult) return (
-    <div style={{ height:"100vh", background:"#06060f", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, fontFamily:"monospace", padding:20 }}>
+    
+    <div style={{ height:"100vh", background:"#06060f", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12, fontFamily:"monospace", padding:20, overflowY:"auto" }}>
       <div style={{ fontSize:9, letterSpacing:6, color:"#60a5fa" }}>EXPLORATION RESULT</div>
       <div style={{ fontSize:24, fontWeight:900, color:"#fff", letterSpacing:2 }}>探索終了</div>
-      <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:"20px 28px", width:"100%", maxWidth:320 }}>
+      <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:"16px 24px", width:"100%", maxWidth:320 }}>
         {[
           { label:"獲得EXP",  val:`+${sessionExp.current}`,             color:"#86efac" },
           { label:"獲得G",    val:`+${sessionGold.current}`,            color:"#fbbf24" },
@@ -314,7 +387,7 @@ export default function DungeonPage({ onBack }) {
           { label:"マップ率", val:`${Math.floor(mappingRef.current)}%`, color:"#60a5fa" },
           { label:"倒した敵", val:`${defeatedList.current.length}体`,   color:"#f87171" },
         ].map(({ label, val, color }) => (
-          <div key={label} style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+          <div key={label} style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
             <span style={{ color:"#4a4a6a", fontSize:11 }}>{label}</span>
             <span style={{ color, fontSize:13, fontWeight:700 }}>{val}</span>
           </div>
@@ -330,15 +403,22 @@ export default function DungeonPage({ onBack }) {
           </div>
         </div>
       )}
-      <button onClick={handleResultClose} style={{ padding:"12px 32px", background:"#0a2a0a", border:"1px solid #4ade80", borderRadius:6, cursor:"pointer", color:"#4ade80", fontSize:12, letterSpacing:3, fontWeight:700 }}>
-        街へ帰還 →
-      </button>
+      {sessionChests.current.length > 0 && (
+        <ChestOpenSection
+          chests={sessionChests.current}
+          onAllOpened={() => setChestsAllOpened(true)}
+        />
+      )}
+      {(sessionChests.current.length === 0 || chestsAllOpened) && (
+        <button onClick={handleResultClose} style={{ padding:"12px 32px", background:"#0a2a0a", border:"1px solid #4ade80", borderRadius:6, cursor:"pointer", color:"#4ade80", fontSize:12, letterSpacing:3, fontWeight:700 }}>
+          街へ帰還 →
+        </button>
+      )}
     </div>
   );
 
   return (
     <div style={{ height:"100vh", background:"#000", fontFamily:"monospace", display:"flex", flexDirection:"column", position:"relative" }}>
-
       <DungeonCanvas isRunning={isRunning} isBreak={phase==="break"} isPaused={monsterArrived} />
       <PlayerSprite hp={hp} maxHp={maxHp} isRunning={isRunning} isBreak={phase==="break"} isDefeated={playerDefeated} />
       <MonsterSprite
@@ -366,13 +446,11 @@ export default function DungeonPage({ onBack }) {
           const pending = pendingBattleRef.current;
           if (!pending) return;
           const { result, monsters } = pending;
-
           const baseStats = calcPlayerStats(player);
           const maxHpVal = baseStats.maxHp;
           let currentHp = Math.max(1, result.playerHpAfter);
           const slots = [...(player.specialSlots||[null,null,null])];
           let newItemBox = [...(player.itemBox||[])];
-
           slots.forEach((slot, i) => {
             if (!slot) return;
             const hpPct = currentHp / maxHpVal;
@@ -387,19 +465,15 @@ export default function DungeonPage({ onBack }) {
               addLog(`💊 ${slot.name}を使用！HP+${healAmt}`, "#38bdf8");
             }
           });
-
           hpRef.current = currentHp;
           setHp(currentHp);
           updatePlayer({ specialSlots: slots, itemBox: newItemBox });
-
           if (!result.won && result.playerHpAfter <= 0) {
             setPlayerDefeated(true);
             setTimeout(() => setPlayerDefeated(false), 6000);
           }
-
           result.logs.slice(-3).forEach(l => addLog(l.text, l.color));
           if (result.won) {
-            // ボス特別報酬
             if (pending.isBoss) {
               const bossGold = Math.floor(500 * (floor / 5));
               const bossExp  = Math.floor(100 * (floor / 5));
@@ -418,17 +492,15 @@ export default function DungeonPage({ onBack }) {
               }
             });
             monsters.forEach(m => defeatedList.current.push(m));
-
-            // 図鑑更新
             const newBook = { ...(player.monsterBook||{}) };
             monsters.forEach(m => {
               if (!newBook[m.id]) newBook[m.id] = { count:0, name:m.name, tribe:m.tribe, material:m.material };
               newBook[m.id].count += 1;
             });
             updatePlayer({ monsterBook: newBook });
-
             if (Math.random() < 0.25 * (1 + (passiveBonusRef.current.chestBonus||0)/100)) {
-              sessionChests.current.push(rollChest());
+              const chestResult = openChest(rollChest().id || "common", floorRef.current);
+              sessionChests.current.push(chestResult);
             }
             addMapping(2);
           }
@@ -476,9 +548,7 @@ export default function DungeonPage({ onBack }) {
                   </div>
                 )}
                 {hasKey && (
-                  <div style={{ fontSize:8, color:"#4ade80" }}>
-                    自動的にボス戦闘を開始します…
-                  </div>
+                  <div style={{ fontSize:8, color:"#4ade80" }}>自動的にボス戦闘を開始します…</div>
                 )}
               </div>
             );
@@ -553,14 +623,13 @@ export default function DungeonPage({ onBack }) {
             </button>
           </div>
         )}
-        
 
         {/* 戦闘ログ（右上固定） */}
         <div style={{ position:"absolute", top:60, right:8, width:180, maxHeight:"40vh", display:"flex", flexDirection:"column", gap:2, zIndex:2, pointerEvents:"none" }}>
           <div style={{ fontSize:7, color:"#3a3a5a", letterSpacing:2, marginBottom:2, textAlign:"right" }}>BATTLE LOG</div>
           <div style={{ display:"flex", flexDirection:"column-reverse", overflowY:"auto", gap:2, maxHeight:"38vh" }}>
             {[...logs].reverse().slice(0, 8).map((log, i) => (
-              <div key={log.id} style={{ fontSize:9, color:log.color, opacity: i === 0 ? 1 : i < 3 ? 0.8 : 0.4, padding:"2px 6px", background:"rgba(0,0,0,0.7)", borderLeft:`2px solid ${log.color}44`, borderRadius:"0 2px 2px 0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              <div key={log.id} style={{ fontSize:9, color:log.color, opacity: i===0?1:i<3?0.8:0.4, padding:"2px 6px", background:"rgba(0,0,0,0.7)", borderLeft:`2px solid ${log.color}44`, borderRadius:"0 2px 2px 0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                 {log.text}
               </div>
             ))}
