@@ -101,10 +101,10 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
 
           // ダメージ数字
           s.effects.push({
-            x:tx + (Math.random()-0.5)*20,
-            y:ty - 40,
-            vx:(Math.random()-0.5)*0.5,
-            vy:-2,
+            x: tx + (turn.actor === "player" ? -30 : 30),
+            y: ty - 60,
+            vx: turn.actor === "player" ? -0.3 : 0.3,
+            vy: -1.5,
             life:900, maxLife:900, alpha:1,
             text:`${turn.dmg}`,
             isCrit:turn.isCrit,

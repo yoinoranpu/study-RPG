@@ -303,7 +303,7 @@ export default function DungeonPage({ onBack }) {
           let newItemBox = [...(player.itemBox||[])];
           if (!result.won && result.playerHpAfter <= 0) {
             setPlayerDefeated(true);
-            setTimeout(() => setPlayerDefeated(false), 2000);
+            setTimeout(() => setPlayerDefeated(false), 4500);
           }
 
           slots.forEach((slot, i) => {
@@ -414,13 +414,17 @@ export default function DungeonPage({ onBack }) {
           </button>
         )}
 
-        <div style={{ width:"100%", maxWidth:320, maxHeight:100, overflow:"hidden", display:"flex", flexDirection:"column", justifyContent:"flex-end", gap:2 }}>
-          {logs.slice(-4).map((log,i) => (
-            <div key={log.id} style={{ fontSize:11, color:log.color, opacity:0.4+(i/4)*0.6, padding:"2px 8px", background:"rgba(0,0,0,0.6)", borderLeft:`2px solid ${log.color}44`, borderRadius:"0 2px 2px 0" }}>
+        {/* 戦闘ログ（右上固定） */}
+      <div style={{ position:"absolute", top:60, right:8, width:180, maxHeight:"40vh", display:"flex", flexDirection:"column", gap:2, zIndex:2, pointerEvents:"none" }}>
+        <div style={{ fontSize:7, color:"#3a3a5a", letterSpacing:2, marginBottom:2, textAlign:"right" }}>BATTLE LOG</div>
+        <div style={{ display:"flex", flexDirection:"column-reverse", overflowY:"auto", gap:2, maxHeight:"38vh" }}>
+         {[...logs].reverse().slice(0, 8).map((log, i) => (
+            <div key={log.id} style={{ fontSize:9, color:log.color, opacity: i === 0 ? 1 : i < 3 ? 0.8 : 0.4, padding:"2px 6px", background:"rgba(0,0,0,0.7)", borderLeft:`2px solid ${log.color}44`, borderRadius:"0 2px 2px 0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
               {log.text}
             </div>
           ))}
         </div>
+      </div>
       </div>
 
       {battlePopup && (
