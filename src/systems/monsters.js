@@ -35,8 +35,52 @@ export const MONSTER_BASE = [
   { id:"fire_dragon", name:"火竜", tribe:"竜", star:3, hp:220, atk:45, def:30, mag:40, mdef:25, eva:12, crit:18, expMul:2.8, gMul:3.2,
     actions:[{type:"matk",pct:50,label:"炎ブレス"},{type:"atk",pct:40,label:"炎爪"},{type:"def",pct:10,label:"炎を纏う"}]},
 ];
+// ─── ボスモンスターデータ ───
+export const BOSS_DATA = [
+  // B5F〜B35F（既存強化版）
+  { floor:5,  baseId:"slime",      name:"大スライム王",     hpMul:8,  atkMul:2.0, defMul:1.5 },
+  { floor:10, baseId:"skeleton",   name:"骸骨の将",         hpMul:8,  atkMul:2.0, defMul:1.5 },
+  { floor:15, baseId:"kobold",     name:"コボルト族長",     hpMul:8,  atkMul:2.0, defMul:1.5 },
+  { floor:20, baseId:"moss_slime", name:"古代苔の巨躯",     hpMul:8,  atkMul:2.0, defMul:1.5 },
+  { floor:25, baseId:"imp",        name:"魔王の使い",       hpMul:10, atkMul:2.2, defMul:1.8 },
+  { floor:30, baseId:"wolf",       name:"白銀の狼王",       hpMul:10, atkMul:2.2, defMul:1.8 },
+  { floor:35, baseId:"goblin",     name:"ゴブリン大将",     hpMul:10, atkMul:2.2, defMul:1.8 },
+  { floor:40, baseId:"giant_slime",name:"原初の大スライム", hpMul:12, atkMul:2.5, defMul:2.0 },
+  { floor:45, baseId:"death_knight",name:"冥府の騎士王",   hpMul:12, atkMul:2.5, defMul:2.0 },
+  { floor:50, baseId:"demon_soldier",name:"魔界将軍",       hpMul:12, atkMul:2.5, defMul:2.0 },
+  { floor:55, baseId:"world_tree", name:"世界樹の守護者",   hpMul:15, atkMul:2.8, defMul:2.2 },
+  { floor:60, baseId:"goblin_king",name:"ゴブリン大王",     hpMul:15, atkMul:2.8, defMul:2.2 },
+  { floor:65, baseId:"fenrir",     name:"神狼フェンリル",   hpMul:15, atkMul:2.8, defMul:2.2 },
+  { floor:70, baseId:"fire_dragon",name:"炎竜王イフリート", hpMul:18, atkMul:3.0, defMul:2.5 },
+  // B75F〜B100F: 専用ボス（将来追加）
+  // { floor:75, baseId:null, name:"???", ... },
+];
+
+export const getBossData = (floor) => BOSS_DATA.find(b => b.floor === floor);
+
+export const generateBoss = (bossData) => {
+  const base = MONSTER_BASE.find(m => m.id === bossData.baseId);
+  if (!base) return null;
+  return {
+    ...base,
+    name: bossData.name,
+    displayName: bossData.name,
+    hp:   Math.floor(base.hp   * bossData.hpMul),
+    maxHp:Math.floor(base.hp   * bossData.hpMul),
+    atk:  Math.floor(base.atk  * bossData.atkMul),
+    def:  Math.floor(base.def  * bossData.defMul),
+    mag:  Math.floor(base.mag  * bossData.atkMul),
+    mdef: Math.floor(base.mdef * bossData.defMul),
+    isBoss: true,
+    rarity: { id:"legend", label:"BOSS", color:"#ef4444", mul:1 },
+    dangerStar: 10,
+    expGain:  Math.floor(base.expGain  * bossData.hpMul * 2),
+    goldGain: Math.floor(base.goldGain * bossData.hpMul * 2),
+  };
+};
 
 export const TRIBES = ["粘体","獣","ゴブリン","不死","悪魔","植物","竜"];
+
 
 // モンスター生成
 export const generateMonster = (base, floor = 1) => {

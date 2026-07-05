@@ -12,6 +12,7 @@ import EventSprite from "../components/EventSprite";
 import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
 import { calcPassiveBonus } from "../data/skills";
+import { getBossData, generateBoss } from "../systems/monsters";
 
 
 const EVENT_INTERVAL = 6 * 60 * 1000;
@@ -46,6 +47,8 @@ export default function DungeonPage({ onBack }) {
   const [battleEffectActive, setBattleEffectActive] = useState(false);
   const [battleTurns, setBattleTurns] = useState([]);
   const [playerDefeated, setPlayerDefeated] = useState(false);
+  const [showBossWarning, setShowBossWarning] = useState(false);
+const [bossAvailable, setBossAvailable] = useState(false);
 
   const logId         = useRef(1);
   const sessionExp    = useRef(0);
@@ -77,6 +80,16 @@ export default function DungeonPage({ onBack }) {
       floorRef.current += 1;
       setFloor(floorRef.current);
       addLog(`🗺 B${floorRef.current}Fに到達！`, "#60a5fa");
+
+      // ボス階層チェック
+      if (floorRef.current % 5 === 0) {
+        setTimeout(() => {
+          setShowBossWarning(true);
+          setTimeout(() => setShowBossWarning(false), 3000);
+        }, 500);
+        addLog(`⚠ B${floorRef.current}F ボス階層！`, "#ef4444");
+      }
+
       const RARITY_UNLOCKS = { 10:"uncommon", 25:"rare", 50:"epic", 75:"legendary" };
       const unlocked = RARITY_UNLOCKS[floorRef.current];
       if (unlocked) {
@@ -135,7 +148,8 @@ export default function DungeonPage({ onBack }) {
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 5000);
     }
   }, [addLog, addMapping, player]);
-
+ 
+      
   // タイマー
   useEffect(() => {
     if (!isRunning) return;
@@ -361,6 +375,15 @@ export default function DungeonPage({ onBack }) {
         monsterX={0.35} monsterY={0.72}
         playerX={0.72}  playerY={0.72}
       />
+      {/* ボスWARNING演出 */}
+      {showBossWarning && (
+        <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", zIndex:10 }}>
+          <div style={{ fontSize:11, letterSpacing:8, color:"#ef4444", marginBottom:8, animation:"pulse 0.5s infinite" }}>⚠ WARNING ⚠</div>
+          <div style={{ fontSize:28, fontWeight:900, color:"#ef4444", letterSpacing:4, textShadow:"0 0 20px #ef4444" }}>BOSS</div>
+          <div style={{ fontSize:13, color:"#fbbf24", marginTop:8, letterSpacing:2 }}>B{floor}F ボスが出現した！</div>
+          <div style={{ fontSize:9, color:"#666", marginTop:16 }}>準備はいいか？</div>
+        </div>
+      )}
 
       {/* ヘッダー */}
       <div style={{ padding:"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:12, position:"relative", zIndex:1 }}>
@@ -424,7 +447,11 @@ export default function DungeonPage({ onBack }) {
             DEBUG: イベント発生
           </button>
         )}
-
+{DEBUG && (
+  <button onClick={() => addMapping(25)} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #60a5fa44", borderRadius:4, cursor:"pointer", color:"#60a5fa", fontSize:9, fontFamily:"monospace" }}>
+    DEBUG: マップ+25%
+  </button>
+)}
         {/* 戦闘ログ（右上固定） */}
       <div style={{ position:"absolute", top:60, right:8, width:180, maxHeight:"40vh", display:"flex", flexDirection:"column", gap:2, zIndex:2, pointerEvents:"none" }}>
         <div style={{ fontSize:7, color:"#3a3a5a", letterSpacing:2, marginBottom:2, textAlign:"right" }}>BATTLE LOG</div>

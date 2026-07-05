@@ -158,6 +158,9 @@ export const SPECIAL_DB = [
   { id:"S001", name:"スキルリセット石",icon:"🔮", rarity:"rare",     type:"special", effect:"skill_reset", desc:"習得スキルをリセット",     shopWeight:2 },
   { id:"S002", name:"レア素材パック",  icon:"📦", rarity:"rare",     type:"special", effect:"mat_pack",    desc:"ランダム素材×5個",         shopWeight:3 },
   { id:"S003", name:"強化の秘石",      icon:"💠", rarity:"epic",     type:"special", effect:"forge_up_2",  desc:"選択装備を+2強化",         shopWeight:1 },
+  { id:"KEY001", name:"古びた鍵",   icon:"🗝", rarity:"uncommon", type:"special", effect:"boss_key_1", desc:"B5F〜B35Fのボス部屋を開ける",  shopWeight:0, dropWeight:2 },
+  { id:"KEY002", name:"封印の鍵",   icon:"🔑", rarity:"rare",     type:"special", effect:"boss_key_2", desc:"B40F〜B70Fのボス部屋を開ける", shopWeight:0, dropWeight:1 },
+  { id:"KEY003", name:"禁忌の鍵",   icon:"⚜", rarity:"epic",     type:"special", effect:"boss_key_3", desc:"B75F〜のボス部屋を開ける",     shopWeight:0, dropWeight:0 },
 ];
 
 // ─── 全アイテムDB（統合） ───

@@ -101,7 +101,6 @@ const usePlayerStore = create((set, get) => ({
     const uid = get().uid;
     const resetData = {
       totalExp: 0, gold: 500, floor: 1, maxFloor: 1,
-      unlockedRarity: "common", // 解放済み最高レアリティ
       floorMapping: 0, hp: 100, maxHp: 100,
       equippedWeapon: null, equippedArmor: null,
       equippedAcc1: null, equippedAcc2: null,
@@ -112,8 +111,8 @@ const usePlayerStore = create((set, get) => ({
       passiveSkillSlots: [null, null, null, null, null, null],
       battleStyle: "balanced",
       studyMinutesTotal: 0, studyMinutesToday: 0, studyMinutesWeek: 0,
+      monsterBook: {},
       unlockedRarity: "common",
-      monsterBook: data.monsterBook || {},
     };
     set(resetData);
     debounceSave(uid, resetData);
