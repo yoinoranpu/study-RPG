@@ -34,6 +34,7 @@ const debounceSave = (uid, data) => {
       studyMinutesToday: data.studyMinutesToday,
       studyMinutesWeek: data.studyMinutesWeek,
       unlockedRarity: data.unlockedRarity || "common",
+      monsterBook: data.monsterBook || {},
     };
     savePlayerData(uid, saveData);
   }, 2000);
@@ -112,10 +113,13 @@ const usePlayerStore = create((set, get) => ({
       battleStyle: "balanced",
       studyMinutesTotal: 0, studyMinutesToday: 0, studyMinutesWeek: 0,
       unlockedRarity: "common",
+      monsterBook: data.monsterBook || {},
     };
     set(resetData);
     debounceSave(uid, resetData);
   },
+  // 図鑑（倒したモンスターの記録）
+monsterBook: {}, // { monsterId: { count: 0, name: "", tribe: "", material: "" } }
 }));
 
 export default usePlayerStore;

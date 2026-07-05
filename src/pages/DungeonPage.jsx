@@ -336,6 +336,17 @@ export default function DungeonPage({ onBack }) {
               }
             });
             monsters.forEach(m => defeatedList.current.push(m));
+            
+            // 図鑑更新
+            const newBook = { ...(player.monsterBook||{}) };
+            monsters.forEach(m => {
+              if (!newBook[m.id]) {
+                newBook[m.id] = { count:0, name:m.name, tribe:m.tribe, material:m.material };
+              }
+              newBook[m.id].count += 1;
+            });
+            updatePlayer({ monsterBook: newBook });
+
             if (Math.random() < 0.25 * (1 + (passiveBonusRef.current.chestBonus||0)/100)) {
               sessionChests.current.push(rollChest());
             }
