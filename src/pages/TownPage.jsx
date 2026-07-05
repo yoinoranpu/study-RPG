@@ -7,6 +7,7 @@ import ForgeTab from "../components/ForgeTab";
 import CharacterPage from "./CharacterPage";
 import SettingsPage from "./SettingsPage";
 import MonsterBookTab from "../components/MonsterBookTab";
+import DebugItemTab from "../components/DebugItemTab";
 
 export default function TownPage({ onEnterDungeon }) {
   const [tab, setTab] = useState("home");
@@ -17,6 +18,7 @@ export default function TownPage({ onEnterDungeon }) {
   const used = expUsedUpTo(lv);
   const need = expForLevel(lv);
   const lvPct = need > 0 ? Math.min(1, (player.totalExp - used) / need) : 1;
+  const DEBUG = true;
 
   const tabs = [
     { id:"home",      icon:"🏰", label:"街"      },
@@ -147,6 +149,22 @@ export default function TownPage({ onEnterDungeon }) {
             </div>
           </div>
         )}
+        {/* DEBUGクリエイティブ */}
+        {tab === "home" && subTab === "debug" && (
+          <div style={{ height:"100%", display:"flex", flexDirection:"column" }}>
+            <button onClick={() => setSubTab("home")} style={{ padding:"6px 12px", background:"transparent", border:"none", color:"#4a4a6a", cursor:"pointer", fontSize:10, textAlign:"left", fontFamily:"monospace" }}>← 戻る</button>
+            <div style={{ fontSize:8, color:"#a78bfa", padding:"4px 12px", letterSpacing:2 }}>DEBUG - 全アイテム取得</div>
+            <div style={{ flex:1, overflowY:"auto", padding:10 }}>
+              <DebugItemTab />
+            </div>
+          </div>
+        )}
+        {DEBUG && (
+                <button onClick={() => setSubTab("debug")} style={{ flex:1, padding:"12px 0", background:"#080810", border:"1px solid #a78bfa44", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+                  <span style={{ fontSize:18 }}>🔧</span>
+                  <span style={{ fontSize:9, color:"#a78bfa" }}>DEBUG</span>
+                </button>
+              )}
 
         {tab === "character" && <CharacterPage />}
         {tab === "shop"      && <ShopTab />}

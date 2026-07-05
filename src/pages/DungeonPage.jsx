@@ -84,10 +84,58 @@ export default function DungeonPage({ onBack }) {
       return () => clearTimeout(timer);
     }
   }, [bossFloor, floor, player.specialSlots, player.itemBox]);
-
   const addLog = useCallback((text, color="#666") => {
     setLogs(l => [...l, { id:logId.current++, text, color }]);
   }, []);
+
+  // 鍵なしボス階層：自動退却
+  useEffect(() => {
+    if (!bossFloor) return;
+    const keyEffect = floor <= 35 ? "boss_key_1" : floor <= 70 ? "boss_key_2" : "boss_key_3";
+    const hasKey = (player.specialSlots||[]).some(s => s?.effect === keyEffect)
+      || (player.itemBox||[]).some(it => it.effect === keyEffect);
+    if (!hasKey) {
+      const timer = setTimeout(() => {
+        setBossFloor(false);
+        floorRef.current -= 1;
+        setFloor(floorRef.current);
+        mappingRef.current = 99;
+        setMapping(99);
+        addLog(`🔒 鍵がなく退却…B${floorRef.current}Fに戻った`, "#f87171");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [bossFloor, floor, player.specialSlots, player.itemBox, addLog]);
+
+  // 鍵ありボス階層：自動挑戦
+  useEffect(() => {
+    if (!bossFloor) return;
+    const keyEffect = floor <= 35 ? "boss_key_1" : floor <= 70 ? "boss_key_2" : "boss_key_3";
+    const keyItem = (player.specialSlots||[]).find(s => s?.effect === keyEffect)
+      || (player.itemBox||[]).find(it => it.effect === keyEffect);
+    if (!keyItem) return;
+    const timer = setTimeout(() => {
+      const newSlots = (player.specialSlots||[]).map(s => s?.effect === keyEffect ? null : s);
+      const newBox = (player.itemBox||[]).filter(it => it.uid !== keyItem.uid);
+      updatePlayer({ specialSlots: newSlots, itemBox: newBox });
+      const bossData = getBossData(floor);
+      if (!bossData) return;
+      const boss = generateBoss(bossData);
+      if (!boss) return;
+      setBossFloor(false);
+      setBossMonster(boss);
+      setCurrentMonster(boss);
+      setMonsterVisible(true);
+      setMonsterArrived(false);
+      const baseStats = calcPlayerStats(player);
+      const ps = { ...baseStats, hp:Math.max(1, hpRef.current), maxHp:baseStats.maxHp };
+      const result = simulateBattle(ps, [boss]);
+      pendingBattleRef.current = { result, monsters:[boss], isBoss:true };
+      addLog(`🔥 ${boss.displayName}が現れた！`, "#ef4444");
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [bossFloor, floor, player.specialSlots, player.itemBox, addLog, updatePlayer]);
+
 
   const addMapping = useCallback((amount) => {
     const bonus = passiveBonusRef.current.mapBonus || 0;
@@ -428,27 +476,9 @@ export default function DungeonPage({ onBack }) {
                   </div>
                 )}
                 {hasKey && (
-                  <button onClick={() => {
-                    const newSlots = (player.specialSlots||[]).map(s => s?.effect === keyEffect ? null : s);
-                    const newBox = (player.itemBox||[]).filter(it => it.uid !== keyItem.uid);
-                    updatePlayer({ specialSlots: newSlots, itemBox: newBox });
-                    const bossData = getBossData(floor);
-                    if (!bossData) return;
-                    const boss = generateBoss(bossData);
-                    if (!boss) return;
-                    setBossFloor(false);
-                    setBossMonster(boss);
-                    setCurrentMonster(boss);
-                    setMonsterVisible(true);
-                    setMonsterArrived(false);
-                    const baseStats = calcPlayerStats(player);
-                    const ps = { ...baseStats, hp:Math.max(1, hpRef.current), maxHp:baseStats.maxHp };
-                    const result = simulateBattle(ps, [boss]);
-                    pendingBattleRef.current = { result, monsters:[boss], isBoss:true };
-                    addLog(`🔥 ${boss.displayName}が現れた！`, "#ef4444");
-                  }} style={{ padding:"10px 24px", background:"#1a0000", border:"1px solid #ef4444", borderRadius:6, cursor:"pointer", color:"#ef4444", fontSize:10, fontFamily:"monospace", fontWeight:700 }}>
-                    ⚔ 挑戦！
-                  </button>
+                  <div style={{ fontSize:8, color:"#4ade80" }}>
+                    自動的にボス戦闘を開始します…
+                  </div>
                 )}
               </div>
             );
@@ -523,6 +553,7 @@ export default function DungeonPage({ onBack }) {
             </button>
           </div>
         )}
+        
 
         {/* 戦闘ログ（右上固定） */}
         <div style={{ position:"absolute", top:60, right:8, width:180, maxHeight:"40vh", display:"flex", flexDirection:"column", gap:2, zIndex:2, pointerEvents:"none" }}>
