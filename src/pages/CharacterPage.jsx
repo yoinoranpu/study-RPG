@@ -184,11 +184,17 @@ export default function CharacterPage() {
                 const isEq = equippedUids.has(it.uid);
                 return (
                   <div key={it.uid} onClick={()=>setSel(isSel?null:it.uid)}
-                    style={{ aspectRatio:"1", background:isSel?"#12122a":"#080810", border:`2px solid ${isSel?rc:rc+"33"}`, borderRadius:5, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:1, position:"relative", opacity:isEq?0.5:1 }}>
-                    <div style={{ fontSize:13 }}>{it.icon}</div>
-                    {it.upgradeLevel>0 && <div style={{ position:"absolute", top:1, right:2, fontSize:6, color:"#fbbf24" }}>+{it.upgradeLevel}</div>}
-                    {isEq && <div style={{ position:"absolute", bottom:0, left:0, right:0, fontSize:5, color:"#4ade80", textAlign:"center", background:"rgba(0,0,0,0.6)" }}>装備</div>}
-                    <div style={{ fontSize:4, color:rc, textAlign:"center", width:"100%", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", paddingLeft:1 }}>{it.name.slice(0,4)}</div>
+                    style={{ aspectRatio:"1", background:isSel?`${rc}33`:`${rc}18`, border:`2px solid ${isSel?rc:rc+"55"}`, borderRadius:6, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:2, position:"relative", opacity:isEq?0.5:1 }}>
+                    {/* 将来の画像差し替え用 - 今はアイコン表示 */}
+                    <div style={{ fontSize:20, lineHeight:1 }}>{it.icon}</div>
+                    {it.upgradeLevel>0 && (
+                      <div style={{ position:"absolute", top:1, right:3, fontSize:7, color:"#fbbf24", fontWeight:700 }}>+{it.upgradeLevel}</div>
+                    )}
+                    {isEq && (
+                      <div style={{ position:"absolute", bottom:0, left:0, right:0, fontSize:5, color:"#4ade80", textAlign:"center", background:"rgba(0,0,0,0.7)", borderRadius:"0 0 4px 4px" }}>装備中</div>
+                    )}
+                    {/* レアリティインジケーター（下端） */}
+                    <div style={{ position:"absolute", bottom:isEq?10:2, left:4, right:4, height:2, background:rc, borderRadius:1, opacity:0.8 }} />
                   </div>
                 );
               })}
