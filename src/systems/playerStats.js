@@ -3,6 +3,7 @@ import { calcStatBonus } from "../data/skills";
 
 export const calcPlayerStats = (player) => {
   let atk=10, mag=10, def=10, mdef=10, hp=100, eva=5, crit=5;
+  let critDmg=150, mapBonus=0, dropBonus=0, goldBonus=0, chestBonus=0;
 
   // 装備反映
   [player.equippedWeapon, player.equippedArmor,
@@ -18,20 +19,29 @@ export const calcPlayerStats = (player) => {
     crit += s.crit || 0;
   });
 
-  // スキル（ステータス強化系）反映
-  const statBonus = calcStatBonus(player.learnedSkills || []);
-  atk  += statBonus.atk;
-  mag  += statBonus.mag;
-  def  += statBonus.def;
-  mdef += statBonus.mdef;
-  hp   += statBonus.hp;
-  eva  += statBonus.eva;
-  crit += statBonus.crit;
+  // スキル反映
+  const sb = calcStatBonus(player.learnedSkills || []);
+  atk       += sb.atk;
+  mag       += sb.mag;
+  def       += sb.def;
+  mdef      += sb.mdef;
+  hp        += sb.hp;
+  eva       += sb.eva;
+  crit      += sb.crit;
+  critDmg   += sb.critDmg || 0;
+  mapBonus  += sb.mapBonus || 0;
+  dropBonus += sb.dropBonus || 0;
+  goldBonus += sb.goldBonus || 0;
+  chestBonus+= sb.chestBonus || 0;
 
   // レベルボーナス（微量）
   const lv = player.totalExp ? Math.floor(Math.sqrt(player.totalExp / 15)) + 1 : 1;
   hp  += lv * 2;
   def += Math.floor(lv * 0.3);
 
-  return { atk, mag, def, mdef, hp, maxHp: hp, eva, crit };
+  return {
+    atk, mag, def, mdef, hp, maxHp:hp,
+    eva, crit, critDmg,
+    mapBonus, dropBonus, goldBonus, chestBonus,
+  };
 };

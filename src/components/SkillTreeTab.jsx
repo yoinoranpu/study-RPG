@@ -1,14 +1,28 @@
 import { useState, useRef } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { expToLevel } from "../systems/timer";
-import { SKILLS, SKILL_LIST, SKILL_POSITIONS } from "../data/skills";
+import { SKILLS, SKILL_LIST } from "../data/skills";
 
 const RESPEC_COST = 2000;
-const NR = 22;
+const NR = 18; // ノード半径
+const CENTER = { x:500, y:500 }; // SVGの中心
+const R_STEP = 70; // 半径のステップ
 
-const EDGES = SKILL_LIST.flatMap(sk =>
-  sk.req.map(r => ({ from:r, to:sk.id }))
-);
+// 角度と半径からXY座標を計算
+const toXY = (angle, r) => {
+  const rad = (angle * Math.PI) / 180;
+  return {
+    x: CENTER.x + Math.cos(rad) * r * R_STEP,
+    y: CENTER.y + Math.sin(rad) * r * R_STEP,
+  };
+};
+
+// 各スキルのXY座標を計算
+const getPos = (sk) => {
+  if (!sk.pos) return CENTER;
+  if (sk.pos.x !== undefined) return { x: CENTER.x + sk.pos.x, y: CENTER.y + sk.pos.y };
+  return toXY(sk.pos.angle, sk.pos.r);
+};
 
 const TYPE_COLOR = {
   stat:    "#86efac",
@@ -17,15 +31,20 @@ const TYPE_COLOR = {
 };
 
 const TYPE_LABEL = {
-  stat:    "ステータス強化",
+  stat:    "ステータス",
   passive: "パッシブ",
   active:  "アクティブ",
 };
 
+// エッジ（接続線）を生成
+const EDGES = SKILL_LIST.flatMap(sk =>
+  (sk.req || []).map(r => ({ from: r, to: sk.id }))
+);
+
 export default function SkillTreeTab() {
   const { totalExp, gold, learnedSkills, spUsed, updatePlayer } = usePlayerStore();
-  const [offset, setOffset] = useState({ x:-50, y:-50 });
-  const [scale, setScale]   = useState(0.75);
+  const [offset, setOffset] = useState({ x:0, y:0 });
+  const [scale, setScale]   = useState(0.55);
   const [dragging, setDragging] = useState(false);
   const [dragStart, setDragStart] = useState(null);
   const [sel, setSel] = useState(null);
@@ -38,15 +57,15 @@ export default function SkillTreeTab() {
 
   function canLearn(sk) {
     if (learned.has(sk.id)) return false;
-    if (spFree < (sk.sp || 1)) return false;
-    return sk.req.every(r => learned.has(r));
+    if (spFree < 1) return false;
+    return (sk.req || []).every(r => learned.has(r));
   }
 
   function learnSkill(sk) {
     if (!canLearn(sk)) return;
     updatePlayer({
       learnedSkills: [...(learnedSkills || ["start"]), sk.id],
-      spUsed: (spUsed || 0) + (sk.sp || 1),
+      spUsed: (spUsed || 0) + 1,
     });
   }
 
@@ -71,10 +90,20 @@ export default function SkillTreeTab() {
     setDragStart(c);
   }
   function onPU() { setDragging(false); }
-  function onWheel(e) { e.preventDefault(); setScale(s => Math.max(0.3, Math.min(2.5, s - e.deltaY*0.001))); }
-  function onNodeClick(sk) { if (isDragged.current) return; setSel(t => t===sk.id?null:sk.id); }
+  function onWheel(e) {
+    e.preventDefault();
+    setScale(s => Math.max(0.25, Math.min(2.0, s - e.deltaY * 0.001)));
+  }
+  function onNodeClick(sk) {
+    if (isDragged.current) return;
+    setSel(t => t === sk.id ? null : sk.id);
+  }
 
   const selSkill = sel ? SKILLS[sel] : null;
+
+  // スキルのXY座標をキャッシュ
+  const posCache = {};
+  SKILL_LIST.forEach(sk => { posCache[sk.id] = getPos(sk); });
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
@@ -82,7 +111,7 @@ export default function SkillTreeTab() {
       <div style={{ padding:"8px 12px", background:"#080810", borderBottom:"1px solid #1e1e2e", flexShrink:0, display:"flex", alignItems:"center", gap:10 }}>
         <span style={{ fontSize:9, color:"#a78bfa", letterSpacing:2 }}>SKILL TREE</span>
         <span style={{ fontSize:11, color:"#fbbf24" }}>SP <b>{spFree}</b>/{spEarned}</span>
-        <div style={{ display:"flex", gap:8, marginLeft:4 }}>
+        <div style={{ display:"flex", gap:6, marginLeft:4 }}>
           {Object.entries(TYPE_COLOR).map(([type,color])=>(
             <span key={type} style={{ fontSize:7, color, border:`1px solid ${color}44`, padding:"1px 5px", borderRadius:2 }}>
               {TYPE_LABEL[type]}
@@ -108,60 +137,71 @@ export default function SkillTreeTab() {
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
           <g transform={`translate(${offset.x},${offset.y}) scale(${scale})`}>
+
             {/* エッジ */}
             {EDGES.map(({ from, to }) => {
-              const a = SKILL_POSITIONS[from], b = SKILL_POSITIONS[to];
+              const a = posCache[from], b = posCache[to];
               if (!a || !b) return null;
               const active = learned.has(from) && learned.has(to);
               const partial = learned.has(from) && !learned.has(to);
               const toSk = SKILLS[to];
               const color = TYPE_COLOR[toSk?.type] || "#888";
               return (
-                <line key={`${from}-${to}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                <line key={`${from}-${to}`}
+                  x1={a.x} y1={a.y} x2={b.x} y2={b.y}
                   stroke={active ? color : partial ? color+"55" : "#1a1a2a"}
-                  strokeWidth={active ? 2.5 : 1.5}
+                  strokeWidth={active ? 2 : 1}
                   strokeDasharray={partial ? "5 4" : "none"}
-                  style={{ filter:active?`drop-shadow(0 0 3px ${color}66)`:"none" }} />
+                  style={{ filter:active?`drop-shadow(0 0 3px ${color}66)`:"none" }}
+                />
               );
             })}
 
             {/* ノード */}
             {SKILL_LIST.map(sk => {
-              const pos = SKILL_POSITIONS[sk.id];
+              const pos = posCache[sk.id];
               if (!pos) return null;
               const isL = learned.has(sk.id);
               const learnable = canLearn(sk);
               const isSel = sel === sk.id;
               const locked = !isL && !learnable;
-              const color = TYPE_COLOR[sk.type] || "#888";
-              const nc = isL ? color : learnable ? color+"99" : "#2a2a3a";
+              const color = sk.color || TYPE_COLOR[sk.type] || "#888";
 
               return (
                 <g key={sk.id} onClick={() => onNodeClick(sk)} style={{ cursor:"pointer" }}>
-                  {isSel && <circle cx={pos.x} cy={pos.y} r={NR+6} fill="none" stroke={color} strokeWidth={1.5} style={{ filter:`drop-shadow(0 0 8px ${color})` }} />}
+                  {isSel && (
+                    <circle cx={pos.x} cy={pos.y} r={NR+6}
+                      fill="none" stroke={color} strokeWidth={1.5}
+                      style={{ filter:`drop-shadow(0 0 8px ${color})` }} />
+                  )}
                   <circle cx={pos.x} cy={pos.y} r={NR}
-                    fill={isL?"#0d0d18":locked?"#050508":"#09090f"}
-                    stroke={nc} strokeWidth={isL?2:1.5}
-                    style={{ filter:isL?`drop-shadow(0 0 6px ${color}88)`:isSel?`drop-shadow(0 0 6px ${color})`:"" }} />
-                  <text x={pos.x} y={pos.y-4} textAnchor="middle" dominantBaseline="middle"
-                    fontSize={locked?12:14} opacity={locked?0.2:1}
+                    fill={isL ? `${color}22` : locked ? "#050508" : "#09090f"}
+                    stroke={isL ? color : learnable ? color+"88" : "#2a2a3a"}
+                    strokeWidth={isL ? 2 : 1.5}
+                    style={{ filter:isL ? `drop-shadow(0 0 5px ${color}88)` : "" }}
+                  />
+                  <text x={pos.x} y={pos.y-2} textAnchor="middle" dominantBaseline="middle"
+                    fontSize={locked ? 10 : 12} opacity={locked ? 0.2 : 1}
                     style={{ pointerEvents:"none", userSelect:"none" }}>
-                    {locked?"🔒":sk.icon}
+                    {locked ? "🔒" : sk.icon}
                   </text>
-                  <text x={pos.x} y={pos.y+13} textAnchor="middle" fontSize={6}
-                    fill={isL?color:locked?"#2a2a2a":color+"99"}
+                  <text x={pos.x} y={pos.y+11} textAnchor="middle" fontSize={5.5}
+                    fill={isL ? color : locked ? "#2a2a2a" : color+"88"}
                     fontFamily="monospace"
                     style={{ pointerEvents:"none", userSelect:"none" }}>
-                    {sk.name}
+                    {sk.name.slice(0, 6)}
                   </text>
                   {isL && sk.id !== "start" && (
-                    <text x={pos.x+NR-3} y={pos.y-NR+8} textAnchor="middle" fontSize={9} fill="#4ade80" style={{ pointerEvents:"none" }}>✓</text>
+                    <text x={pos.x+NR-4} y={pos.y-NR+6} textAnchor="middle"
+                      fontSize={9} fill="#4ade80"
+                      style={{ pointerEvents:"none" }}>✓</text>
                   )}
                 </g>
               );
             })}
           </g>
         </svg>
+
         <div style={{ position:"absolute", bottom:8, left:0, right:0, textAlign:"center", fontSize:8, color:"#1a1a2a", pointerEvents:"none", letterSpacing:2 }}>
           ドラッグ移動・ホイールズーム
         </div>
@@ -174,7 +214,7 @@ export default function SkillTreeTab() {
             <span style={{ fontSize:20 }}>{selSkill.icon}</span>
             <div style={{ flex:1 }}>
               <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                <span style={{ fontSize:12, fontWeight:700, color:learned.has(selSkill.id)?TYPE_COLOR[selSkill.type]:"#e8e0d0" }}>
+                <span style={{ fontSize:12, fontWeight:700, color:learned.has(selSkill.id)?selSkill.color||"#e8e0d0":"#e8e0d0" }}>
                   {selSkill.name}
                 </span>
                 <span style={{ fontSize:7, color:TYPE_COLOR[selSkill.type], border:`1px solid ${TYPE_COLOR[selSkill.type]}44`, padding:"1px 4px", borderRadius:2 }}>
@@ -187,18 +227,19 @@ export default function SkillTreeTab() {
               <div style={{ fontSize:9, color:"#4a4a6a", marginTop:2 }}>{selSkill.desc}</div>
             </div>
             <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:10, color:"#fbbf24" }}>SP {selSkill.sp}</div>
+              <div style={{ fontSize:10, color:"#fbbf24" }}>SP 1</div>
               {selSkill.type==="passive" && <div style={{ fontSize:7, color:"#a78bfa", marginTop:2 }}>キャラタブでセット</div>}
-              {selSkill.type==="active"  && <div style={{ fontSize:7, color:"#f87171", marginTop:2 }}>将来実装</div>}
+              {selSkill.type==="active"  && <div style={{ fontSize:7, color:"#f87171", marginTop:2 }}>キャラタブでセット</div>}
             </div>
           </div>
 
           {!learned.has(selSkill.id) && (
-            <button onClick={() => learnSkill(selSkill)} disabled={!canLearn(selSkill)}
-              style={{ width:"100%", padding:"7px 0", background:canLearn(selSkill)?"#0a1a0a":"#0a0a0a", border:`1px solid ${canLearn(selSkill)?TYPE_COLOR[selSkill.type]:"#2a2a2a"}`, borderRadius:4, cursor:canLearn(selSkill)?"pointer":"default", color:canLearn(selSkill)?TYPE_COLOR[selSkill.type]:"#3a3a3a", fontSize:10, letterSpacing:2, fontFamily:"monospace" }}>
-              {spFree < (selSkill.sp||1) ? `SP不足（必要${selSkill.sp}）`
-                : !selSkill.req.every(r=>learned.has(r)) ? "前提未取得"
-                : `SP${selSkill.sp}消費して習得`}
+            <button onClick={() => learnSkill(selSkill)}
+              disabled={!canLearn(selSkill)}
+              style={{ width:"100%", padding:"7px 0", background:canLearn(selSkill)?"#0a1a0a":"#0a0a0a", border:`1px solid ${canLearn(selSkill)?selSkill.color||TYPE_COLOR[selSkill.type]:"#2a2a2a"}`, borderRadius:4, cursor:canLearn(selSkill)?"pointer":"default", color:canLearn(selSkill)?selSkill.color||TYPE_COLOR[selSkill.type]:"#3a3a3a", fontSize:10, letterSpacing:2, fontFamily:"monospace" }}>
+              {spFree < 1 ? "SP不足"
+                : !(selSkill.req||[]).every(r=>learned.has(r)) ? "前提未取得"
+                : "SP1消費して習得"}
             </button>
           )}
         </div>
