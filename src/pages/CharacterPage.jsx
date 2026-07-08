@@ -20,7 +20,7 @@ export default function CharacterPage() {
   const [tab, setTab] = useState("equip");
   const [sel, setSel] = useState(null);
   const player = usePlayerStore();
-  const { updatePlayer, itemBox, learnedSkills, activeSkillSlots, passiveSkillSlots } = usePlayerStore();
+  const { updatePlayer, itemBox, learnedSkills, activeSkillSlots, passiveSkillSlots, skillMode } = usePlayerStore();
   const stats = calcPlayerStats(player);
   const lv = expToLevel(player.totalExp);
   const used = expUsedUpTo(lv);
@@ -310,8 +310,18 @@ export default function CharacterPage() {
 
           {/* アクティブスキル */}
           <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:12, marginBottom:10 }}>
-            <div style={{ fontSize:8, color:"#f87171", letterSpacing:2, marginBottom:8 }}>
-              アクティブスキル（最大4）<span style={{ color:"#3a3a3a", marginLeft:6 }}>将来実装</span>
+            <div style={{ fontSize:8, color:"#f87171", letterSpacing:2, marginBottom:8, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <span>アクティブスキル（最大4）</span>
+              <div style={{ display:"flex", gap:4 }}>
+                <button onClick={() => updatePlayer({ skillMode:"order" })}
+                  style={{ padding:"3px 8px", background:(skillMode||"order")==="order"?"#1a0a0a":"transparent", border:`1px solid ${(skillMode||"order")==="order"?"#f87171":"#2a2a3a"}`, borderRadius:3, cursor:"pointer", color:(skillMode||"order")==="order"?"#f87171":"#4a4a6a", fontSize:8, fontFamily:"monospace" }}>
+                  🔢 順番
+                </button>
+                <button onClick={() => updatePlayer({ skillMode:"random" })}
+                  style={{ padding:"3px 8px", background:skillMode==="random"?"#1a0a0a":"transparent", border:`1px solid ${skillMode==="random"?"#f87171":"#2a2a3a"}`, borderRadius:3, cursor:"pointer", color:skillMode==="random"?"#f87171":"#4a4a6a", fontSize:8, fontFamily:"monospace" }}>
+                  🎲 ランダム
+                </button>
+              </div>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:8 }}>
               {(activeSkillSlots||[null,null,null,null]).map((id,i)=>{

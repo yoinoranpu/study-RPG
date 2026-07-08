@@ -14,10 +14,12 @@ import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVE
 import { calcPassiveBonus } from "../data/skills";
 import { openChest } from "../data/chest_table";
 import { RARITY_COLOR } from "../data/items";
+import SummonSprite from "../components/SummonSprite";
 
 const EVENT_INTERVAL = 6 * 60 * 1000;
 const BASE_MAX_EVENTS = 4;
 const DEBUG = import.meta.env.DEV;
+
 
 // ─── 宝箱開封コンポーネント ───
 function ChestOpenSection({ chests, onAllOpened }) {
@@ -128,6 +130,7 @@ export default function DungeonPage({ onBack }) {
   const [bossFloor, setBossFloor] = useState(false);
   const [bossMonster, setBossMonster] = useState(null);
   const [chestsAllOpened, setChestsAllOpened] = useState(false);
+  const [activeSummons, setActiveSummons] = useState([]);
  
   
 
@@ -436,6 +439,7 @@ export default function DungeonPage({ onBack }) {
   return (
     <div style={{ height:"100vh", background:"#000", fontFamily:"monospace", display:"flex", flexDirection:"column", position:"relative" }}>
       <DungeonCanvas isRunning={isRunning} isBreak={phase==="break"} isPaused={monsterArrived} />
+      <SummonSprite summons={activeSummons} />
       <PlayerSprite hp={hp} maxHp={maxHp} isRunning={isRunning} isBreak={phase==="break"} isDefeated={playerDefeated} />
       <MonsterSprite
         monster={currentMonster}
@@ -457,6 +461,7 @@ export default function DungeonPage({ onBack }) {
         isActive={battleEffectActive}
         turns={battleTurns}
         onTurnLog={(text, color) => addLog(text, color)}
+        onSummonUpdate={(snapshot) => setActiveSummons(snapshot)}
         onPlayerHpUpdate={(newHp) => { hpRef.current = newHp; setHp(newHp); }}
         onMonsterHpUpdate={(idx, newHp) => { setCurrentMonster(m => m ? { ...m, hp: newHp } : m); }}
         onComplete={() => {
@@ -525,6 +530,7 @@ export default function DungeonPage({ onBack }) {
           setBattleEffectActive(false);
           pendingBattleRef.current = null;
           setTimeout(() => setHp(currentHp), 100);
+          setActiveSummons([]);
           setTimeout(() => { setMonsterVisible(false); setCurrentMonster(null); setMonsterArrived(false); setBattlePopup(null); }, 3000);
         }}
         monsterX={0.35} monsterY={0.72}

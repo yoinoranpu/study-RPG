@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { savePlayerData } from "../firebase/saveLoad";
 
-// 保存をまとめて遅延実行（連続更新でも1回だけ保存）
 let saveTimer = null;
 const debounceSave = (uid, data) => {
   if (!uid) return;
@@ -26,6 +25,7 @@ const debounceSave = (uid, data) => {
       spUsed: data.spUsed,
       activeSkillSlots: data.activeSkillSlots,
       passiveSkillSlots: data.passiveSkillSlots,
+      skillMode: data.skillMode || "order",
       battleStyle: data.battleStyle,
       timerWork: data.timerWork,
       timerBreak: data.timerBreak,
@@ -41,12 +41,10 @@ const debounceSave = (uid, data) => {
 };
 
 const usePlayerStore = create((set, get) => ({
-  // プレイヤー基本情報
   uid: null,
   isGuest: true,
   isLoggedIn: false,
 
-  // ゲームデータ
   totalExp: 0,
   gold: 500,
   floor: 1,
@@ -55,35 +53,32 @@ const usePlayerStore = create((set, get) => ({
   hp: 100,
   maxHp: 100,
 
-  // 装備
   equippedWeapon: null,
   equippedArmor: null,
   equippedAcc1: null,
   equippedAcc2: null,
   specialSlots: [null, null, null],
- 
-  // アイテム・素材
+
   itemBox: [],
   materials: {},
 
-  // スキル
   learnedSkills: ["start"],
   spUsed: 0,
   activeSkillSlots: [null, null, null, null],
   passiveSkillSlots: [null, null, null, null, null, null],
+  skillMode: "order",
   battleStyle: "balanced",
 
-  // タイマー設定
   timerWork: 25,
   timerBreak: 5,
   timerSets: 4,
 
-  // 学習記録
   studyMinutesTotal: 0,
   studyMinutesToday: 0,
   studyMinutesWeek: 0,
 
-  // アクション
+  monsterBook: {},
+
   setUid: (uid) => set({ uid }),
   setIsGuest: (isGuest) => set({ isGuest }),
   setIsLoggedIn: (isLoggedIn) => set({ isLoggedIn }),
@@ -91,7 +86,6 @@ const usePlayerStore = create((set, get) => ({
   updatePlayer: (data) => {
     set((state) => {
       const newState = { ...state, ...data };
-      // 自動保存
       debounceSave(newState.uid, newState);
       return newState;
     });
@@ -109,6 +103,7 @@ const usePlayerStore = create((set, get) => ({
       learnedSkills: ["start"], spUsed: 0,
       activeSkillSlots: [null, null, null, null],
       passiveSkillSlots: [null, null, null, null, null, null],
+      skillMode: "order",
       battleStyle: "balanced",
       studyMinutesTotal: 0, studyMinutesToday: 0, studyMinutesWeek: 0,
       monsterBook: {},
@@ -117,8 +112,6 @@ const usePlayerStore = create((set, get) => ({
     set(resetData);
     debounceSave(uid, resetData);
   },
-  // 図鑑（倒したモンスターの記録）
-monsterBook: {}, // { monsterId: { count: 0, name: "", tribe: "", material: "" } }
 }));
 
 export default usePlayerStore;

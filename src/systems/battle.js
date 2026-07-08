@@ -161,9 +161,11 @@ export const simulateBattle = (player, monsters, options = {}) => {
               hp:tmpl.hp, maxHp:tmpl.hp,
               atkMul:tmpl.atkMul, statRef:tmpl.statRef,
               position:tmpl.position, speed:tmpl.speed,
+              summonType:a.summonType,
             });
           }
-          pushTurn({ actor:"player", target:-1, type:"summon", summonType:a.summonType, logText:`${tmpl.icon} ${tmpl.name}を召喚！`, logColor:tmpl.color });
+          const snapshot = allies.filter(al=>al.hp>0).map(al=>({ summonType:al.summonType, position:al.position, hp:al.hp, maxHp:al.maxHp }));
+          pushTurn({ actor:"player", target:-1, type:"summon", summonType:a.summonType, summonSnapshot:snapshot, logText:`${tmpl.icon} ${tmpl.name}を召喚！`, logColor:tmpl.color });
         }
         return;
       }
@@ -259,7 +261,10 @@ export const simulateBattle = (player, monsters, options = {}) => {
       let dmg = calcDamage(atkS, 0);
       victim.hp = Math.max(0, victim.hp - dmg);
       pushTurn({ actor:"monster", source:enemy.idx, type:"attackAlly", allyUid:victim.uid, dmg, logText:`${enemy.name}の${action.label}！${victim.name}に${dmg}ダメージ`, logColor:"#f87171" });
-      if (victim.hp <= 0) pushTurn({ actor:"monster", source:enemy.idx, type:"allyDown", allyUid:victim.uid, logText:`💥 ${victim.name}が倒れた…`, logColor:"#666" });
+      if (victim.hp <= 0) {
+        const snapshot = allies.filter(al=>al.hp>0).map(al=>({ summonType:al.summonType, position:al.position, hp:al.hp, maxHp:al.maxHp }));
+        pushTurn({ actor:"monster", source:enemy.idx, type:"allyDown", allyUid:victim.uid, summonSnapshot:snapshot, logText:`💥 ${victim.name}が倒れた…`, logColor:"#666" });
+      }
       return;
     }
 
