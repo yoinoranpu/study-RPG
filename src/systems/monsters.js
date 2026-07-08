@@ -72,6 +72,7 @@ export const generateBoss = (bossData) => {
     mag:  Math.floor(base.mag  * bossData.atkMul),
     mdef: Math.floor(base.mdef * bossData.defMul),
     isBoss: true,
+    speed: 60,  // ← 追加
     rarity: { id:"legend", label:"BOSS", color:"#ef4444", mul:1 },
     dangerStar: 10,
     expGain:  Math.floor(base.expGain  * bossData.hpMul * 2),
@@ -115,6 +116,7 @@ export const generateMonster = (base, floor = 1) => {
 
   return {
     ...base, hp, maxHp: hp, atk, def, mag, mdef, eva, crit,
+    speed: 50 + eva + base.star * 5,  // ← 追加
     rarity, titles, displayName, dangerStar,
     expGain:  Math.floor(10 * base.expMul * rarity.mul * fm),
     goldGain: Math.floor(20 * base.gMul  * rarity.mul * fm),

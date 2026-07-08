@@ -1,23 +1,24 @@
 import { useEffect, useRef } from "react";
 
-const TURN_DURATION = 1500; // 1ターン1.5秒
+const TURN_DURATION = 1500;
 
-export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUpdate, onMonsterHpUpdate, monsterX, monsterY, playerX, playerY }) {
+export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUpdate, onMonsterHpUpdate, onTurnLog, monsterX, monsterY, playerX, playerY }) {
   const canvasRef = useRef(null);
   const frameRef  = useRef(null);
   const stateRef  = useRef({
     turnIndex:0, turnTime:0, effects:[],
     playerHitFlash:0, monsterHitFlash:0,
     playerShake:0, monsterShake:0,
-    done:false
+    done:false, lastLoggedIndex:-1,
   });
 
   useEffect(() => {
-    if (!isActive) {
-      stateRef.current = { turnIndex:0, turnTime:0, effects:[], playerHitFlash:0, monsterHitFlash:0, playerShake:0, monsterShake:0, done:false };
-      return;
-    }
-    stateRef.current = { turnIndex:0, turnTime:0, effects:[], playerHitFlash:0, monsterHitFlash:0, playerShake:0, monsterShake:0, done:false };
+    stateRef.current = {
+      turnIndex:0, turnTime:0, effects:[],
+      playerHitFlash:0, monsterHitFlash:0,
+      playerShake:0, monsterShake:0,
+      done:false, lastLoggedIndex:-1,
+    };
   }, [isActive, turns]);
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
       ctx.clearRect(0, 0, W, H);
 
       const s = stateRef.current;
-     if (!isActive || !turns || turns.length === 0 || s.done) {
+      if (!isActive || !turns || turns.length === 0 || s.done) {
         if (isActive && turns && turns.length === 0 && !s.done) {
           s.done = true;
           setTimeout(() => onComplete && onComplete(), 0);
@@ -61,8 +62,15 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
 
       const turn = turns[Math.min(s.turnIndex, turns.length - 1)];
 
-      // ターン開始時エフェクト生成
-      if (s.turnTime < 30 && turn) {
+      // ターン開始時：ログ＆エフェクト生成（1ターン1回）
+      if (s.turnTime < 30 && turn && s.lastLoggedIndex !== s.turnIndex) {
+        s.lastLoggedIndex = s.turnIndex;
+
+        // ログ出力
+        if (turn.logText && onTurnLog) {
+          onTurnLog(turn.logText, turn.logColor || "#a0a0a0");
+        }
+
         const px = playerX * W, py = playerY * H;
         const mx = monsterX * W, my = monsterY * H;
 
@@ -70,11 +78,9 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
           const tx = turn.actor === "player" ? mx : px;
           const ty = turn.actor === "player" ? my : py;
 
-          // HP更新
           if (turn.actor === "player" && onMonsterHpUpdate) onMonsterHpUpdate(turn.target, turn.hpLeft);
           if (turn.actor === "monster" && onPlayerHpUpdate) onPlayerHpUpdate(turn.hpLeft);
 
-          // 斬撃エフェクト（多め）
           const slashCount = turn.isCrit ? 8 : 4;
           for (let i = 0; i < slashCount; i++) {
             s.effects.push({
@@ -90,7 +96,6 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
             });
           }
 
-          // 衝撃波
           s.effects.push({
             x:tx, y:ty, vx:0, vy:0,
             life:300, maxLife:300, alpha:1,
@@ -99,7 +104,6 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
             type:"shockwave",
           });
 
-          // ダメージ数字
           s.effects.push({
             x: tx + (turn.actor === "player" ? -30 : 30),
             y: ty - 60,
@@ -112,7 +116,19 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
             type:"number",
           });
 
-          // ヒットフラッシュ・シェイク
+          // スキル名表示
+          if (turn.label) {
+            s.effects.push({
+              x: turn.actor === "player" ? px : mx,
+              y: (turn.actor === "player" ? py : my) - 100,
+              vx:0, vy:-0.8,
+              life:1000, maxLife:1000, alpha:1,
+              text: turn.label,
+              color: turn.actor==="player" ? "#60a5fa" : "#f87171",
+              type:"skillname",
+            });
+          }
+
           if (turn.actor === "player") {
             s.monsterHitFlash = 200;
             s.monsterShake = 300;
@@ -127,7 +143,6 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
           s.effects.push({ x:tx, y:ty-40, vx:0, vy:-1, life:700, maxLife:700, alpha:1, text:"MISS", color:"#34d399", type:"number" });
 
         } else if (turn.type === "defeat") {
-          // 撃破エフェクト（パーティクル）
           for (let i = 0; i < 20; i++) {
             const angle = (i/20)*Math.PI*2;
             s.effects.push({
@@ -140,6 +155,14 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
             });
           }
           s.effects.push({ x:mx, y:my-80, vx:0, vy:-0.5, life:1000, maxLife:1000, alpha:1, text:"DEFEAT!", color:"#fbbf24", type:"number", big:true });
+
+        } else if (turn.type === "buff") {
+          s.effects.push({
+            x:px, y:py-90, vx:0, vy:-0.8,
+            life:1000, maxLife:1000, alpha:1,
+            text: turn.label || "BUFF",
+            color:"#60a5fa", type:"skillname",
+          });
         }
       }
 
@@ -198,11 +221,19 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
             ctx.fillStyle = "#fbbf24";
             ctx.fillText("CRITICAL!", e.x, e.y - fontSize);
           }
+
+        } else if (e.type === "skillname") {
+          ctx.font = `bold ${H*0.026}px monospace`;
+          ctx.textAlign = "center";
+          ctx.fillStyle = e.color;
+          ctx.shadowColor = e.color;
+          ctx.shadowBlur = 10;
+          ctx.fillText(e.text, e.x, e.y);
         }
         ctx.restore();
       });
 
-      // プレイヤーヒットフラッシュ
+      // ヒットフラッシュ
       if (s.playerHitFlash > 0) {
         const shakeX = s.playerShake > 0 ? (Math.random()-0.5)*8 : 0;
         const a = s.playerHitFlash / 200;
@@ -212,8 +243,6 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, W, H);
       }
-
-      // モンスターヒットフラッシュ
       if (s.monsterHitFlash > 0) {
         const shakeX = s.monsterShake > 0 ? (Math.random()-0.5)*8 : 0;
         const a = s.monsterHitFlash / 200;
@@ -224,18 +253,12 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
         ctx.fillRect(0, 0, W, H);
       }
 
-      // 画面フラッシュ（ダメージ時）
-      if (s.playerHitFlash > 150) {
-        ctx.fillStyle = `rgba(248,113,113,0.15)`;
-        ctx.fillRect(0, 0, W, H);
-      }
-
       frameRef.current = requestAnimationFrame(loop);
     };
 
     frameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [isActive, turns, monsterX, monsterY, playerX, playerY, onComplete, onPlayerHpUpdate, onMonsterHpUpdate]);
+  }, [isActive, turns, monsterX, monsterY, playerX, playerY, onComplete, onPlayerHpUpdate, onMonsterHpUpdate, onTurnLog]);
 
   return (
     <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%", zIndex:4, pointerEvents:"none" }} />

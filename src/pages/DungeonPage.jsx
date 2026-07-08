@@ -192,7 +192,14 @@ export default function DungeonPage({ onBack }) {
       setMonsterVisible(true);
       setMonsterArrived(false);
       const baseStats = calcPlayerStats(player);
-      const ps = { ...baseStats, hp:Math.max(1, hpRef.current), maxHp:baseStats.maxHp };
+      const ps = {
+        ...baseStats,
+        hp:Math.max(1, hpRef.current),
+        maxHp:baseStats.maxHp,
+        activeSkillSlots: player.activeSkillSlots || [],
+        skillMode: player.skillMode || "order",
+        learnedSkills: player.learnedSkills || [],
+      };
       const result = simulateBattle(ps, [boss]);
       pendingBattleRef.current = { result, monsters:[boss], isBoss:true };
       addLog(`🔥 ${boss.displayName}が現れた！`, "#ef4444");
@@ -233,12 +240,21 @@ export default function DungeonPage({ onBack }) {
     setEventCount(eventCountRef.current);
 
     if (evType === "battle") {
+      console.log("activeSkillSlots:", player.activeSkillSlots);
+      console.log("skillMode:", player.skillMode);
       const monsters = pickMonsters(floorRef.current);
       addLog(`⚔ ${monsters.map(m=>m.displayName).join("と")}が現れた！`, "#f87171");
       setCurrentEvent(null); setEventVisible(false);
       setCurrentMonster(monsters[0]); setMonsterVisible(true); setMonsterArrived(false);
       const baseStats = calcPlayerStats(player);
-      const ps = { ...baseStats, hp:Math.max(1, hpRef.current), maxHp:baseStats.maxHp };
+      const ps = {
+        ...baseStats,
+        hp:Math.max(1, hpRef.current),
+        maxHp:baseStats.maxHp,
+        activeSkillSlots: player.activeSkillSlots || [],
+        skillMode: player.skillMode || "order",
+        learnedSkills: player.learnedSkills || [],
+      };
       const result = simulateBattle(ps, monsters);
       pendingBattleRef.current = { result, monsters };
 
@@ -440,6 +456,7 @@ export default function DungeonPage({ onBack }) {
       <BattleEffect
         isActive={battleEffectActive}
         turns={battleTurns}
+        onTurnLog={(text, color) => addLog(text, color)}
         onPlayerHpUpdate={(newHp) => { hpRef.current = newHp; setHp(newHp); }}
         onMonsterHpUpdate={(idx, newHp) => { setCurrentMonster(m => m ? { ...m, hp: newHp } : m); }}
         onComplete={() => {
@@ -472,7 +489,7 @@ export default function DungeonPage({ onBack }) {
             setPlayerDefeated(true);
             setTimeout(() => setPlayerDefeated(false), 6000);
           }
-          result.logs.slice(-3).forEach(l => addLog(l.text, l.color));
+          result.logs.forEach(l => addLog(l.text, l.color));
           if (result.won) {
             if (pending.isBoss) {
               const bossGold = Math.floor(500 * (floor / 5));
