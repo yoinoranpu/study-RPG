@@ -130,10 +130,48 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
           // 召喚の光
           s.effects.push({ x:W*0.65, y:py, vx:0, vy:0, life:500, maxLife:500, alpha:1, radius:0, maxRadius:60, color:turn.logColor||"#c084fc", type:"shockwave" });
 
-        } else if (turn.type === "allyDown") {
-          if (onSummonUpdate && turn.summonSnapshot) {
-            onSummonUpdate(turn.summonSnapshot);
+        } else if (turn.type === "statusDmg") {
+          // HP更新
+          if (turn.actor === "player" && onMonsterHpUpdate && turn.target >= 0) {
+            onMonsterHpUpdate(turn.target, turn.hpLeft);
           }
+          if (turn.actor === "monster" && onPlayerHpUpdate && turn.hpLeft !== undefined) {
+            onPlayerHpUpdate(turn.hpLeft);
+          }
+          // ダメージ数字
+          const isEnemy = turn.actor === "player";
+          const tx = isEnemy ? mx : px;
+          const ty = isEnemy ? my : py;
+          const STATUS_COLOR = { poison:"#a78bfa", burn:"#ef4444", paralyze:"#fbbf24", freeze:"#38bdf8" };
+          const STATUS_ICON = { poison:"☠", burn:"🔥", paralyze:"⚡", freeze:"❄" };
+          s.effects.push({
+            x:tx, y:ty-70, vx:0, vy:-1.2,
+            life:800, maxLife:800, alpha:1,
+            text:`${STATUS_ICON[turn.statusType]||""}${turn.dmg}`,
+            color:STATUS_COLOR[turn.statusType]||"#a0a0a0",
+            type:"number",
+          });
+
+        } else if (turn.type === "status") {
+          const STATUS_COLOR = { poison:"#a78bfa", burn:"#ef4444", paralyze:"#fbbf24", freeze:"#38bdf8", stun:"#e8e0d0" };
+          const STATUS_ICON = { poison:"☠", burn:"🔥", paralyze:"⚡", freeze:"❄", stun:"💫" };
+          const tx = turn.target >= 0 ? mx : px;
+          const ty = turn.target >= 0 ? my : py;
+          s.effects.push({
+            x:tx, y:ty-90, vx:0, vy:-0.6,
+            life:1000, maxLife:1000, alpha:1,
+            text:STATUS_ICON[turn.statusType]||"?",
+            color:STATUS_COLOR[turn.statusType]||"#a0a0a0",
+            type:"skillname",
+          });
+          // 状態異常の輪
+          s.effects.push({
+            x:tx, y:ty-40, vx:0, vy:0,
+            life:600, maxLife:600, alpha:1,
+            radius:0, maxRadius:45,
+            color:STATUS_COLOR[turn.statusType]||"#a0a0a0",
+            type:"shockwave",
+          });
         }
       }
 
