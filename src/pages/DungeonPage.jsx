@@ -122,6 +122,7 @@ export default function DungeonPage({ onBack }) {
   const eventCountRef = useRef(0);
   const pendingBattleRef = useRef(null);
   const passiveBonusRef  = useRef({});
+  const sessionScaleRef = useRef({ atk: 0, mag: 0 });
 
   useEffect(() => {
     passiveBonusRef.current = calcPassiveBonus(player.passiveSkillSlots || []);
@@ -181,7 +182,7 @@ export default function DungeonPage({ onBack }) {
       setCurrentMonsters([boss]);
       setMonsterVisible(true);
       setMonsterArrived(false);
-      const result = simulateBattle(buildPlayerStats(), [boss]);
+      const result = simulateBattle(buildPlayerStats(), [boss], { sessionScale: sessionScaleRef.current });
       pendingBattleRef.current = { result, monsters:[boss], isBoss:true };
       addLog(`🔥 ${boss.displayName}が現れた！`, "#ef4444");
     }, 3000);
@@ -225,7 +226,7 @@ export default function DungeonPage({ onBack }) {
       addLog(`⚔ ${monsters.map(m=>m.displayName).join("と")}が現れた！`, "#f87171");
       setCurrentEvent(null); setEventVisible(false);
       setCurrentMonsters(monsters); setMonsterVisible(true); setMonsterArrived(false);
-      const result = simulateBattle(buildPlayerStats(), monsters);
+      const result = simulateBattle(buildPlayerStats(), monsters, { sessionScale: sessionScaleRef.current });
       pendingBattleRef.current = { result, monsters };
 
     } else if (evType === "chest") {
@@ -424,6 +425,7 @@ export default function DungeonPage({ onBack }) {
           const pending = pendingBattleRef.current;
           if (!pending) return;
           const { result, monsters } = pending;
+          if (result.sessionScaleAfter) sessionScaleRef.current = result.sessionScaleAfter;
           const baseStats = calcPlayerStats(player);
           const maxHpVal = baseStats.maxHp;
           let currentHp = Math.max(1, result.playerHpAfter);
