@@ -182,10 +182,10 @@ function drawDragon(ctx, x, y, size, color, frame) {
 
 const DRAW_FUNCS = { slime:drawSlime, beast:drawBeast, goblin:drawGoblin, undead:drawUndead, demon:drawDemon, plant:drawPlant, dragon:drawDragon };
 
-export default function MonsterSprite({ monster, isVisible, onReach, floorY }) {
+export default function MonsterSprite({ monsters, isVisible, onReach, floorY }) {
   const canvasRef = useRef(null);
   const frameRef  = useRef(null);
-  const stateRef  = useRef({ x:null, targetX:null, animFrame:0, arrived:false });
+  const stateRef  = useRef({ positions:[], animFrame:0, arrived:false });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -201,87 +201,110 @@ export default function MonsterSprite({ monster, isVisible, onReach, floorY }) {
       if (canvas.width !== W || canvas.height !== H) { canvas.width=W; canvas.height=H; }
       ctx.clearRect(0, 0, W, H);
 
-      if (!monster || !isVisible) { frameRef.current = requestAnimationFrame(loop); return; }
+      const list = monsters || [];
+      if (list.length === 0 || !isVisible) { frameRef.current = requestAnimationFrame(loop); return; }
 
       const s = stateRef.current;
-      if (s.x === null) {
-        s.x = -W * 0.2;   // 左端から出てくる
-        s.targetX = W * 0.35;
+
+      // 初期化：各モンスターの位置を設定
+      if (s.positions.length !== list.length) {
+        s.positions = list.map((_, i) => ({
+          x: -W * 0.2 - i * 60,
+          targetX: W * (0.35 - i * 0.13),
+        }));
         s.arrived = false;
       }
 
       s.animFrame += dt * 0.05;
 
-      // 左から右へ移動
-      if (!s.arrived) {
-        s.x += dt * 0.15;
-        if (s.x >= s.targetX) {
-          s.x = s.targetX;
-          s.arrived = true;
-          onReach && onReach();
+      // 全員が到着したかチェック
+      let allArrived = true;
+      s.positions.forEach(p => {
+        if (p.x < p.targetX) {
+          p.x += dt * 0.15;
+          if (p.x >= p.targetX) p.x = p.targetX;
+          else allArrived = false;
         }
+      });
+
+      if (allArrived && !s.arrived) {
+        s.arrived = true;
+        onReach && onReach();
       }
 
-      const tribe = monster.tribe || "粘体";
-      const design = TRIBE_DESIGNS[tribe] || TRIBE_DESIGNS["粘体"];
-      const drawFn = DRAW_FUNCS[design.body];
-      const py = floorY || H * 0.72;
-      const rarityMul = { none:1.0, elite:1.15, hero:1.3, legend:1.5 }[monster.rarity?.id||"none"] || 1.0;
-      const size = H * 0.18 * rarityMul;
+      // 各モンスターを描画（後ろの敵から先に描く）
+      [...list].reverse().forEach((monster, revIdx) => {
+        const i = list.length - 1 - revIdx;
+        if (!monster || monster.hp <= 0) return;
+        const p = s.positions[i];
+        if (!p) return;
 
-      if (drawFn) drawFn(ctx, s.x, py, size, design.color, s.animFrame);
+        const tribe = monster.tribe || "粘体";
+        const design = TRIBE_DESIGNS[tribe] || TRIBE_DESIGNS["粘体"];
+        const drawFn = DRAW_FUNCS[design.body];
+        const py = (floorY || H * 0.72) - i * 12;
+        const rarityMul = { none:1.0, elite:1.15, hero:1.3, legend:1.5 }[monster.rarity?.id||"none"] || 1.0;
+        const size = H * 0.18 * rarityMul * (1 - i * 0.12);
 
-      if (monster.maxHp) {
-        const barW = size * 2.2;
-        const barH = 18;
-        const barY = py - size * 1.2 - 16;
-        const barX = s.x - barW/2;
-        
-        ctx.fillStyle = "#1a0a0a";
-        ctx.beginPath();
-        ctx.roundRect(barX, barY, barW, barH, 3);
-        ctx.fill();
-        
-        const hpPct = Math.max(0, (monster.hp||0) / monster.maxHp);
-        ctx.fillStyle = hpPct > 0.5 ? "#4ade80" : hpPct > 0.25 ? "#fbbf24" : "#f87171";
-        ctx.beginPath();
-        ctx.roundRect(barX, barY, barW * hpPct, barH, 3);
-        ctx.fill();
-        
-        ctx.strokeStyle = "#333";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(barX, barY, barW, barH, 3);
-        ctx.stroke();
+        ctx.save();
+        ctx.globalAlpha = 1;
+        if (drawFn) drawFn(ctx, p.x, py, size, design.color, s.animFrame + i * 20);
+        ctx.restore();
+        ctx.globalAlpha = 1;
 
-        // HP数値をバーの中央に表示
-        ctx.font = `bold ${H * 0.016}px monospace`;
+        // HPバー
+        if (monster.maxHp) {
+          const barW = size * 2.2;
+          const barH = i === 0 ? 18 : 12;
+          const barY = py - size * 1.2 - 16;
+          const barX = p.x - barW/2;
+
+          ctx.fillStyle = "#1a0a0a";
+          ctx.beginPath();
+          ctx.roundRect(barX, barY, barW, barH, 3);
+          ctx.fill();
+
+          const hpPct = Math.max(0, (monster.hp||0) / monster.maxHp);
+          ctx.fillStyle = hpPct > 0.5 ? "#4ade80" : hpPct > 0.25 ? "#fbbf24" : "#f87171";
+          ctx.beginPath();
+          ctx.roundRect(barX, barY, barW * hpPct, barH, 3);
+          ctx.fill();
+
+          ctx.strokeStyle = "#333";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.roundRect(barX, barY, barW, barH, 3);
+          ctx.stroke();
+
+          ctx.font = `bold ${H * (i===0 ? 0.016 : 0.012)}px monospace`;
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#fff";
+          ctx.shadowBlur = 0;
+          ctx.fillText(`${monster.hp||0}/${monster.maxHp}`, p.x, barY + barH * 0.75);
+        }
+
+        // 名前
+        ctx.font = `bold ${H * (i===0 ? 0.020 : 0.015)}px monospace`;
         ctx.textAlign = "center";
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = monster.rarity?.color || "#888";
+        ctx.shadowColor = monster.rarity?.color || "#888";
+        ctx.shadowBlur = 4;
+        ctx.fillText(monster.displayName, p.x, py - size * 1.2 - 22);
         ctx.shadowBlur = 0;
-        ctx.fillText(`${monster.hp||0}/${monster.maxHp}`, s.x, barY + barH * 0.75);
-      }
-
-      // 名前（HPバーの上）
-      ctx.font = `bold ${H * 0.020}px monospace`;
-      ctx.textAlign = "center";
-      ctx.fillStyle = monster.rarity?.color || "#888";
-      ctx.shadowColor = monster.rarity?.color || "#888";
-      ctx.shadowBlur = 4;
-      ctx.fillText(monster.displayName, s.x, py - size * 1.2 - 22);
-      ctx.shadowBlur = 0;
+      });
 
       frameRef.current = requestAnimationFrame(loop);
     };
 
     frameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [monster, isVisible, onReach, floorY]);
+  }, [monsters, isVisible, onReach, floorY]);
 
   useEffect(() => {
     if (!isVisible) {
-      stateRef.current = { x:null, targetX:null, animFrame:0, reached:false };
+      stateRef.current = { positions:[], animFrame:0, arrived:false };
     }
   }, [isVisible]);
+
   return <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%", zIndex:3, pointerEvents:"none" }} />;
 }
