@@ -1,6 +1,7 @@
 import { useState } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { RARITY_COLOR, RARITY_LABEL, getItemStats, INNATE, SYNTHESIS_COST, getAbilitySlots } from "../data/items";
+import { SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_SYNTHESIS_COST, nextBookRarity, makeBook } from "../data/skills";
 
 const MILESTONE = {
   weapon:    { 5:{stat:"crit",val:1,label:"クリ率+1%"}, 10:{stat:"atk",val:5,label:"ATK+5"}, 15:{stat:"crit",val:2,label:"クリ率+2%"}, 20:{stat:"atk",val:10,label:"ATK+10"} },
@@ -23,7 +24,7 @@ export default function ForgeTab() {
   const [sel, setSel] = useState(null);
   const [matSel, setMatSel] = useState(null);
   const [msg, setMsg] = useState("");
-  const { itemBox, gold, materials, updatePlayer } = usePlayerStore();
+  const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots } = usePlayerStore();
 
   const upgradeItem = itemBox.find(it => it.uid === sel);
   const matOpts = upgradeItem ? MAT_UP[upgradeItem.type] || [] : [];
@@ -93,6 +94,34 @@ export default function ForgeTab() {
     setTimeout(() => setMsg(""), 4000);
   }
 
+  const bookItem = (skillBooks||[]).find(b => b.uid === sel);
+  const bookCandidates = bookItem
+    ? (skillBooks||[]).filter(b => b.uid !== bookItem.uid && b.id === bookItem.id && b.rarity === bookItem.rarity)
+    : [];
+  const bookMatItem = (skillBooks||[]).find(b => b.uid === matSel);
+  const nextBookR = bookItem ? nextBookRarity(bookItem.rarity) : null;
+  const bookSynthCost = bookItem ? BOOK_SYNTHESIS_COST[bookItem.rarity] : null;
+
+  function synthesizeBook() {
+    if (!bookItem || !bookMatItem) { setMsg("ベースと素材を選択して！"); return; }
+    if (!nextBookR) { setMsg("これ以上合成できません"); return; }
+    if (gold < bookSynthCost) { setMsg("Gが不足！"); return; }
+    const newBook = makeBook(bookItem.id, nextBookR);
+    const newSkillBooks = (skillBooks||[])
+      .filter(b => b.uid !== bookItem.uid && b.uid !== bookMatItem.uid)
+      .concat(newBook);
+    const replaceSlot = (uid) => uid === bookItem.uid ? newBook.uid : (uid === bookMatItem.uid ? null : uid);
+    updatePlayer({
+      skillBooks: newSkillBooks,
+      activeSkillSlots: (activeSkillSlots||[]).map(replaceSlot),
+      passiveSkillSlots: (passiveSkillSlots||[]).map(replaceSlot),
+      gold: gold - bookSynthCost,
+    });
+    setSel(null); setMatSel(null);
+    setMsg(`✨ ${SKILL_BOOKS[bookItem.id].name}が${BOOK_RARITY_LABEL[nextBookR]}になった！`);
+    setTimeout(() => setMsg(""), 4000);
+  }
+
   const TYPE_COLOR = { weapon:"#f87171", armor:"#60a5fa", accessory:"#fbbf24" };
 
   return (
@@ -104,7 +133,7 @@ export default function ForgeTab() {
       </div>
 
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-        {[{id:"upgrade",label:"⬆ 強化"},{id:"synth",label:"✨ 合成"}].map(t => (
+        {[{id:"upgrade",label:"⬆ 強化"},{id:"synth",label:"✨ 合成"},{id:"book",label:"📖 スキル書"}].map(t => (
           <button key={t.id} onClick={() => { setTab(t.id); setSel(null); setMatSel(null); }}
             style={{ flex:1, padding:"8px 0", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#fb923c":"transparent"}`, cursor:"pointer", color:tab===t.id?"#fb923c":"#4a4a6a", fontSize:11, fontFamily:"monospace" }}>
             {t.label}
@@ -305,6 +334,77 @@ export default function ForgeTab() {
                   <span style={{ fontSize:10, color:"#fbbf24" }}>コスト: {synthCost?.gold?.toLocaleString()}G</span>
                   <button onClick={synthesize} disabled={gold < (synthCost?.gold||0)}
                     style={{ padding:"8px 20px", background:"#0a001a", border:`1px solid ${RARITY_COLOR[next]}`, borderRadius:4, cursor:"pointer", color:RARITY_COLOR[next], fontSize:11, fontFamily:"monospace", fontWeight:700 }}>
+                    ✨ 合成
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* スキル書合成タブ */}
+        {tab === "book" && (
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            <div style={{ fontSize:8, color:"#4a4a6a" }}>同じスキル書・同じレアリティ2冊で1段階上のレアリティに合成</div>
+
+            <div>
+              <div style={{ fontSize:8, color:"#a78bfa", marginBottom:6 }}>① ベースのスキル書を選択</div>
+              {(skillBooks||[]).filter(b => nextBookRarity(b.rarity)).length === 0
+                ? <div style={{ fontSize:9, color:"#2a2a2a", padding:8 }}>合成できるスキル書がない</div>
+                : <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3 }}>
+                    {(skillBooks||[]).filter(b => nextBookRarity(b.rarity)).map(b => {
+                      const rc = BOOK_RARITY_COLOR[b.rarity] || "#888";
+                      const isSel = sel === b.uid;
+                      const book = SKILL_BOOKS[b.id];
+                      return (
+                        <div key={b.uid} onClick={() => { setSel(isSel?null:b.uid); setMatSel(null); }}
+                          style={{ aspectRatio:"1", background:isSel?"#12122a":"#080810", border:`2px solid ${isSel?rc:rc+"33"}`, borderRadius:5, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:1 }}>
+                          <div style={{ fontSize:13 }}>{book?.icon}</div>
+                          <div style={{ fontSize:4, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", paddingLeft:1 }}>{book?.name.slice(0,4)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+              }
+            </div>
+
+            {bookItem && (
+              <div>
+                <div style={{ fontSize:8, color:"#a78bfa", marginBottom:6 }}>② 素材のスキル書を選択</div>
+                {bookCandidates.length === 0
+                  ? <div style={{ fontSize:9, color:"#2a2a2a", padding:8 }}>合成できる素材がない（同じ書・同じレアリティが必要）</div>
+                  : <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3 }}>
+                      {bookCandidates.map(b => {
+                        const rc = BOOK_RARITY_COLOR[b.rarity] || "#888";
+                        const isSel = matSel === b.uid;
+                        const book = SKILL_BOOKS[b.id];
+                        return (
+                          <div key={b.uid} onClick={() => setMatSel(isSel?null:b.uid)}
+                            style={{ aspectRatio:"1", background:isSel?"#1a0a2a":"#080810", border:`2px solid ${isSel?"#a78bfa":rc+"33"}`, borderRadius:5, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:1 }}>
+                            <div style={{ fontSize:13 }}>{book?.icon}</div>
+                            <div style={{ fontSize:4, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", paddingLeft:1 }}>{book?.name.slice(0,4)}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                }
+              </div>
+            )}
+
+            {bookItem && bookMatItem && nextBookR && (
+              <div style={{ background:"#0d0d15", border:`1px solid ${BOOK_RARITY_COLOR[nextBookR]||"#2a2a3a"}`, borderRadius:8, padding:12 }}>
+                <div style={{ fontSize:8, color:"#4a4a6a", marginBottom:6 }}>合成プレビュー</div>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, fontSize:9 }}>
+                  <span style={{ color:BOOK_RARITY_COLOR[bookItem.rarity] }}>{SKILL_BOOKS[bookItem.id].name}</span>
+                  <span style={{ color:"#4a4a6a" }}>+</span>
+                  <span style={{ color:BOOK_RARITY_COLOR[bookMatItem.rarity] }}>{SKILL_BOOKS[bookMatItem.id].name}</span>
+                  <span style={{ color:"#4a4a6a" }}>→</span>
+                  <span style={{ color:BOOK_RARITY_COLOR[nextBookR], fontWeight:700 }}>{SKILL_BOOKS[bookItem.id].name} {BOOK_RARITY_LABEL[nextBookR]}</span>
+                </div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <span style={{ fontSize:10, color:"#fbbf24" }}>コスト: {bookSynthCost?.toLocaleString()}G</span>
+                  <button onClick={synthesizeBook} disabled={gold < (bookSynthCost||0)}
+                    style={{ padding:"8px 20px", background:"#0a001a", border:`1px solid ${BOOK_RARITY_COLOR[nextBookR]}`, borderRadius:4, cursor:"pointer", color:BOOK_RARITY_COLOR[nextBookR], fontSize:11, fontFamily:"monospace", fontWeight:700 }}>
                     ✨ 合成
                   </button>
                 </div>

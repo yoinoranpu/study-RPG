@@ -1,5 +1,4 @@
 import { getItemStats } from "../data/items";
-import { calcStatBonus } from "../data/skills";
 
 export const calcPlayerStats = (player) => {
   let atk=10, mag=10, def=10, mdef=10, hp=100, eva=5, crit=5;
@@ -18,21 +17,6 @@ export const calcPlayerStats = (player) => {
     eva  += s.eva  || 0;
     crit += s.crit || 0;
   });
-
-  // スキル反映
-  const sb = calcStatBonus(player.learnedSkills || []);
-  atk       += sb.atk;
-  mag       += sb.mag;
-  def       += sb.def;
-  mdef      += sb.mdef;
-  hp        += sb.hp;
-  eva       += sb.eva;
-  crit      += sb.crit;
-  critDmg   += sb.critDmg || 0;
-  mapBonus  += sb.mapBonus || 0;
-  dropBonus += sb.dropBonus || 0;
-  goldBonus += sb.goldBonus || 0;
-  chestBonus+= sb.chestBonus || 0;
 
   // レベルボーナス（微量）
   const lv = player.totalExp ? Math.floor(Math.sqrt(player.totalExp / 15)) + 1 : 1;

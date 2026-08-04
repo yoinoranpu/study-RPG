@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════
 
 import { WEAPON_DB, ARMOR_DB, ACCESSORY_DB, CONSUMABLE_DB, makeItem, getRarity } from "./items";
+import { makeBook, rollBookRarity, rollBookId } from "./skills";
 
 // ─── 宝箱レアリティ定義 ───
 export const CHEST_TYPES = {
@@ -34,30 +35,34 @@ export const rollChestRarity = () => {
 // 将来変更するときはここの数値だけ変える
 export const CHEST_CONTENT_TABLE = {
   common: [
-    { type:"gold",     prob:0.40, min:50,   max:200  },
-    { type:"consumable",prob:0.25 },
-    { type:"equipment", prob:0.25 },
-    { type:"special",   prob:0.08 },
+    { type:"gold",     prob:0.35, min:50,   max:200  },
+    { type:"consumable",prob:0.20 },
+    { type:"equipment", prob:0.22 },
+    { type:"skillbook",  prob:0.15 },
+    { type:"special",   prob:0.06 },
     { type:"key",       prob:0.02 },
   ],
   uncommon: [
-    { type:"gold",     prob:0.30, min:200,  max:500  },
-    { type:"consumable",prob:0.20 },
-    { type:"equipment", prob:0.35 },
+    { type:"gold",     prob:0.22, min:200,  max:500  },
+    { type:"consumable",prob:0.15 },
+    { type:"equipment", prob:0.28 },
+    { type:"skillbook",  prob:0.20 },
     { type:"special",   prob:0.10 },
     { type:"key",       prob:0.05 },
   ],
   rare: [
-    { type:"gold",     prob:0.20, min:500,  max:1500 },
-    { type:"consumable",prob:0.15 },
-    { type:"equipment", prob:0.45 },
+    { type:"gold",     prob:0.15, min:500,  max:1500 },
+    { type:"consumable",prob:0.10 },
+    { type:"equipment", prob:0.35 },
+    { type:"skillbook",  prob:0.20 },
     { type:"special",   prob:0.15 },
     { type:"key",       prob:0.05 },
   ],
   epic: [
-    { type:"gold",     prob:0.15, min:1000, max:3000 },
-    { type:"consumable",prob:0.10 },
-    { type:"equipment", prob:0.55 },
+    { type:"gold",     prob:0.10, min:1000, max:3000 },
+    { type:"consumable",prob:0.05 },
+    { type:"equipment", prob:0.45 },
+    { type:"skillbook",  prob:0.20 },
     { type:"special",   prob:0.15 },
     { type:"key",       prob:0.05 },
   ],
@@ -101,6 +106,12 @@ export const openChest = (chestRarityId, currentFloor = 1) => {
     });
     const tmpl = pool[Math.floor(Math.random() * pool.length)];
     return { type:"item", item: makeItem(tmpl), chestType };
+  }
+
+  if (category === "skillbook") {
+    const rarity = rollBookRarity(chestRarityId, currentFloor);
+    const book = makeBook(rollBookId(), rarity);
+    return { type:"skillbook", book, chestType };
   }
 
   if (category === "special") {

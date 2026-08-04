@@ -14,6 +14,24 @@ export const loginAsGuest = async () => {
   return result.user;
 };
 
+// スキルスロットを常に指定の長さに補正（古いセーブデータの長さ不整合対策）
+const normalizeSlotLength = (slots, len) => {
+  const arr = [...(slots || [])];
+  while (arr.length < len) arr.push(null);
+  arr.length = len;
+  return arr;
+};
+
+// ロードしたデータのスロット長を補正
+const normalizeLoadedData = (data) => {
+  if (!data) return data;
+  return {
+    ...data,
+    activeSkillSlots: normalizeSlotLength(data.activeSkillSlots, 4),
+    passiveSkillSlots: normalizeSlotLength(data.passiveSkillSlots, 6),
+  };
+};
+
 // データ保存
 export const savePlayerData = async (uid, data) => {
   const saveData = {
@@ -31,10 +49,10 @@ export const savePlayerData = async (uid, data) => {
     specialSlots: data.specialSlots || [null,null,null],
     itemBox: data.itemBox || [],
     materials: data.materials || {},
-    learnedSkills: data.learnedSkills || ["start"],
-    spUsed: data.spUsed || 0,
-    activeSkillSlots: data.activeSkillSlots || [null,null,null,null],
-    passiveSkillSlots: data.passiveSkillSlots || [null,null,null,null,null,null],
+    skillBooks: data.skillBooks || [],
+    activeSkillSlots: normalizeSlotLength(data.activeSkillSlots, 4),
+    passiveSkillSlots: normalizeSlotLength(data.passiveSkillSlots, 6),
+    skillMode: data.skillMode || "order",
     battleStyle: data.battleStyle || "balanced",
     timerWork: data.timerWork || 25,
     timerBreak: data.timerBreak || 5,
@@ -42,6 +60,8 @@ export const savePlayerData = async (uid, data) => {
     studyMinutesTotal: data.studyMinutesTotal || 0,
     studyMinutesToday: data.studyMinutesToday || 0,
     studyMinutesWeek: data.studyMinutesWeek || 0,
+    unlockedRarity: data.unlockedRarity || "common",
+    monsterBook: data.monsterBook || {},
   };
 
   try {
@@ -62,16 +82,16 @@ export const loadPlayerData = async (uid) => {
     const snap = await getDoc(doc(db, "players", uid));
     if (snap.exists()) {
       // Firestoreのデータを返す
-      return snap.data();
+      return normalizeLoadedData(snap.data());
     }
     // Firestoreにない場合はlocalStorageから復元
     const local = localStorage.getItem("sd_save");
-    return local ? JSON.parse(local) : null;
+    return local ? normalizeLoadedData(JSON.parse(local)) : null;
   } catch (e) {
     // オフライン時はlocalStorageから復元
     console.log("オフライン読み込み:", e.message);
     const local = localStorage.getItem("sd_save");
-    return local ? JSON.parse(local) : null;
+    return local ? normalizeLoadedData(JSON.parse(local)) : null;
   }
 };
 

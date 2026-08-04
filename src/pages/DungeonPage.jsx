@@ -12,7 +12,7 @@ import MonsterSprite from "../components/MonsterSprite";
 import EventSprite from "../components/EventSprite";
 import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
-import { calcPassiveBonus } from "../data/skills";
+import { calcBookPassiveBonus, SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
 import { openChest } from "../data/chest_table";
 import { RARITY_COLOR } from "../data/items";
 
@@ -54,6 +54,11 @@ function ChestOpenSection({ chests, onAllOpened }) {
               <div style={{ flex:1 }}>
                 {chest.type === "gold" ? (
                   <span style={{ fontSize:10, color:"#fbbf24" }}>+{chest.gold}G</span>
+                ) : chest.type === "skillbook" ? (
+                  <span style={{ fontSize:10, color: BOOK_RARITY_COLOR[chest.book?.rarity]||"#e8e0d0" }}>
+                    {SKILL_BOOKS[chest.book?.id]?.icon} {SKILL_BOOKS[chest.book?.id]?.name}
+                    <span style={{ fontSize:7, marginLeft:4 }}>{BOOK_RARITY_LABEL[chest.book?.rarity]}</span>
+                  </span>
                 ) : (
                   <span style={{ fontSize:10, color: RARITY_COLOR[chest.item?.rarity]||"#e8e0d0" }}>
                     {chest.item?.icon} {chest.item?.name}
@@ -125,8 +130,8 @@ export default function DungeonPage({ onBack }) {
   const sessionScaleRef = useRef({ atk: 0, mag: 0 });
 
   useEffect(() => {
-    passiveBonusRef.current = calcPassiveBonus(player.passiveSkillSlots || []);
-  }, [player.passiveSkillSlots]);
+    passiveBonusRef.current = calcBookPassiveBonus(player.passiveSkillSlots || [], player.skillBooks || []);
+  }, [player.passiveSkillSlots, player.skillBooks]);
 
   const addLog = useCallback((text, color="#666") => {
     setLogs(l => [...l, { id:logId.current++, text, color }]);
@@ -138,9 +143,10 @@ export default function DungeonPage({ onBack }) {
       ...baseStats,
       hp: Math.max(1, hpRef.current),
       maxHp: baseStats.maxHp,
+      skillBooks: player.skillBooks || [],
       activeSkillSlots: player.activeSkillSlots || [],
+      passiveSkillSlots: player.passiveSkillSlots || [],
       skillMode: player.skillMode || "order",
-      learnedSkills: player.learnedSkills || [],
     };
   }, [player]);
 
@@ -259,7 +265,7 @@ export default function DungeonPage({ onBack }) {
       if (ev.effect==="heal") { hpRef.current=player.maxHp||100; setHp(hpRef.current); }
       if (ev.effect==="map") addMapping(5);
       setMonsterVisible(false); setCurrentMonsters([]);
-      setCurrentEvent(ev.effect==="heal"?"heal":ev.effect==="buff"?"fairy":"npc");
+      setCurrentEvent(ev.effect==="heal"?"heal":ev.effect==="buff"?"fairy":ev.effect==="enhance"?"spirit":"npc");
       setEventVisible(true); setMonsterArrived(false);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 5000);
     }
@@ -324,8 +330,10 @@ export default function DungeonPage({ onBack }) {
       }
     }
     const newItemBox = [...(player.itemBox||[])];
+    const newSkillBooks = [...(player.skillBooks||[])];
     sessionChests.current.forEach(chest => {
       if (chest.type === "item" && chest.item && newItemBox.length < 30) newItemBox.push(chest.item);
+      if (chest.type === "skillbook" && chest.book) newSkillBooks.push(chest.book);
     });
     updatePlayer({
       totalExp: newTotalExp,
@@ -336,6 +344,7 @@ export default function DungeonPage({ onBack }) {
       hp:       hpRef.current,
       materials: newMats,
       itemBox:  newItemBox,
+      skillBooks: newSkillBooks,
       timerWork: workMin, timerBreak: breakMin, timerSets: totalSets,
       studyMinutesTotal: (player.studyMinutesTotal||0) + studiedMinutes,
       studyMinutesToday: (player.studyMinutesToday||0) + studiedMinutes,

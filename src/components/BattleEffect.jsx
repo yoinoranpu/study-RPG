@@ -1,6 +1,12 @@
 import { useEffect, useRef } from "react";
+import { BOOK_RARITY_MUL } from "../data/skills";
 
 const TURN_DURATION = 1500;
+// レアリティが上がるほどエフェクトを大きく・激しく（common=1.0 〜 origin=2.4）
+const rarityFx = (rarity) => {
+  const mul = BOOK_RARITY_MUL[rarity] || 1.0;
+  return { mul, size: 0.7 + mul * 0.3, count: 0.6 + mul * 0.4, shake: 0.7 + mul * 0.3 };
+};
 
 export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUpdate, onMonsterHpUpdate, onTurnLog, onSummonUpdate, monsterX, monsterY, playerX, playerY }) {
   const canvasRef = useRef(null);
@@ -9,6 +15,7 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
     turnIndex:0, turnTime:0, effects:[],
     playerHitFlash:0, monsterHitFlash:0,
     playerShake:0, monsterShake:0,
+    playerFxScale:1, monsterFxScale:1,
     done:false, lastLoggedIndex:-1,
   });
 
@@ -17,6 +24,7 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
       turnIndex:0, turnTime:0, effects:[],
       playerHitFlash:0, monsterHitFlash:0,
       playerShake:0, monsterShake:0,
+      playerFxScale:1, monsterFxScale:1,
       done:false, lastLoggedIndex:-1,
     };
   }, [isActive, turns]);
@@ -79,25 +87,30 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
           if (turn.actor === "player" && onMonsterHpUpdate) onMonsterHpUpdate(turn.target, turn.hpLeft);
           if (turn.actor === "monster" && onPlayerHpUpdate) onPlayerHpUpdate(turn.hpLeft);
 
-          const slashCount = turn.isCrit ? 8 : 4;
+          const fx = turn.actor === "player" ? rarityFx(turn.rarity) : rarityFx(null);
+          const slashCount = Math.round((turn.isCrit ? 8 : 4) * fx.count);
+          const slashLen = (turn.isCrit ? 24 : 16) * fx.size;
           for (let i = 0; i < slashCount; i++) {
             s.effects.push({
-              x: tx + (Math.random()-0.5)*40, y: ty + (Math.random()-0.5)*40,
+              x: tx + (Math.random()-0.5)*40*fx.size, y: ty + (Math.random()-0.5)*40*fx.size,
               vx: (Math.random()-0.5)*4, vy: -Math.random()*3 - 1,
               life:500, maxLife:500, alpha:1,
-              angle: Math.random()*Math.PI, len: turn.isCrit ? 24 : 16,
+              angle: Math.random()*Math.PI, len: slashLen,
               color: turn.actor==="player" ? "#e8e0d0" : "#f87171", type:"slash",
             });
           }
-          s.effects.push({ x:tx, y:ty, vx:0, vy:0, life:300, maxLife:300, alpha:1, radius:0, maxRadius:50, color: turn.actor==="player" ? "#ffffff" : "#f87171", type:"shockwave" });
+          s.effects.push({ x:tx, y:ty, vx:0, vy:0, life:300, maxLife:300, alpha:1, radius:0, maxRadius:50*fx.size, color: turn.actor==="player" ? "#ffffff" : "#f87171", type:"shockwave" });
+          if (fx.mul >= 1.75) {
+            s.effects.push({ x:tx, y:ty, vx:0, vy:0, life:500, maxLife:500, alpha:1, radius:0, maxRadius:85*fx.size, color: turn.actor==="player" ? "#fbbf24" : "#f87171", type:"shockwave" });
+          }
           s.effects.push({ x: tx + (turn.actor === "player" ? -30 : 30), y: ty - 60, vx: turn.actor === "player" ? -0.3 : 0.3, vy: -1.5, life:900, maxLife:900, alpha:1, text:`${turn.dmg}`, isCrit:turn.isCrit, color: turn.actor==="player" ? (turn.isCrit?"#fbbf24":"#e8e0d0") : "#f87171", type:"number" });
 
           if (turn.label) {
-            s.effects.push({ x: turn.actor === "player" ? px : mx, y: (turn.actor === "player" ? py : my) - 100, vx:0, vy:-0.8, life:1000, maxLife:1000, alpha:1, text: turn.label, color: turn.actor==="player" ? "#60a5fa" : "#f87171", type:"skillname" });
+            s.effects.push({ x: turn.actor === "player" ? px : mx, y: (turn.actor === "player" ? py : my) - 100, vx:0, vy:-0.8, life:1000, maxLife:1000, alpha:1, text: turn.label, color: turn.actor==="player" ? "#60a5fa" : "#f87171", type:"skillname", scale: fx.size });
           }
 
-          if (turn.actor === "player") { s.monsterHitFlash = 200; s.monsterShake = 300; }
-          else { s.playerHitFlash = 200; s.playerShake = 300; }
+          if (turn.actor === "player") { s.monsterHitFlash = 200; s.monsterShake = 300; s.monsterFxScale = fx.shake; }
+          else { s.playerHitFlash = 200; s.playerShake = 300; s.playerFxScale = 1; }
 
         } else if (turn.type === "attackAlly") {
           // 召喚物が攻撃を受けた
@@ -120,15 +133,17 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
           s.effects.push({ x:mx, y:my-80, vx:0, vy:-0.5, life:1000, maxLife:1000, alpha:1, text:"DEFEAT!", color:"#fbbf24", type:"number", big:true });
 
         } else if (turn.type === "buff") {
-          s.effects.push({ x:px, y:py-90, vx:0, vy:-0.8, life:1000, maxLife:1000, alpha:1, text: turn.label || "BUFF", color:"#60a5fa", type:"skillname" });
+          const fx = rarityFx(turn.rarity);
+          s.effects.push({ x:px, y:py-90, vx:0, vy:-0.8, life:1000, maxLife:1000, alpha:1, text: turn.label || "BUFF", color:"#60a5fa", type:"skillname", scale:fx.size });
 
         } else if (turn.type === "summon") {
           if (onSummonUpdate && turn.summonSnapshot) {
             onSummonUpdate(turn.summonSnapshot);
           }
-          s.effects.push({ x:px-40, y:py-90, vx:0, vy:-0.8, life:1200, maxLife:1200, alpha:1, text:"召喚！", color:turn.logColor||"#c084fc", type:"skillname" });
+          const fx = rarityFx(turn.rarity);
+          s.effects.push({ x:px-40, y:py-90, vx:0, vy:-0.8, life:1200, maxLife:1200, alpha:1, text:"召喚！", color:turn.logColor||"#c084fc", type:"skillname", scale:fx.size });
           // 召喚の光
-          s.effects.push({ x:W*0.65, y:py, vx:0, vy:0, life:500, maxLife:500, alpha:1, radius:0, maxRadius:60, color:turn.logColor||"#c084fc", type:"shockwave" });
+          s.effects.push({ x:W*0.65, y:py, vx:0, vy:0, life:500, maxLife:500, alpha:1, radius:0, maxRadius:60*fx.size, color:turn.logColor||"#c084fc", type:"shockwave" });
 
         } else if (turn.type === "statusDmg") {
           // HP更新
@@ -207,24 +222,27 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
           ctx.fillText(e.text, e.x, e.y);
           if (e.isCrit) { ctx.font = `bold ${H*0.022}px monospace`; ctx.fillStyle = "#fbbf24"; ctx.fillText("CRITICAL!", e.x, e.y - fontSize); }
         } else if (e.type === "skillname") {
-          ctx.font = `bold ${H*0.026}px monospace`; ctx.textAlign = "center";
-          ctx.fillStyle = e.color; ctx.shadowColor = e.color; ctx.shadowBlur = 10;
+          const sc = e.scale || 1;
+          ctx.font = `bold ${H*0.026*sc}px monospace`; ctx.textAlign = "center";
+          ctx.fillStyle = e.color; ctx.shadowColor = e.color; ctx.shadowBlur = 10 * sc;
           ctx.fillText(e.text, e.x, e.y);
         }
         ctx.restore();
       });
 
       if (s.playerHitFlash > 0) {
-        const shakeX = s.playerShake > 0 ? (Math.random()-0.5)*8 : 0;
+        const pfx = s.playerFxScale || 1;
+        const shakeX = s.playerShake > 0 ? (Math.random()-0.5)*8*pfx : 0;
         const a = s.playerHitFlash / 200;
-        const g = ctx.createRadialGradient(playerX*W+shakeX, playerY*H-40, 0, playerX*W+shakeX, playerY*H-40, 70);
+        const g = ctx.createRadialGradient(playerX*W+shakeX, playerY*H-40, 0, playerX*W+shakeX, playerY*H-40, 70*pfx);
         g.addColorStop(0, `rgba(248,113,113,${a*0.6})`); g.addColorStop(1, "transparent");
         ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
       }
       if (s.monsterHitFlash > 0) {
-        const shakeX = s.monsterShake > 0 ? (Math.random()-0.5)*8 : 0;
+        const mfx = s.monsterFxScale || 1;
+        const shakeX = s.monsterShake > 0 ? (Math.random()-0.5)*8*mfx : 0;
         const a = s.monsterHitFlash / 200;
-        const g = ctx.createRadialGradient(monsterX*W+shakeX, monsterY*H-40, 0, monsterX*W+shakeX, monsterY*H-40, 70);
+        const g = ctx.createRadialGradient(monsterX*W+shakeX, monsterY*H-40, 0, monsterX*W+shakeX, monsterY*H-40, 70*mfx);
         g.addColorStop(0, `rgba(255,255,255,${a*0.5})`); g.addColorStop(1, "transparent");
         ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
       }

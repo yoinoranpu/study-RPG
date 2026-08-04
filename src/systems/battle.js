@@ -1,11 +1,8 @@
-import { SKILLS } from "../data/skills";
+import { SKILL_BOOKS, getBookEffect } from "../data/skills";
 import { initStatusState, rankMul, changeRank, applyStatus, checkSkipTurn, tickStatuses, STATUS_DEFS } from "./status";
 
 export const calcDamage = (atk, def) =>
   Math.max(1, Math.floor(atk * (100 / (100 + def))));
-
-const getActiveSkills = (activeSkillSlots = []) =>
-  activeSkillSlots.filter(Boolean).map(id => SKILLS[id]).filter(sk => sk?.active);
 
 const SUMMON_TEMPLATES = {
   familiar: { name:"使い魔",     hp:15,  atkMul:0.4, statRef:"mag", position:"back",  speed:90, color:"#c084fc" },
@@ -15,6 +12,27 @@ const SUMMON_TEMPLATES = {
   golem:    { name:"ゴーレム",   hp:100, atkMul:0.5, statRef:"atk", position:"front", speed:40, color:"#a16207" },
 };
 
+// activeSkillSlots(uid配列) → セットされたアクティブ書の実効データ配列
+const resolveActiveBooks = (slots = [], skillBooks = []) =>
+  slots.filter(Boolean).map(uid => {
+    const owned = skillBooks.find(b => b.uid === uid);
+    if (!owned) return null;
+    const book = SKILL_BOOKS[owned.id];
+    if (!book || book.type !== "active") return null;
+    const eff = getBookEffect(owned.id, owned.rarity);
+    return { id: owned.id, name: book.name, icon: book.icon, rarity: owned.rarity, active: eff.effect };
+  }).filter(Boolean);
+
+// passiveSkillSlots(uid配列) → セット済みパッシブ書のid集合
+const resolvePassiveIds = (slots = [], skillBooks = []) => {
+  const ids = new Set();
+  slots.filter(Boolean).forEach(uid => {
+    const owned = skillBooks.find(b => b.uid === uid);
+    if (owned && SKILL_BOOKS[owned.id]?.type === "passive") ids.add(owned.id);
+  });
+  return ids;
+};
+
 export const simulateBattle = (player, monsters, options = {}) => {
   const logs = [];
   const turns = [];
@@ -22,24 +40,22 @@ export const simulateBattle = (player, monsters, options = {}) => {
   const drops = [];
   let totalExp = 0, totalGold = 0;
 
-  // ─── スケール値 ───
-  // session: ダンジョン探索中ずっと累積（帰還でリセット）
   const sessionScale = { atk: 0, mag: 0, ...(options.sessionScale || {}) };
-  // battle: この戦闘だけ
   let battleAtk = 0;
   let battleEva = 0;
   let battleCrit = 0;
 
-  const activeSkills = getActiveSkills(player.activeSkillSlots || []);
+  const skillBooks = player.skillBooks || [];
+  const activeBooks = resolveActiveBooks(player.activeSkillSlots || [], skillBooks);
+  const passiveIds  = resolvePassiveIds(player.passiveSkillSlots || [], skillBooks);
   const skillMode = player.skillMode || "order";
   let skillIndex = 0;
 
-  const learned = new Set(player.learnedSkills || []);
+  const has = (id) => passiveIds.has(id);
   let deathSaveUsed = false;
   let defBuff = 0;
   let critBuff = 0;
 
-  const addLog = (text, color = "#a0a0a0") => logs.push({ text, color });
   const pushTurn = (t) => turns.push(t);
 
   const playerEntity = {
@@ -67,7 +83,6 @@ export const simulateBattle = (player, monsters, options = {}) => {
 
   const allies = [];
 
-  // ─── 実効ステータス（スケール + ランク補正）───
   const eAtk = (e) => {
     const bonus = e.side === "player" ? (sessionScale.atk + battleAtk) : 0;
     return Math.floor((e.atk + bonus) * rankMul(e.ranks?.atk));
@@ -96,13 +111,11 @@ export const simulateBattle = (player, monsters, options = {}) => {
     };
   }
 
-  const hasShadow = learned.has("th_shadow");
-  if (hasShadow) {
+  if (has("sb_shadow")) {
     playerEntity.speed += 9999;
     pushTurn({ actor:"player", target:-1, type:"info", logText:"🌑 影移動！先手を取った！", logColor:"#a78bfa" });
   }
 
-  // 開始時にスケール表示（累積があれば）
   if (sessionScale.atk > 0 || sessionScale.mag > 0) {
     const parts = [];
     if (sessionScale.atk > 0) parts.push(`ATK+${sessionScale.atk}`);
@@ -127,38 +140,24 @@ export const simulateBattle = (player, monsters, options = {}) => {
   };
 
   const pickSkill = () => {
-    if (activeSkills.length === 0) return null;
-    if (skillMode === "random") return activeSkills[Math.floor(Math.random() * activeSkills.length)];
-    const sk = activeSkills[skillIndex % activeSkills.length];
+    if (activeBooks.length === 0) return null;
+    if (skillMode === "random") return activeBooks[Math.floor(Math.random() * activeBooks.length)];
+    const sk = activeBooks[skillIndex % activeBooks.length];
     skillIndex++;
     return sk;
   };
 
-  // ─── スケールトリガー ───
-  const onPlayerAttack = () => {
-    if (learned.has("sw_kenshin")) sessionScale.atk += 2;   // 研鑽
-  };
-  const onPlayerCast = () => {
-    if (learned.has("mg_accumulate")) sessionScale.mag += 3; // 魔力蓄積
-  };
-  const onPlayerCrit = () => {
-    if (learned.has("bw_hawkeye")) battleEva += 5;           // 鷹の目覚醒
-  };
-  const onTurnPassed = () => {
-    if (learned.has("bw_snipeeye")) battleCrit += 5;         // 狙撃眼
-  };
-  const onPlayerHurt = () => {
-    if (learned.has("df_wound")) battleAtk += 4;             // 傷の怒り
-  };
-  const onEnemyKilled = () => {
-    if (learned.has("sw_musou")) sessionScale.atk += 5;      // 無双
-  };
-  const onPoisonTick = () => {
-    if (learned.has("th_toxicscale")) sessionScale.atk += 3; // 毒蓄積
-  };
-  const onSummonHit = () => {
-    if (learned.has("ex_tactician")) { sessionScale.atk += 1; sessionScale.mag += 1; }
-    if (learned.has("ex_commander")) { sessionScale.atk += 2; sessionScale.mag += 2; }
+  // ─── スケールトリガー（パッシブ書ベース）───
+  const onPlayerAttack = () => { if (has("sb_kenshin")) sessionScale.atk += 2; };
+  const onPlayerCast   = () => { if (has("sb_accumulate")) sessionScale.mag += 3; };
+  const onPlayerCrit   = () => { if (has("sb_hawkeye")) battleEva += 5; };
+  const onTurnPassed   = () => { if (has("sb_snipeeye")) battleCrit += 5; };
+  const onPlayerHurt   = () => { if (has("sb_wound")) battleAtk += 4; };
+  const onEnemyKilled  = () => { if (has("sb_musou")) sessionScale.atk += 5; };
+  const onPoisonTick   = () => { if (has("sb_toxicscale")) sessionScale.atk += 3; };
+  const onSummonHit    = () => {
+    if (has("sb_tactician")) { sessionScale.atk += 1; sessionScale.mag += 1; }
+    if (has("sb_commander")) { sessionScale.atk += 2; sessionScale.mag += 2; }
   };
 
   const tryApplyStatus = (target, a, sourceMag) => {
@@ -177,11 +176,11 @@ export const simulateBattle = (player, monsters, options = {}) => {
     });
   };
 
-  const dealToEnemy = (enemy, dmg, isCrit, label, byWho="player") => {
+  const dealToEnemy = (enemy, dmg, isCrit, label, byWho="player", rarity=null) => {
     if (!enemy || enemy.hp <= 0) return;
     enemy.hp = Math.max(0, enemy.hp - dmg);
     const prefix = byWho === "player" ? "" : `${byWho}の`;
-    pushTurn({ actor:"player", target:enemy.idx, type:"attack", dmg, isCrit, label, hpLeft:enemy.hp,
+    pushTurn({ actor:"player", target:enemy.idx, type:"attack", dmg, isCrit, label, rarity, hpLeft:enemy.hp,
       logText:`${prefix}${label ? label+"！" : "攻撃！"}${enemy.name}に${dmg}ダメージ`, logColor:isCrit?"#fbbf24":"#86efac" });
     if (enemy.hp <= 0) {
       totalExp += enemy.expGain; totalGold += enemy.goldGain;
@@ -204,12 +203,15 @@ export const simulateBattle = (player, monsters, options = {}) => {
     const myCrit = eCrit(playerEntity);
     critBuff = 0;
 
-    if (learned.has("th_assassin")) {
-      const t = aliveEnemies().find(e => !e.isBoss && e.hp <= e.maxHp * 0.20);
+    // 暗殺（アクティブ書にセットされていれば）
+    const assassinBook = activeBooks.find(b => b.active?.type === "assassinate");
+    if (assassinBook) {
+      const th = assassinBook.active.threshold || 0.20;
+      const t = aliveEnemies().find(e => !e.isBoss && e.hp <= e.maxHp * th);
       if (t) {
         const killDmg = t.hp;
         t.hp = 0;
-        pushTurn({ actor:"player", target:t.idx, type:"attack", dmg:killDmg, isCrit:true, label:"暗殺", hpLeft:0, logText:`☠ 暗殺！${t.name}を仕留めた！`, logColor:"#8b5cf6" });
+        pushTurn({ actor:"player", target:t.idx, type:"attack", dmg:killDmg, isCrit:true, label:"暗殺", rarity:assassinBook.rarity, hpLeft:0, logText:`☠ 暗殺！${t.name}を仕留めた！`, logColor:"#8b5cf6" });
         pushTurn({ actor:"player", target:t.idx, type:"defeat", logText:`⚔ ${t.name}撃破！`, logColor:"#4ade80" });
         totalExp += t.expGain; totalGold += t.goldGain;
         if (Math.random() < 0.60) materials.push(t.material);
@@ -241,14 +243,28 @@ export const simulateBattle = (player, monsters, options = {}) => {
             });
           }
           const snapshot = allies.filter(al=>al.hp>0).map(al=>({ summonType:al.summonType, position:al.position, hp:al.hp, maxHp:al.maxHp }));
-          pushTurn({ actor:"player", target:-1, type:"summon", summonType:a.summonType, summonSnapshot:snapshot, logText:`${tmpl.name}を召喚！`, logColor:tmpl.color });
+          pushTurn({ actor:"player", target:-1, type:"summon", summonType:a.summonType, rarity:skill.rarity, summonSnapshot:snapshot, logText:`${tmpl.name}を召喚！`, logColor:tmpl.color });
         }
+        return;
+      }
+
+      if (a.type === "assassinate") {
+        // 条件を満たす敵がいなかった場合は通常攻撃扱い
+        onPlayerAttack();
+        if (Math.random()*100 < eEva(target)) { pushTurn({ actor:"player", target:target.idx, type:"miss", logText:`${target.name}は回避！`, logColor:"#34d399" }); return; }
+        const isCrit = Math.random()*100 < myCrit;
+        if (isCrit) onPlayerCrit();
+        let dmg = calcDamage(myAtk, eDef(target));
+        if (isCrit) dmg = Math.floor(dmg * playerEntity.critDmg/100);
+        // ボスには bossDmg 倍率
+        if (target.isBoss && target.hp <= target.maxHp * 0.30) dmg = Math.floor(dmg * (a.bossDmg || 3.0));
+        dealToEnemy(target, dmg, isCrit, skill.name, "player", skill.rarity);
         return;
       }
 
       if (a.type === "trap") {
         tryApplyStatus(target, a, myMag);
-        pushTurn({ actor:"player", target:-1, type:"buff", label:skill.name, logText:`⚠ ${skill.name}を仕掛けた！`, logColor:"#fb923c" });
+        pushTurn({ actor:"player", target:-1, type:"buff", label:skill.name, rarity:skill.rarity, logText:`⚠ ${skill.name}を仕掛けた！`, logColor:"#fb923c" });
         return;
       }
 
@@ -262,7 +278,7 @@ export const simulateBattle = (player, monsters, options = {}) => {
           aliveEnemies().forEach(e => {
             let dmg = calcDamage(Math.floor(baseStat * a.dmgMul), isMagic ? eMdef(e) : eDef(e));
             if (isCrit) dmg = Math.floor(dmg * playerEntity.critDmg / 100);
-            dealToEnemy(e, dmg, isCrit, skill.name);
+            dealToEnemy(e, dmg, isCrit, skill.name, "player", skill.rarity);
             if (e.hp > 0) tryApplyStatus(e, a, myMag);
           });
         } else {
@@ -272,7 +288,7 @@ export const simulateBattle = (player, monsters, options = {}) => {
           }
           let dmg = calcDamage(Math.floor(baseStat * a.dmgMul), isMagic ? eMdef(target) : eDef(target));
           if (isCrit) dmg = Math.floor(dmg * playerEntity.critDmg / 100);
-          dealToEnemy(target, dmg, isCrit, skill.name);
+          dealToEnemy(target, dmg, isCrit, skill.name, "player", skill.rarity);
           if (target.hp > 0) tryApplyStatus(target, a, myMag);
         }
         return;
@@ -287,21 +303,21 @@ export const simulateBattle = (player, monsters, options = {}) => {
           if (isCrit) onPlayerCrit();
           let dmg = calcDamage(Math.floor(myAtk * a.dmgMul), eDef(target));
           if (isCrit) dmg = Math.floor(dmg * playerEntity.critDmg/100);
-          dealToEnemy(target, dmg, isCrit, `${skill.name}(${h+1})`);
+          dealToEnemy(target, dmg, isCrit, `${skill.name}(${h+1})`, "player", skill.rarity);
         }
         return;
       }
 
       if (a.type === "fixedDmg") {
         onPlayerAttack();
-        const dmg = a.base + Math.floor(myAtk * 0.3);
-        dealToEnemy(target, dmg, false, skill.name);
+        const dmg = (a.base || 30) + Math.floor(myAtk * 0.3);
+        dealToEnemy(target, dmg, false, skill.name, "player", skill.rarity);
         return;
       }
 
       if (a.type === "buff") {
-        if (a.stat === "def") { defBuff = Math.floor(playerEntity.def * a.mul); pushTurn({ actor:"player", target:-1, type:"buff", label:skill.name, logText:`🛡 ${skill.name}！DEF+${defBuff}`, logColor:"#60a5fa" }); }
-        else if (a.stat === "crit") { critBuff = a.val; pushTurn({ actor:"player", target:-1, type:"buff", label:skill.name, logText:`🎯 ${skill.name}！次の攻撃クリ率+${a.val}%`, logColor:"#fbbf24" }); }
+        if (a.stat === "def") { defBuff = Math.floor(playerEntity.def * a.mul); pushTurn({ actor:"player", target:-1, type:"buff", label:skill.name, rarity:skill.rarity, logText:`🛡 ${skill.name}！DEF+${defBuff}`, logColor:"#60a5fa" }); }
+        else if (a.stat === "crit") { critBuff = a.val; pushTurn({ actor:"player", target:-1, type:"buff", label:skill.name, rarity:skill.rarity, logText:`🎯 ${skill.name}！次の攻撃クリ率+${a.val}%`, logColor:"#fbbf24" }); }
         return;
       }
     }
@@ -327,7 +343,9 @@ export const simulateBattle = (player, monsters, options = {}) => {
       pushTurn({ actor:"ally", target:target.idx, type:"miss", logText:`${ally.name}の攻撃は回避された`, logColor:"#34d399" });
       return;
     }
-    const dmg = calcDamage(Math.floor(baseStat * ally.atkMul), eDef(target));
+    let mul = ally.atkMul;
+    if (has("sb_commander")) mul *= 1.5;
+    const dmg = calcDamage(Math.floor(baseStat * mul), eDef(target));
     onSummonHit();
     dealToEnemy(target, dmg, false, null, ally.name);
   };
@@ -367,10 +385,12 @@ export const simulateBattle = (player, monsters, options = {}) => {
     const defS = isMagic ? eMdef(playerEntity) : eDef(playerEntity);
     let dmg = calcDamage(atkS, defS);
     if (isCrit) dmg = Math.floor(dmg * 1.5);
+    // 鉄壁（被ダメ軽減）
+    if (has("sb_tetsuwall")) dmg = Math.floor(dmg * 0.85);
     playerEntity.hp = Math.max(0, playerEntity.hp - dmg);
     onPlayerHurt();
 
-    if (playerEntity.hp <= 0 && learned.has("df_undying") && !deathSaveUsed) {
+    if (playerEntity.hp <= 0 && has("sb_undying") && !deathSaveUsed) {
       deathSaveUsed = true;
       playerEntity.hp = Math.max(1, Math.floor(playerEntity.maxHp * 0.10));
       pushTurn({ actor:"monster", source:enemy.idx, type:"attack", dmg, isCrit, label:action.label, hpLeft:playerEntity.hp, logText:`${enemy.name}の${action.label}！${dmg}ダメージ`, logColor:isMagic?"#a78bfa":"#f87171" });
@@ -382,7 +402,7 @@ export const simulateBattle = (player, monsters, options = {}) => {
 
     if (action.status) tryApplyStatus(playerEntity, action.status, eMag(enemy));
 
-    const hasCounter = (player.activeSkillSlots||[]).some(id => SKILLS[id]?.active?.type === "counter");
+    const hasCounter = activeBooks.some(b => b.active?.type === "counter");
     if (hasCounter && playerEntity.hp > 0 && enemy.hp > 0) {
       dealToEnemy(enemy, Math.floor(dmg * 1.5), false, "カウンター");
     }
@@ -407,7 +427,7 @@ export const simulateBattle = (player, monsters, options = {}) => {
           onEnemyKilled();
         }
       } else if (entity.side === "player") {
-        if (entity.hp <= 0 && learned.has("df_undying") && !deathSaveUsed) {
+        if (entity.hp <= 0 && has("sb_undying") && !deathSaveUsed) {
           deathSaveUsed = true;
           entity.hp = Math.max(1, Math.floor(entity.maxHp * 0.10));
         }
@@ -441,10 +461,18 @@ export const simulateBattle = (player, monsters, options = {}) => {
     enemies.filter(e => e.hp > 0).forEach(processStatusTick);
     allies.filter(a => a.hp > 0).forEach(processStatusTick);
 
-    onTurnPassed();  // 狙撃眼
+    onTurnPassed();
   }
 
   const won = enemies.every(e => e.hp <= 0);
+
+  // 回復魔法（戦闘後HP回復）
+  if (won && has("sb_heal")) {
+    const healed = Math.floor(playerEntity.maxHp * 0.10);
+    playerEntity.hp = Math.min(playerEntity.maxHp, playerEntity.hp + healed);
+    pushTurn({ actor:"player", target:-1, type:"info", logText:`💚 回復魔法でHP+${healed}`, logColor:"#4ade80" });
+  }
+
   if (!won && playerEntity.hp <= 0) pushTurn({ actor:"player", target:-1, type:"info", logText:"💀 撤退…", logColor:"#f87171" });
   if (turns.length === 0) pushTurn({ actor:"player", target:0, type:"skip", logText:"様子を見ている…", logColor:"#3a3a3a" });
 

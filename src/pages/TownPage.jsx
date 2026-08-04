@@ -2,7 +2,6 @@ import { useState } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
 import ShopTab from "../components/ShopTab";
-import SkillTreeTab from "../components/SkillTreeTab";
 import ForgeTab from "../components/ForgeTab";
 import CharacterPage from "./CharacterPage";
 import SettingsPage from "./SettingsPage";
@@ -18,16 +17,14 @@ export default function TownPage({ onEnterDungeon }) {
   const used = expUsedUpTo(lv);
   const need = expForLevel(lv);
   const lvPct = need > 0 ? Math.min(1, (player.totalExp - used) / need) : 1;
-  const DEBUG = true;
+  const DEBUG = import.meta.env.DEV;
 
   const tabs = [
     { id:"home",      icon:"🏰", label:"街"      },
     { id:"character", icon:"🧙", label:"キャラ"  },
     { id:"shop",      icon:"🏪", label:"ショップ" },
-    { id:"skill",     icon:"🌳", label:"スキル"  },
     { id:"forge",     icon:"🔨", label:"鍛冶屋"  },
   ];
-
   return (
     <div style={{ height:"100vh", background:"#06060f", fontFamily:"monospace", display:"flex", flexDirection:"column", overflow:"hidden" }}>
 
@@ -61,7 +58,7 @@ export default function TownPage({ onEnterDungeon }) {
       </div>
 
       {/* コンテンツ */}
-      <div style={{ flex:1, overflowY:"auto", padding: ["character","shop","skill","forge"].includes(tab) ? 0 : 14 }}>
+      <div style={{ flex:1, overflowY:"auto", padding: ["character","shop","forge"].includes(tab) ? 0 : 14 }}>
 
         {/* ホーム */}
         {tab === "home" && subTab === "home" && (
@@ -168,7 +165,6 @@ export default function TownPage({ onEnterDungeon }) {
 
         {tab === "character" && <CharacterPage />}
         {tab === "shop"      && <ShopTab />}
-        {tab === "skill"     && <SkillTreeTab />}
         {tab === "forge"     && <ForgeTab />}
       </div>
 

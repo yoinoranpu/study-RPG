@@ -21,8 +21,7 @@ const debounceSave = (uid, data) => {
       specialSlots: data.specialSlots,
       itemBox: data.itemBox,
       materials: data.materials,
-      learnedSkills: data.learnedSkills,
-      spUsed: data.spUsed,
+      skillBooks: data.skillBooks || [],
       activeSkillSlots: data.activeSkillSlots,
       passiveSkillSlots: data.passiveSkillSlots,
       skillMode: data.skillMode || "order",
@@ -62,9 +61,9 @@ const usePlayerStore = create((set, get) => ({
   itemBox: [],
   materials: {},
 
-  learnedSkills: ["start"],
-  spUsed: 0,
-  activeSkillSlots: [null, null, null, null],
+  // スキル書（装備と同じ個体管理）
+  skillBooks: [],
+  activeSkillSlots: [null, null, null, null],   // uidを格納
   passiveSkillSlots: [null, null, null, null, null, null],
   skillMode: "order",
   battleStyle: "balanced",
@@ -100,7 +99,7 @@ const usePlayerStore = create((set, get) => ({
       equippedAcc1: null, equippedAcc2: null,
       specialSlots: [null, null, null],
       itemBox: [], materials: {},
-      learnedSkills: ["start"], spUsed: 0,
+      skillBooks: [],
       activeSkillSlots: [null, null, null, null],
       passiveSkillSlots: [null, null, null, null, null, null],
       skillMode: "order",
