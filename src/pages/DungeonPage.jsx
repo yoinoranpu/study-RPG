@@ -240,7 +240,7 @@ export default function DungeonPage({ onBack }) {
     setEventCount(eventCountRef.current);
 
     if (evType === "battle") {
-      const monsters = pickMonsters(globalDepth(dungeonId, floorRef.current));
+      const monsters = pickMonsters(globalDepth(dungeonId, floorRef.current), dungeonId);
       addLog(`⚔ ${monsters.map(m=>m.displayName).join("と")}が現れた！`, "#f87171");
       setCurrentEvent(null); setEventVisible(false);
       setCurrentMonsters(monsters); setMonsterVisible(true); setMonsterArrived(false);

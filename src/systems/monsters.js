@@ -1,39 +1,73 @@
 import { rollRarity, rollTitles, TRIBE_MAT } from "./events";
 
 // モンスターベースデータ
+// dungeonTier: このモンスターが通常戦闘に出現するダンジョン(1/2/3)。ボスはBOSS_DATAで別途参照するため無関係。
 export const MONSTER_BASE = [
-  { id:"slime", name:"スライム", tribe:"粘体", star:1, hp:25, atk:8, def:5, mag:10, mdef:8, eva:3, crit:2, expMul:1.0, gMul:1.0,
+  // ─── ダンジョン1(既存) ───
+  { id:"slime", name:"スライム", tribe:"粘体", star:1, dungeonTier:1, hp:25, atk:8, def:5, mag:10, mdef:8, eva:3, crit:2, expMul:1.0, gMul:1.0,
     actions:[{type:"atk",pct:80,label:"体当たり"},{type:"def",pct:10,label:"固まる"},{type:"skip",pct:10,label:"ぐにゃぐにゃ"}]},
-  { id:"slime_army", name:"スライム軍団", tribe:"粘体", star:2, hp:40, atk:10, def:8, mag:12, mdef:10, eva:5, crit:2, expMul:1.2, gMul:1.2,
+  { id:"slime_army", name:"スライム軍団", tribe:"粘体", star:2, dungeonTier:1, hp:40, atk:10, def:8, mag:12, mdef:10, eva:5, crit:2, expMul:1.2, gMul:1.2,
     actions:[{type:"atk",pct:70,label:"集団攻撃"},{type:"matk",pct:20,label:"酸液"},{type:"def",pct:10,label:"合体"}]},
-  { id:"giant_slime", name:"巨大スライム", tribe:"粘体", star:3, hp:120, atk:15, def:20, mag:20, mdef:25, eva:2, crit:5, expMul:1.8, gMul:1.8,
+  { id:"giant_slime", name:"巨大スライム", tribe:"粘体", star:3, dungeonTier:1, hp:120, atk:15, def:20, mag:20, mdef:25, eva:2, crit:5, expMul:1.8, gMul:1.8,
     actions:[{type:"atk",pct:60,label:"押しつぶす"},{type:"matk",pct:30,label:"消化液"},{type:"def",pct:10,label:"再生"}]},
-  { id:"wolf", name:"オオカミ", tribe:"獣", star:1, hp:35, atk:15, def:6, mag:5, mdef:4, eva:10, crit:6, expMul:1.0, gMul:1.0,
+  { id:"wolf", name:"オオカミ", tribe:"獣", star:1, dungeonTier:1, hp:35, atk:15, def:6, mag:5, mdef:4, eva:10, crit:6, expMul:1.0, gMul:1.0,
     actions:[{type:"atk",pct:70,label:"噛みつく"},{type:"atk",pct:20,label:"引っかく"},{type:"skip",pct:10,label:"うなる"}]},
-  { id:"dire_wolf", name:"ダイアウルフ", tribe:"獣", star:2, hp:60, atk:20, def:10, mag:8, mdef:8, eva:12, crit:8, expMul:1.4, gMul:1.4,
+  { id:"dire_wolf", name:"ダイアウルフ", tribe:"獣", star:2, dungeonTier:1, hp:60, atk:20, def:10, mag:8, mdef:8, eva:12, crit:8, expMul:1.4, gMul:1.4,
     actions:[{type:"atk",pct:60,label:"強襲"},{type:"atk",pct:30,label:"連続噛みつき"},{type:"def",pct:10,label:"毛を逆立てる"}]},
-  { id:"fenrir", name:"フェンリル", tribe:"獣", star:4, hp:150, atk:32, def:20, mag:15, mdef:18, eva:22, crit:15, expMul:2.5, gMul:2.5,
+  { id:"fenrir", name:"フェンリル", tribe:"獣", star:4, dungeonTier:1, hp:150, atk:32, def:20, mag:15, mdef:18, eva:22, crit:15, expMul:2.5, gMul:2.5,
     actions:[{type:"atk",pct:60,label:"神速の一咬み"},{type:"atk",pct:30,label:"暴嵐爪"},{type:"def",pct:10,label:"月に吠える"}]},
-  { id:"goblin", name:"ゴブリン", tribe:"ゴブリン", star:1, hp:30, atk:10, def:6, mag:5, mdef:5, eva:5, crit:3, expMul:1.0, gMul:1.2,
+  { id:"goblin", name:"ゴブリン", tribe:"ゴブリン", star:1, dungeonTier:1, hp:30, atk:10, def:6, mag:5, mdef:5, eva:5, crit:3, expMul:1.0, gMul:1.2,
     actions:[{type:"atk",pct:70,label:"棍棒"},{type:"atk",pct:20,label:"石投げ"},{type:"skip",pct:10,label:"怯む"}]},
-  { id:"goblin_king", name:"ゴブリンキング", tribe:"ゴブリン", star:4, hp:140, atk:28, def:22, mag:18, mdef:18, eva:10, crit:12, expMul:2.2, gMul:2.5,
+  { id:"goblin_king", name:"ゴブリンキング", tribe:"ゴブリン", star:4, dungeonTier:1, hp:140, atk:28, def:22, mag:18, mdef:18, eva:10, crit:12, expMul:2.2, gMul:2.5,
     actions:[{type:"atk",pct:50,label:"王の一撃"},{type:"matk",pct:30,label:"号令"},{type:"def",pct:20,label:"鎧を纏う"}]},
-  { id:"skeleton", name:"スケルトン", tribe:"不死", star:1, hp:40, atk:12, def:12, mag:0, mdef:18, eva:5, crit:5, expMul:1.0, gMul:1.0,
+  { id:"skeleton", name:"スケルトン", tribe:"不死", star:1, dungeonTier:1, hp:40, atk:12, def:12, mag:0, mdef:18, eva:5, crit:5, expMul:1.0, gMul:1.0,
     actions:[{type:"atk",pct:70,label:"骨の剣"},{type:"def",pct:20,label:"骨で防ぐ"},{type:"skip",pct:10,label:"骨が鳴る"}]},
-  { id:"death_knight", name:"デスナイト", tribe:"不死", star:4, hp:160, atk:32, def:26, mag:20, mdef:22, eva:10, crit:15, expMul:2.3, gMul:2.3,
+  { id:"death_knight", name:"デスナイト", tribe:"不死", star:4, dungeonTier:1, hp:160, atk:32, def:26, mag:20, mdef:22, eva:10, crit:15, expMul:2.3, gMul:2.3,
     actions:[{type:"atk",pct:50,label:"冥府の剣"},{type:"matk",pct:30,label:"死の波動"},{type:"def",pct:20,label:"不死の鎧"}]},
-  { id:"imp", name:"インプ", tribe:"悪魔", star:1, hp:30, atk:10, def:5, mag:18, mdef:10, eva:15, crit:10, expMul:1.1, gMul:1.3,
+  { id:"imp", name:"インプ", tribe:"悪魔", star:1, dungeonTier:1, hp:30, atk:10, def:5, mag:18, mdef:10, eva:15, crit:10, expMul:1.1, gMul:1.3,
     actions:[{type:"matk",pct:60,label:"火炎弾"},{type:"atk",pct:30,label:"引っかく"},{type:"skip",pct:10,label:"飛び回る"}]},
-  { id:"demon_soldier", name:"魔界兵", tribe:"悪魔", star:4, hp:180, atk:36, def:30, mag:25, mdef:25, eva:10, crit:18, expMul:2.4, gMul:2.4,
+  { id:"demon_soldier", name:"魔界兵", tribe:"悪魔", star:4, dungeonTier:1, hp:180, atk:36, def:30, mag:25, mdef:25, eva:10, crit:18, expMul:2.4, gMul:2.4,
     actions:[{type:"atk",pct:50,label:"魔剣撃"},{type:"matk",pct:30,label:"魔界炎"},{type:"def",pct:20,label:"魔鎧展開"}]},
-  { id:"moss_slime", name:"苔スライム", tribe:"植物", star:1, hp:45, atk:8, def:15, mag:12, mdef:20, eva:2, crit:2, expMul:1.1, gMul:1.0,
+  { id:"moss_slime", name:"苔スライム", tribe:"植物", star:1, dungeonTier:1, hp:45, atk:8, def:15, mag:12, mdef:20, eva:2, crit:2, expMul:1.1, gMul:1.0,
     actions:[{type:"atk",pct:50,label:"胞子攻撃"},{type:"def",pct:30,label:"固まる"},{type:"skip",pct:20,label:"光合成"}]},
-  { id:"world_tree", name:"世界樹の苗木", tribe:"植物", star:4, hp:220, atk:15, def:40, mag:38, mdef:50, eva:0, crit:5, expMul:3.0, gMul:3.0,
+  { id:"world_tree", name:"世界樹の苗木", tribe:"植物", star:4, dungeonTier:1, hp:220, atk:15, def:40, mag:38, mdef:50, eva:0, crit:5, expMul:3.0, gMul:3.0,
     actions:[{type:"matk",pct:60,label:"生命の雷"},{type:"def",pct:30,label:"神聖な壁"},{type:"skip",pct:10,label:"根が揺れる"}]},
-  { id:"kobold", name:"コボルト", tribe:"竜", star:1, hp:30, atk:10, def:8, mag:5, mdef:6, eva:8, crit:4, expMul:1.1, gMul:1.2,
+  { id:"kobold", name:"コボルト", tribe:"竜", star:1, dungeonTier:1, hp:30, atk:10, def:8, mag:5, mdef:6, eva:8, crit:4, expMul:1.1, gMul:1.2,
     actions:[{type:"atk",pct:70,label:"爪攻撃"},{type:"atk",pct:20,label:"噛みつく"},{type:"skip",pct:10,label:"ドラゴンポーズ"}]},
-  { id:"fire_dragon", name:"火竜", tribe:"竜", star:3, hp:220, atk:45, def:30, mag:40, mdef:25, eva:12, crit:18, expMul:2.8, gMul:3.2,
+  { id:"fire_dragon", name:"火竜", tribe:"竜", star:3, dungeonTier:1, hp:220, atk:45, def:30, mag:40, mdef:25, eva:12, crit:18, expMul:2.8, gMul:3.2,
     actions:[{type:"matk",pct:50,label:"炎ブレス"},{type:"atk",pct:40,label:"炎爪"},{type:"def",pct:10,label:"炎を纏う"}]},
+
+  // ─── ダンジョン2 新規 ───
+  { id:"acid_slime", name:"酸スライム", tribe:"粘体", star:2, dungeonTier:2, hp:55, atk:16, def:14, mag:16, mdef:15, eva:4, crit:3, expMul:1.4, gMul:1.4,
+    actions:[{type:"atk",pct:70,label:"酸で溶かす"},{type:"matk",pct:20,label:"酸霧"},{type:"def",pct:10,label:"身を守る"}]},
+  { id:"armored_boar", name:"重装イノシシ", tribe:"獣", star:2, dungeonTier:2, hp:70, atk:22, def:18, mag:5, mdef:10, eva:8, crit:6, expMul:1.5, gMul:1.4,
+    actions:[{type:"atk",pct:75,label:"猛突進"},{type:"atk",pct:15,label:"牙で突く"},{type:"def",pct:10,label:"身構える"}]},
+  { id:"goblin_shaman", name:"ゴブリンシャーマン", tribe:"ゴブリン", star:2, dungeonTier:2, hp:55, atk:10, def:10, mag:24, mdef:16, eva:6, crit:4, expMul:1.5, gMul:1.5,
+    actions:[{type:"matk",pct:60,label:"呪いの杖"},{type:"atk",pct:20,label:"殴打"},{type:"def",pct:20,label:"呪符を貼る"}]},
+  { id:"wraith_knight", name:"亡霊騎士", tribe:"不死", star:3, dungeonTier:2, hp:75, atk:20, def:16, mag:14, mdef:20, eva:10, crit:8, expMul:1.6, gMul:1.5,
+    actions:[{type:"atk",pct:60,label:"亡霊の剣"},{type:"matk",pct:25,label:"怨念"},{type:"def",pct:15,label:"実体を薄める"}]},
+  { id:"imp_captain", name:"小悪魔隊長", tribe:"悪魔", star:3, dungeonTier:2, hp:65, atk:18, def:12, mag:22, mdef:16, eva:14, crit:10, expMul:1.6, gMul:1.6,
+    actions:[{type:"matk",pct:55,label:"業火弾"},{type:"atk",pct:30,label:"鋭爪"},{type:"skip",pct:15,label:"嘲笑う"}]},
+  { id:"man_eater", name:"食人植物", tribe:"植物", star:3, dungeonTier:2, hp:90, atk:20, def:20, mag:18, mdef:22, eva:2, crit:4, expMul:1.6, gMul:1.4,
+    actions:[{type:"atk",pct:55,label:"咬みつく蔦"},{type:"matk",pct:25,label:"胞子噴射"},{type:"def",pct:20,label:"根を張る"}]},
+  { id:"young_dragon", name:"若竜", tribe:"竜", star:3, dungeonTier:2, hp:95, atk:26, def:18, mag:20, mdef:16, eva:10, crit:10, expMul:1.7, gMul:1.7,
+    actions:[{type:"atk",pct:50,label:"尻尾払い"},{type:"matk",pct:35,label:"ブレス"},{type:"def",pct:15,label:"鱗を硬化"}]},
+
+  // ─── ダンジョン3 新規 ───
+  { id:"abyss_slime", name:"深淵スライム", tribe:"粘体", star:4, dungeonTier:3, hp:160, atk:28, def:26, mag:32, mdef:28, eva:4, crit:6, expMul:2.6, gMul:2.6,
+    actions:[{type:"atk",pct:50,label:"闇の浸食"},{type:"matk",pct:35,label:"深淵の波動"},{type:"def",pct:15,label:"無限に蠢く"}]},
+  { id:"blood_wolf_chief", name:"血狼の首領", tribe:"獣", star:4, dungeonTier:3, hp:180, atk:40, def:24, mag:10, mdef:16, eva:20, crit:16, expMul:2.7, gMul:2.6,
+    actions:[{type:"atk",pct:65,label:"血染めの牙"},{type:"atk",pct:25,label:"疾風の爪"},{type:"def",pct:10,label:"血の加護"}]},
+  { id:"goblin_pope", name:"ゴブリン教皇", tribe:"ゴブリン", star:4, dungeonTier:3, hp:170, atk:22, def:24, mag:40, mdef:32, eva:8, crit:10, expMul:2.8, gMul:2.8,
+    actions:[{type:"matk",pct:55,label:"邪教の呪詛"},{type:"atk",pct:20,label:"杖打"},{type:"def",pct:25,label:"邪神の加護"}]},
+  { id:"fallen_queen", name:"亡国の女王", tribe:"不死", star:4, dungeonTier:3, hp:200, atk:36, def:28, mag:36, mdef:34, eva:12, crit:16, expMul:3.0, gMul:2.8,
+    actions:[{type:"atk",pct:45,label:"亡国の剣"},{type:"matk",pct:35,label:"死の宣告"},{type:"def",pct:20,label:"冥府の盾"}]},
+  { id:"fallen_angel", name:"堕天使", tribe:"悪魔", star:4, dungeonTier:3, hp:190, atk:38, def:26, mag:38, mdef:28, eva:18, crit:18, expMul:3.0, gMul:3.0,
+    actions:[{type:"atk",pct:45,label:"堕天の剣"},{type:"matk",pct:40,label:"冥闇の光"},{type:"def",pct:15,label:"闇の翼"}]},
+  { id:"cursed_tree", name:"古の魔樹", tribe:"植物", star:4, dungeonTier:3, hp:260, atk:18, def:45, mag:45, mdef:55, eva:0, crit:4, expMul:3.2, gMul:2.8,
+    actions:[{type:"matk",pct:60,label:"呪いの実"},{type:"def",pct:30,label:"樹皮の鎧"},{type:"skip",pct:10,label:"根を伸ばす"}]},
+  { id:"black_dragon", name:"黒竜", tribe:"竜", star:4, dungeonTier:3, hp:240, atk:48, def:32, mag:42, mdef:28, eva:14, crit:20, expMul:3.4, gMul:3.4,
+    actions:[{type:"matk",pct:50,label:"暗黒ブレス"},{type:"atk",pct:40,label:"竜爪撃"},{type:"def",pct:10,label:"竜鱗を硬化"}]},
 ];
 // ─── ボスモンスターデータ ───
 // 3ダンジョン×30階（各ダンジョン5階ごと=6体）に再構成。
@@ -131,14 +165,19 @@ export const generateMonster = (base, floor = 1) => {
 };
 
 // 出現モンスター抽選
-export const pickMonsters = (floor = 1) => {
+// floorはglobalDepth(難易度スケール用)、dungeonIdは出現種族プールの絞り込みに使う
+export const pickMonsters = (floor = 1, dungeonId = 1) => {
+  const dungeonPool = MONSTER_BASE.filter(m => (m.dungeonTier || 1) === dungeonId);
+  const basePool = dungeonPool.length > 0 ? dungeonPool : MONSTER_BASE;
+
   const tribe = TRIBES[Math.floor(Math.random() * TRIBES.length)];
   const starProbs = [{ star:1, p:0.60 },{ star:2, p:0.25 },{ star:3, p:0.10 },{ star:4, p:0.05 }];
   let r = Math.random(), acc = 0, star = 1;
   for (const s of starProbs) { acc += s.p; if (r < acc) { star = s.star; break; } }
 
-  const pool = MONSTER_BASE.filter(m => m.tribe === tribe && m.star === star);
-  const src  = pool.length > 0 ? pool : MONSTER_BASE.filter(m => m.tribe === tribe);
+  const pool = basePool.filter(m => m.tribe === tribe && m.star === star);
+  const tribePool = pool.length > 0 ? pool : basePool.filter(m => m.tribe === tribe);
+  const src = tribePool.length > 0 ? tribePool : basePool;
   const base = src[Math.floor(Math.random() * src.length)];
   const result = [generateMonster(base, floor)];
 
