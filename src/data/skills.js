@@ -360,8 +360,9 @@ const BOOK_DROP_WEIGHT_BY_CHEST = {
 };
 
 // floorは「全ダンジョン通算の深度(globalDepth)」を渡す想定（呼び出し側で計算）
+// ダンジョン1(1〜30階)だけで最上位(legendary)まで出し切る設計。items.jsのRARITY.unlockFloorと揃える。
 export const rollBookRarity = (chestRarityId = "common", floor = 1) => {
-  const maxTier = floor >= 75 ? 4 : floor >= 50 ? 3 : floor >= 25 ? 2 : floor >= 10 ? 1 : 0;
+  const maxTier = floor >= 28 ? 4 : floor >= 20 ? 3 : floor >= 12 ? 2 : floor >= 5 ? 1 : 0;
   const weights = BOOK_DROP_WEIGHT_BY_CHEST[chestRarityId] || BOOK_DROP_WEIGHT_BY_CHEST.common;
   const pool = BOOK_DROP_RARITY_ORDER.slice(0, maxTier + 1);
   const w = pool.map((_, i) => weights[i] || 0);

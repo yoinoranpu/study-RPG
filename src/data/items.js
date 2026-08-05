@@ -4,12 +4,15 @@
 // ═══════════════════════════════════════════════════════
 
 // ─── レアリティ定義 ───
+// unlockFloorは全ダンジョン通算深度(globalDepth)。ダンジョン1(1〜30階)だけで
+// 最上位(legendary)まで一通り出し切り、そこから先を続ける人には全要素が
+// 揃った状態で遊んでもらう設計。
 export const RARITY = {
   common:    { id:"common",    label:"Common",    color:"#a0a0a0", tier:1, unlockFloor:0  },
-  uncommon:  { id:"uncommon",  label:"Uncommon",  color:"#4ade80", tier:2, unlockFloor:10 },
-  rare:      { id:"rare",      label:"Rare",       color:"#60a5fa", tier:3, unlockFloor:25 },
-  epic:      { id:"epic",      label:"Epic",       color:"#a78bfa", tier:4, unlockFloor:50 },
-  legendary: { id:"legendary", label:"Legendary",  color:"#fbbf24", tier:5, unlockFloor:75 },
+  uncommon:  { id:"uncommon",  label:"Uncommon",  color:"#4ade80", tier:2, unlockFloor:5  },
+  rare:      { id:"rare",      label:"Rare",       color:"#60a5fa", tier:3, unlockFloor:12 },
+  epic:      { id:"epic",      label:"Epic",       color:"#a78bfa", tier:4, unlockFloor:20 },
+  legendary: { id:"legendary", label:"Legendary",  color:"#fbbf24", tier:5, unlockFloor:28 },
   mythic:    { id:"mythic",    label:"Mythic",     color:"#ef4444", tier:6, unlockFloor:999 }, // 合成限定
   origin:    { id:"origin",    label:"Origin",     color:"#FFD700", tier:7, unlockFloor:999, border:"#ef4444" }, // 合成限定
 };

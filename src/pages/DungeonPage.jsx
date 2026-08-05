@@ -219,7 +219,8 @@ export default function DungeonPage({ onBack }) {
           addLog(`⚠ B${floorRef.current}F ボス階層！`, "#ef4444");
         }
         // レアリティ解放は全ダンジョン通算の深度で判定（ダンジョンが変わってもコモンに逆戻りしない）
-        const RARITY_UNLOCKS = { 10:"uncommon", 25:"rare", 50:"epic", 75:"legendary" };
+        // ダンジョン1(1〜30階)だけで最上位まで出し切る。items.jsのRARITY.unlockFloorと揃える。
+        const RARITY_UNLOCKS = { 5:"uncommon", 12:"rare", 20:"epic", 28:"legendary" };
         const unlocked = RARITY_UNLOCKS[globalDepth(dungeonId, floorRef.current)];
         if (unlocked) {
           setTimeout(() => { updatePlayer({ unlockedRarity: unlocked }); }, 0);

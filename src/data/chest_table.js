@@ -96,11 +96,11 @@ export const openChest = (chestRarityId, currentFloor = 1, dungeonId = 1) => {
   }
 
   if (category === "equipment") {
-    // フロアに応じてレアリティフィルタ
-    const maxRarityTier = currentFloor >= 75 ? 5 :
-                          currentFloor >= 50 ? 4 :
-                          currentFloor >= 25 ? 3 :
-                          currentFloor >= 10 ? 2 : 1;
+    // フロアに応じてレアリティフィルタ（ダンジョン1だけで最上位まで出し切る。items.jsのRARITY.unlockFloorと揃える）
+    const maxRarityTier = currentFloor >= 28 ? 5 :
+                          currentFloor >= 20 ? 4 :
+                          currentFloor >= 12 ? 3 :
+                          currentFloor >= 5 ? 2 : 1;
     const pool = [...WEAPON_DB, ...ARMOR_DB, ...ACCESSORY_DB].filter(it => {
       const tier = getRarity(it.rarity)?.tier || 1;
       return tier <= maxRarityTier + 1 && it.dropWeight > 0;
