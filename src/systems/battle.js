@@ -55,6 +55,7 @@ export const simulateBattle = (player, monsters, options = {}) => {
   const innate = {
     armorPierceMul: 1, vampiricPct: 0, berserkerActive: false, guardianPct: 0, swiftSpd: 0,
     fireDmgChance: 0, thunderStunChance: 0, poisonBladeChance: 0,
+    poisonChance: 0, burnChance: 0, freezeChance: 0, paralyzeChance: 0,
     ...(player.innateBonus || {}),
   };
 
@@ -209,11 +210,14 @@ export const simulateBattle = (player, monsters, options = {}) => {
         const heal = Math.max(1, Math.floor(dmg * innate.vampiricPct / 100));
         playerEntity.hp = Math.min(playerEntity.maxHp, playerEntity.hp + heal);
       }
-      if (enemy.hp > 0 && (innate.fireDmgChance > 0 || innate.thunderStunChance > 0 || innate.poisonBladeChance > 0)) {
+      if (enemy.hp > 0 && (innate.fireDmgChance > 0 || innate.thunderStunChance > 0 || innate.poisonBladeChance > 0
+          || innate.poisonChance > 0 || innate.burnChance > 0 || innate.freezeChance > 0 || innate.paralyzeChance > 0)) {
         tryApplyStatus(enemy, {
-          burn: innate.fireDmgChance / 100,
+          burn: (innate.fireDmgChance + innate.burnChance) / 100,
           stun: innate.thunderStunChance / 100,
-          poison: innate.poisonBladeChance / 100,
+          poison: (innate.poisonBladeChance + innate.poisonChance) / 100,
+          freeze: innate.freezeChance / 100,
+          paralyze: innate.paralyzeChance / 100,
         }, eMag(playerEntity));
       }
     }

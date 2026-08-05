@@ -44,6 +44,13 @@ const normalizeLoadedData = (data) => {
     quests: data.quests || makeInitialQuests(),
     stats: data.stats || makeInitialStats(),
     achievements: data.achievements || makeInitialAchievements(),
+    unlockedRarity: data.unlockedRarity || "common",
+    monsterBook: data.monsterBook || {},
+    skillBookDex: data.skillBookDex || {},
+    specialSlots: data.specialSlots || [null, null, null],
+    timerWork: data.timerWork || 25,
+    timerBreak: data.timerBreak || 5,
+    timerSets: data.timerSets || 4,
   };
 };
 

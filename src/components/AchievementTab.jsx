@@ -1,5 +1,6 @@
 import usePlayerStore from "../store/usePlayerStore";
 import { ACHIEVEMENT_DEFS } from "../systems/achievements";
+import RewardRow from "./RewardRow";
 
 const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
@@ -38,7 +39,6 @@ export default function AchievementTab() {
     const done = progress >= ach.target;
     const isClaimed = !!claimed[ach.id];
     const revealed = !ach.hidden || done;
-    const pct = Math.min(100, (progress / ach.target) * 100);
     const color = isClaimed ? "#4a4a6a" : done ? "#4ade80" : CATEGORY_COLOR[ach.category];
 
     if (!revealed) {
@@ -52,31 +52,15 @@ export default function AchievementTab() {
       );
     }
 
+    const rewardChips = [
+      { text:`${ach.reward.gold}G`, color:"#fbbf24" },
+      { text:`${ach.reward.exp}EXP`, color:"#86efac" },
+    ];
+
     return (
-      <div style={{ background:"#0d0d15", border:`1px solid ${isClaimed?"#2a2a3a":color+"66"}`, borderLeft:`3px solid ${color}`, borderRadius:6, padding:"10px 12px", marginBottom:8, opacity:isClaimed?0.6:1 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-          <span style={{ fontSize:11, color:"#e8e0d0", fontWeight:700 }}>{ach.label}</span>
-          <span style={{ fontSize:10, color:DIM }}>{progress}/{ach.target}</span>
-        </div>
-        <div style={{ fontSize:9, color:DIM, marginBottom:8 }}>{ach.desc}</div>
-        <div style={{ height:5, background:"#080810", borderRadius:3, overflow:"hidden", marginBottom:8 }}>
-          <div style={{ height:"100%", width:`${pct}%`, background:color, borderRadius:3 }} />
-        </div>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div style={{ display:"flex", gap:8, fontSize:10 }}>
-            <span style={{ color:"#fbbf24" }}>{ach.reward.gold}G</span>
-            <span style={{ color:"#86efac" }}>{ach.reward.exp}EXP</span>
-          </div>
-          {isClaimed ? (
-            <span style={{ fontSize:9, color:DIM }}>受取済み</span>
-          ) : (
-            <button onClick={()=>claim(ach)} disabled={!done}
-              style={{ padding:"5px 14px", background:done?"#0a1a0a":"#0a0a0a", border:`1px solid ${done?"#4ade80":"#3a3a3a"}`, borderRadius:4, cursor:done?"pointer":"default", color:done?"#4ade80":FAINT, fontSize:10, fontFamily:"monospace" }}>
-              受け取る
-            </button>
-          )}
-        </div>
-      </div>
+      <RewardRow label={ach.label} desc={ach.desc} progress={progress} target={ach.target}
+        claimed={isClaimed} done={done} color={color} rewardChips={rewardChips}
+        onClaim={()=>claim(ach)} />
     );
   }
 

@@ -85,8 +85,19 @@ export default function TownPage({ onEnterDungeon }) {
 
         {/* ホーム */}
         {tab === "home" && subTab === "home" && (
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            <div style={{ background:"#0d0d1a", border:"1px solid #3a3a55", borderRadius:8, padding:14 }}>
+          <div style={{ position:"relative", margin:"-14px", overflow:"hidden" }}>
+            {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（切れ防止） */}
+            <div style={{ position:"absolute", inset:0, background:"#08080f" }} />
+            <div style={{ position:"absolute", top:0, left:0, right:0 }}>
+              <img src="/assets/images/town-banner.png" alt="" style={{ width:"100%", height:"auto", display:"block" }} />
+              <div style={{
+                position:"absolute", inset:0,
+                backgroundImage:"linear-gradient(180deg, rgba(5,5,8,0.05) 0%, rgba(5,5,8,0.1) 40%, rgba(5,5,8,0.85) 75%, #08080f 92%, #08080f 100%)",
+              }} />
+            </div>
+
+            <div style={{ position:"relative", zIndex:1, padding:"150px 14px 14px", display:"flex", flexDirection:"column", gap:10 }}>
+            <div style={{ background:"rgba(13,13,26,0.88)", border:"1px solid #3a3a55", borderRadius:8, padding:14 }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
                 <span style={{ fontSize:28 }}>🧙</span>
                 <div style={{ flex:1 }}>
@@ -150,8 +161,8 @@ export default function TownPage({ onEnterDungeon }) {
               })}
             </div>
 
-            {player.keyRescueDungeonId != null && (
-              <div style={{ background:"#0d0d1a", border:"1px solid #60a5fa44", borderRadius:6, padding:"8px 12px", display:"flex", alignItems:"center", gap:8 }}>
+            {player.keyRescueDungeonId != null && !player.keyRescueClaimed && (
+              <div style={{ background:"rgba(13,13,26,0.88)", border:"1px solid #60a5fa44", borderRadius:6, padding:"8px 12px", display:"flex", alignItems:"center", gap:8 }}>
                 <span style={{ fontSize:16 }}>🔑</span>
                 <span style={{ fontSize:10, color:"#60a5fa" }}>5階ごとのボス部屋には鍵が必要です。宝箱で入手できます（ショップにも並ぶことがあります）</span>
               </div>
@@ -170,6 +181,7 @@ export default function TownPage({ onEnterDungeon }) {
                 <span style={{ fontSize:18 }}>🏆</span>
                 <span style={{ fontSize:10, color:"#f87171" }}>実績</span>
               </button>
+            </div>
             </div>
           </div>
         )}

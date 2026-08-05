@@ -21,7 +21,7 @@ export const RARITY_LIST = Object.values(RARITY);
 export const getRarity = (id) => RARITY[id] || RARITY.common;
 
 // ─── ランダム能力プール（内部用・プレイヤーには数値だけ見える）───
-export const RANDOM_ABILITY_POOL = {
+const RANDOM_ABILITY_POOL = {
   // 基本ステータス
   atk:      { key:"atk",      label:"ATK+",     suffix:"",  tiers:[2,4,6,8,10], type:"stat" },
   def:      { key:"def",      label:"DEF+",     suffix:"",  tiers:[2,4,6,8,10], type:"stat" },
@@ -42,16 +42,16 @@ export const RANDOM_ABILITY_POOL = {
   // 回復
   lifesteal: { key:"lifesteal",label:"吸血+",   suffix:"%", tiers:[2,3,5,7,10], type:"percent" },
 
-  // 将来実装（枠だけ確保）
-  poison:   { key:"poison",   label:"毒付与+",  suffix:"%", tiers:[5,10,15,20,25], type:"status", future:true },
-  burn:     { key:"burn",     label:"火傷付与+", suffix:"%", tiers:[5,10,15,20,25], type:"status", future:true },
-  freeze:   { key:"freeze",   label:"凍結付与+", suffix:"%", tiers:[3,5,8,12,15],  type:"status", future:true },
-  paralyze: { key:"paralyze", label:"麻痺付与+", suffix:"%", tiers:[3,5,8,12,15],  type:"status", future:true },
+  // 状態異常付与（命中時%の確率で付与。src/systems/status.jsのpoison/burn/freeze/paralyzeをそのまま使う）
+  poison:   { key:"poison",   label:"毒付与+",  suffix:"%", tiers:[5,10,15,20,25], type:"status" },
+  burn:     { key:"burn",     label:"火傷付与+", suffix:"%", tiers:[5,10,15,20,25], type:"status" },
+  freeze:   { key:"freeze",   label:"凍結付与+", suffix:"%", tiers:[3,5,8,12,15],  type:"status" },
+  paralyze: { key:"paralyze", label:"麻痺付与+", suffix:"%", tiers:[3,5,8,12,15],  type:"status" },
 };
 
 // ランダム能力を抽選する（tierは1〜5）
 export const rollAbility = (tier = 1) => {
-  const pool = Object.values(RANDOM_ABILITY_POOL).filter(a => !a.future);
+  const pool = Object.values(RANDOM_ABILITY_POOL);
   const ability = pool[Math.floor(Math.random() * pool.length)];
   const val = ability.tiers[Math.min(tier - 1, 4)];
   return { key: ability.key, label: ability.label, suffix: ability.suffix, value: val, type: ability.type };
@@ -64,7 +64,7 @@ export const getAbilitySlots = (rarityId) => {
 };
 
 // レアリティに応じた能力tier
-export const getAbilityTier = (rarityId) => {
+const getAbilityTier = (rarityId) => {
   const tiers = { common:0, uncommon:1, rare:2, epic:3, legendary:4, mythic:5, origin:5 };
   return tiers[rarityId] || 1;
 };
@@ -94,23 +94,32 @@ export const getEquippedInnateBonus = (player) => {
   const bonus = {
     armorPierceMul: 1, vampiricPct: 0, berserkerActive: false, guardianPct: 0, swiftSpd: 0,
     fireDmgChance: 0, thunderStunChance: 0, poisonBladeChance: 0,
+    poisonChance: 0, burnChance: 0, freezeChance: 0, paralyzeChance: 0,
     mapBonus: 0, dropBonus: 0, expBonus: 0,
   };
   const items = [player?.equippedWeapon, player?.equippedArmor, player?.equippedAcc1, player?.equippedAcc2];
   items.forEach(it => {
     const key = it?.innate;
-    if (!key || key === "none") return;
-    if (key === "armor_pierce") bonus.armorPierceMul = Math.min(bonus.armorPierceMul, 0.9);
-    if (key === "vampiric")     bonus.vampiricPct += 5;
-    if (key === "berserker")    bonus.berserkerActive = true;
-    if (key === "guardian")     bonus.guardianPct += 15;
-    if (key === "swift")        bonus.swiftSpd += 20;
-    if (key === "fire_dmg")     bonus.fireDmgChance += 20;
-    if (key === "thunder_stun") bonus.thunderStunChance += 15;
-    if (key === "poison_blade") bonus.poisonBladeChance += 20;
-    if (key === "explorer")     bonus.mapBonus += 10;
-    if (key === "lucky")        bonus.dropBonus += 10;
-    if (key === "exp_bonus")    bonus.expBonus += 10;
+    if (key && key !== "none") {
+      if (key === "armor_pierce") bonus.armorPierceMul = Math.min(bonus.armorPierceMul, 0.9);
+      if (key === "vampiric")     bonus.vampiricPct += 5;
+      if (key === "berserker")    bonus.berserkerActive = true;
+      if (key === "guardian")     bonus.guardianPct += 15;
+      if (key === "swift")        bonus.swiftSpd += 20;
+      if (key === "fire_dmg")     bonus.fireDmgChance += 20;
+      if (key === "thunder_stun") bonus.thunderStunChance += 15;
+      if (key === "poison_blade") bonus.poisonBladeChance += 20;
+      if (key === "explorer")     bonus.mapBonus += 10;
+      if (key === "lucky")        bonus.dropBonus += 10;
+      if (key === "exp_bonus")    bonus.expBonus += 10;
+    }
+    (it?.abilities || []).forEach(ab => {
+      if (ab.type !== "status") return;
+      if (ab.key === "poison")   bonus.poisonChance += ab.value;
+      if (ab.key === "burn")     bonus.burnChance += ab.value;
+      if (ab.key === "freeze")   bonus.freezeChance += ab.value;
+      if (ab.key === "paralyze") bonus.paralyzeChance += ab.value;
+    });
   });
   return bonus;
 };
@@ -206,15 +215,6 @@ export const ALL_ITEMS = [
   ...SPECIAL_DB,
 ];
 
-// ─── 後方互換用（既存コードが参照してる場合） ───
-export const ITEM_DB = {
-  weapon:    WEAPON_DB,
-  armor:     ARMOR_DB,
-  accessory: ACCESSORY_DB,
-  consumable: CONSUMABLE_DB,
-  special:   SPECIAL_DB,
-};
-
 // ─── ショップ価格 ───
 export const getShopPrice = (item) => {
   const prices = { common:80, uncommon:200, rare:500, epic:1200, legendary:3000, mythic:0, origin:0 };
@@ -276,7 +276,8 @@ const applyVariance = (val) => {
 
 export const makeItem = (tmpl) => {
   const rarityId = tmpl.rarity || "common";
-  const slots = getAbilitySlots(rarityId);
+  const isEquipment = tmpl.type === "weapon" || tmpl.type === "armor" || tmpl.type === "accessory";
+  const slots = isEquipment ? getAbilitySlots(rarityId) : 0;
   const tier  = getAbilityTier(rarityId);
 
   // ランダム能力を抽選

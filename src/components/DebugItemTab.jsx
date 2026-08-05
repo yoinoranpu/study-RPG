@@ -2,13 +2,14 @@ import { useState } from "react";
 import { ALL_ITEMS, makeItem, RARITY_COLOR, RARITY_LABEL } from "../data/items";
 import { SKILL_BOOKS, SKILL_BOOK_LIST, makeBook, mergeBookDex, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_RARITY_ORDER } from "../data/skills";
 import usePlayerStore from "../store/usePlayerStore";
+import useFlashMessage from "../hooks/useFlashMessage";
 
 const ITEM_BOX_MAX = 30;
 
 export default function DebugItemTab() {
   const [sub, setSub] = useState("weapon");
   const [bookRarity, setBookRarity] = useState("common");
-  const [msg, setMsg] = useState("");
+  const [msg, flash] = useFlashMessage(2000);
   const { itemBox, skillBooks, skillBookDex, updatePlayer } = usePlayerStore();
 
   const tabs = [
@@ -19,8 +20,6 @@ export default function DebugItemTab() {
     { id:"special",    label:"✨特殊"   },
     { id:"book",       label:"📖スキル書" },
   ];
-
-  function flash(text) { setMsg(text); setTimeout(()=>setMsg(""),2000); }
 
   function give(tmpl) {
     if ((itemBox||[]).length >= ITEM_BOX_MAX) { flash("BOX満杯！"); return; }

@@ -3,10 +3,9 @@ import { QUEST_DEFS } from "../systems/quests";
 import { openChest, CHEST_TYPES } from "../data/chest_table";
 import { getGlobalUnlockDepth } from "../systems/dungeons";
 import { mergeBookDex } from "../data/skills";
+import RewardRow from "./RewardRow";
 
 const ITEM_BOX_MAX = 30;
-const DIM = "#7a7a9a";
-const FAINT = "#5c5c82";
 
 export default function QuestTab() {
   const player = usePlayerStore();
@@ -51,35 +50,18 @@ export default function QuestTab() {
     const progress = Math.min(quest.target, quest.get(q, player));
     const done = progress >= quest.target;
     const claimed = !!q[claimedKey]?.[quest.id];
-    const pct = Math.min(100, (progress / quest.target) * 100);
     const color = claimed ? "#4a4a6a" : done ? "#4ade80" : "#60a5fa";
     const chestType = quest.reward.chestRarity ? CHEST_TYPES[quest.reward.chestRarity] : null;
+    const rewardChips = [
+      { text:`${quest.reward.gold}G`, color:"#fbbf24" },
+      { text:`${quest.reward.exp}EXP`, color:"#86efac" },
+      ...(chestType ? [{ text:`${chestType.icon}${chestType.label}`, color:chestType.color }] : []),
+    ];
 
     return (
-      <div style={{ background:"#0d0d15", border:`1px solid ${claimed?"#2a2a3a":color+"66"}`, borderLeft:`3px solid ${color}`, borderRadius:6, padding:"10px 12px", marginBottom:8, opacity:claimed?0.6:1 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-          <span style={{ fontSize:11, color:"#e8e0d0", fontWeight:700 }}>{quest.label}</span>
-          <span style={{ fontSize:10, color:DIM }}>{progress}/{quest.target}</span>
-        </div>
-        <div style={{ height:5, background:"#080810", borderRadius:3, overflow:"hidden", marginBottom:8 }}>
-          <div style={{ height:"100%", width:`${pct}%`, background:color, borderRadius:3 }} />
-        </div>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div style={{ display:"flex", gap:8, fontSize:10 }}>
-            <span style={{ color:"#fbbf24" }}>{quest.reward.gold}G</span>
-            <span style={{ color:"#86efac" }}>{quest.reward.exp}EXP</span>
-            {chestType && <span style={{ color:chestType.color }}>{chestType.icon}{chestType.label}</span>}
-          </div>
-          {claimed ? (
-            <span style={{ fontSize:9, color:DIM }}>受取済み</span>
-          ) : (
-            <button onClick={()=>claim(scope, quest)} disabled={!done}
-              style={{ padding:"5px 14px", background:done?"#0a1a0a":"#0a0a0a", border:`1px solid ${done?"#4ade80":"#3a3a3a"}`, borderRadius:4, cursor:done?"pointer":"default", color:done?"#4ade80":FAINT, fontSize:10, fontFamily:"monospace" }}>
-              受け取る
-            </button>
-          )}
-        </div>
-      </div>
+      <RewardRow label={quest.label} progress={progress} target={quest.target}
+        claimed={claimed} done={done} color={color} rewardChips={rewardChips}
+        onClaim={()=>claim(scope, quest)} />
     );
   }
 

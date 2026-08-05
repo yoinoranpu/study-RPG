@@ -15,7 +15,7 @@ export const CHEST_TYPES = {
 };
 
 // ─── 宝箱レアリティ抽選確率 ───
-export const CHEST_RARITY_TABLE = [
+const CHEST_RARITY_TABLE = [
   { id:"common",   prob:0.63 },
   { id:"uncommon", prob:0.27 },
   { id:"rare",     prob:0.08 },
@@ -33,7 +33,7 @@ export const rollChestRarity = () => {
 
 // ─── 宝箱中身カテゴリ確率 ───
 // 将来変更するときはここの数値だけ変える
-export const CHEST_CONTENT_TABLE = {
+const CHEST_CONTENT_TABLE = {
   common: [
     { type:"gold",     prob:0.35, min:50,   max:200  },
     { type:"consumable",prob:0.20 },

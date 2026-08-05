@@ -83,6 +83,7 @@ const usePlayerStore = create((set, get) => ({
   studyMinutesToday: 0,
   studyMinutesWeek: 0,
 
+  unlockedRarity: "common",
   monsterBook: {},
   skillBookDex: {},
   quests: makeInitialQuests(),
@@ -118,6 +119,7 @@ const usePlayerStore = create((set, get) => ({
       passiveSkillSlots: [null, null, null, null, null, null],
       skillMode: "order",
       battleStyle: "balanced",
+      timerWork: 25, timerBreak: 5, timerSets: 4,
       studyMinutesTotal: 0, studyMinutesToday: 0, studyMinutesWeek: 0,
       monsterBook: {},
       skillBookDex: {},

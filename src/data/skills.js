@@ -32,7 +32,7 @@ export const BOOK_SYNTHESIS_COST = {
 };
 
 // ─── 売却価格 ───
-export const BOOK_SELL_PRICE = {
+const BOOK_SELL_PRICE = {
   common:    40,
   uncommon:  120,
   rare:      350,
@@ -350,7 +350,7 @@ export const makeBook = (bookId, rarity = "common") => {
 
 // ─── 自然入手（宝箱・ドロップ）のレアリティ抽選 ───
 // mythic/origin は合成でのみ入手可能（自然ドロップ対象外）
-export const BOOK_DROP_RARITY_ORDER = ["common", "uncommon", "rare", "epic", "legendary"];
+const BOOK_DROP_RARITY_ORDER = ["common", "uncommon", "rare", "epic", "legendary"];
 
 const BOOK_DROP_WEIGHT_BY_CHEST = {
   common:   [70, 25, 5,  0,  0],

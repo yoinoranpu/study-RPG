@@ -3,6 +3,7 @@ import usePlayerStore from "../store/usePlayerStore";
 import { RARITY_COLOR, RARITY_LABEL, getItemStats, INNATE, SYNTHESIS_COST, getAbilitySlots } from "../data/items";
 import { SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_SYNTHESIS_COST, nextBookRarity, makeBook, mergeBookDex } from "../data/skills";
 import { makeInitialStats } from "../systems/achievements";
+import useFlashMessage from "../hooks/useFlashMessage";
 
 const MILESTONE = {
   weapon:    { 5:{stat:"crit",val:1,label:"クリ率+1%"}, 10:{stat:"atk",val:5,label:"ATK+5"}, 15:{stat:"crit",val:2,label:"クリ率+2%"}, 20:{stat:"atk",val:10,label:"ATK+10"} },
@@ -22,6 +23,8 @@ const nextRarity = (r) => RARITY_ORDER[RARITY_ORDER.indexOf(r) + 1] || null;
 
 const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
+const BUBBLE_BG = "rgba(18,13,9,0.95)";
+const BUBBLE_BORDER = "#fb923c66";
 
 // ─── 選択グリッド共通部品：レアリティ別グループ化＋検索＋拡大カード ───
 function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getName, emptyText, isMaxed }) {
@@ -114,7 +117,7 @@ export default function ForgeTab() {
   const [tab, setTab] = useState("upgrade");
   const [sel, setSel] = useState(null);
   const [matSel, setMatSel] = useState(null);
-  const [msg, setMsg] = useState("");
+  const [msg, flash] = useFlashMessage(3000);
   const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex, stats } = usePlayerStore();
 
   const upgradeItem = itemBox.find(it => it.uid === sel);
@@ -131,14 +134,13 @@ export default function ForgeTab() {
       itemBox: itemBox.filter(x => x.uid !== forgeStone.uid).map(x => x.uid === upgradeItem.uid ? updated : x),
       stats: { ...prevStats, maxUpgradeLevelEver: Math.max(prevStats.maxUpgradeLevelEver||0, newLv) },
     });
-    setMsg(`💠 ${forgeStone.name}を使って+${newLv}に強化！`);
-    setTimeout(() => setMsg(""), 3000);
+    flash(`💠 ${forgeStone.name}を使って+${newLv}に強化！`);
   }
 
   function upgrade(mo) {
     if (!upgradeItem) return;
-    if ((materials[mo.mat] || 0) < 1) { setMsg("素材が不足！"); return; }
-    if (gold < cost) { setMsg("Gが不足！"); return; }
+    if ((materials[mo.mat] || 0) < 1) { flash("素材が不足！"); return; }
+    if (gold < cost) { flash("Gが不足！"); return; }
     const newLv = upgradeItem.upgradeLevel + 1;
     const newB = { ...upgradeItem.bonuses };
     newB[mo.stat] = (newB[mo.stat] || 0) + 1;
@@ -153,8 +155,7 @@ export default function ForgeTab() {
       materials: { ...materials, [mo.mat]: (materials[mo.mat] || 0) - 1 },
       stats: { ...prevStats, maxUpgradeLevelEver: Math.max(prevStats.maxUpgradeLevelEver||0, newLv) },
     });
-    setMsg(`+${newLv}に強化！${msMsg}`);
-    setTimeout(() => setMsg(""), 3000);
+    flash(`+${newLv}に強化！${msMsg}`);
   }
 
   const baseItem = itemBox.find(it => it.uid === sel);
@@ -166,9 +167,9 @@ export default function ForgeTab() {
   const synthCost = baseItem ? SYNTHESIS_COST[baseItem.rarity] : null;
 
   function synthesize() {
-    if (!baseItem || !matItem) { setMsg("ベースと素材を選択して！"); return; }
-    if (!next) { setMsg("これ以上合成できません"); return; }
-    if (gold < synthCost.gold) { setMsg("Gが不足！"); return; }
+    if (!baseItem || !matItem) { flash("ベースと素材を選択して！"); return; }
+    if (!next) { flash("これ以上合成できません"); return; }
+    if (gold < synthCost.gold) { flash("Gが不足！"); return; }
     const matAbility = matItem.abilities?.[0] || null;
     const newSlots = getAbilitySlots(next);
     const synthesized = {
@@ -207,8 +208,7 @@ export default function ForgeTab() {
       },
     });
     setSel(null); setMatSel(null);
-    setMsg(`✨ ${synthesized.name}が${RARITY_LABEL[next]}になった！`);
-    setTimeout(() => setMsg(""), 4000);
+    flash(`✨ ${synthesized.name}が${RARITY_LABEL[next]}になった！`, 4000);
   }
 
   const bookItem = (skillBooks||[]).find(b => b.uid === sel);
@@ -220,9 +220,9 @@ export default function ForgeTab() {
   const bookSynthCost = bookItem ? BOOK_SYNTHESIS_COST[bookItem.rarity] : null;
 
   function synthesizeBook() {
-    if (!bookItem || !bookMatItem) { setMsg("ベースと素材を選択して！"); return; }
-    if (!nextBookR) { setMsg("これ以上合成できません"); return; }
-    if (gold < bookSynthCost) { setMsg("Gが不足！"); return; }
+    if (!bookItem || !bookMatItem) { flash("ベースと素材を選択して！"); return; }
+    if (!nextBookR) { flash("これ以上合成できません"); return; }
+    if (gold < bookSynthCost) { flash("Gが不足！"); return; }
     const newBook = makeBook(bookItem.id, nextBookR);
     const newSkillBooks = (skillBooks||[])
       .filter(b => b.uid !== bookItem.uid && b.uid !== bookMatItem.uid)
@@ -238,45 +238,64 @@ export default function ForgeTab() {
       stats: { ...prevStats, totalSynthesisCount: (prevStats.totalSynthesisCount||0) + 1 },
     });
     setSel(null); setMatSel(null);
-    setMsg(`✨ ${SKILL_BOOKS[bookItem.id].name}が${BOOK_RARITY_LABEL[nextBookR]}になった！`);
-    setTimeout(() => setMsg(""), 4000);
+    flash(`✨ ${SKILL_BOOKS[bookItem.id].name}が${BOOK_RARITY_LABEL[nextBookR]}になった！`, 4000);
   }
 
+  const bubbleText = () => {
+    if (tab === "upgrade") return upgradeItem ? `${upgradeItem.name}を鍛え直すか` : "武具を持ってきな、鍛え直してやろう";
+    if (tab === "synth") return baseItem ? `${baseItem.name}を合成するか` : "同じ装備を2つ持っておいで";
+    if (tab === "book") return bookItem ? `${SKILL_BOOKS[bookItem.id]?.name}を鍛えるか` : "スキル書も鍛えられるぞ";
+    return "いらっしゃい！";
+  };
+
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
-      <div style={{ padding:"8px 12px", background:"#080810", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-        <div style={{ fontSize:10, color:"#fb923c", letterSpacing:2 }}>🔨 FORGE</div>
-        <div style={{ fontSize:10, color:DIM, marginTop:2 }}>所持G: {gold.toLocaleString()}</div>
-        {msg && <div style={{ fontSize:10, color:"#4ade80", marginTop:3 }}>{msg}</div>}
+    <div style={{ position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
+      {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（切れ防止） */}
+      <div style={{ position:"absolute", inset:0, background:"#08080f" }} />
+      <div style={{ position:"absolute", top:0, left:0, right:0 }}>
+        <img src="/assets/images/forge-banner.png" alt="" style={{ width:"100%", height:"auto", display:"block" }} />
+        <div style={{
+          position:"absolute", inset:0,
+          backgroundImage:"linear-gradient(180deg, rgba(5,5,8,0.08) 0%, rgba(5,5,8,0.15) 45%, rgba(5,5,8,0.75) 68%, #08080f 88%, #08080f 100%)",
+        }} />
       </div>
 
-      <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-        {[{id:"upgrade",label:"⬆ 強化"},{id:"synth",label:"✨ 合成"},{id:"book",label:"📖 スキル書"}].map(t => (
-          <button key={t.id} onClick={() => { setTab(t.id); setSel(null); setMatSel(null); }}
-            style={{ flex:1, padding:"8px 0", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#fb923c":"transparent"}`, cursor:"pointer", color:tab===t.id?"#fb923c":DIM, fontSize:11, fontFamily:"monospace" }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <div style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", height:"100%" }}>
+        {/* ステージ：鍛冶屋(大)＋吹き出し */}
+        <div style={{ flexShrink:0, display:"flex", alignItems:"flex-end", padding:"14px 10px 0" }}>
+          <div style={{
+            width:168, height:208, flexShrink:0, marginBottom:-2,
+            backgroundImage:`url("/assets/images/blacksmith.png")`,
+            backgroundSize:"cover", backgroundPosition:"center 20%", backgroundRepeat:"no-repeat",
+            WebkitMaskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
+            maskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
+          }} />
+          <div style={{ position:"relative", flex:1, minWidth:0, marginLeft:-8, marginBottom:16 }}>
+            <div style={{ position:"absolute", left:-6, bottom:24, width:14, height:14, background:BUBBLE_BG, transform:"rotate(45deg)" }} />
+            <div style={{ position:"relative", background:BUBBLE_BG, border:`2px solid ${BUBBLE_BORDER}`, borderRadius:14, padding:"10px 12px", boxShadow:"0 6px 16px rgba(0,0,0,0.5)" }}>
+              <div style={{ fontSize:11, color:"#e8d8c0" }}>{bubbleText()}</div>
+              <div style={{ fontSize:10, color:DIM, marginTop:6 }}>所持G: {gold.toLocaleString()}</div>
+              {msg && <div style={{ fontSize:10, color:"#4ade80", marginTop:4 }}>{msg}</div>}
+            </div>
+          </div>
+        </div>
 
-      <div style={{ flex:1, overflowY:"auto", padding:10 }}>
+        <div style={{ display:"flex", background:"rgba(8,8,16,0.75)", borderTop:"1px solid #1a1a2a", borderBottom:"1px solid #1a1a2a", flexShrink:0, marginTop:14 }}>
+          {[{id:"upgrade",label:"⬆ 強化"},{id:"synth",label:"✨ 合成"},{id:"book",label:"📖 スキル書"}].map(t => (
+            <button key={t.id} onClick={() => { setTab(t.id); setSel(null); setMatSel(null); }}
+              style={{ flex:1, padding:"11px 4px", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#fb923c":"transparent"}`, cursor:"pointer", color:tab===t.id?"#fb923c":DIM, fontSize:12, fontFamily:"monospace" }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ flex:1, overflowY:"auto", padding:10 }}>
 
         {/* 強化タブ */}
         {tab === "upgrade" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            <ItemPicker
-              items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
-              selectedUid={sel}
-              onSelect={setSel}
-              getRarity={it=>it.rarity}
-              getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
-              getRarityLabel={r=>RARITY_LABEL[r]||r}
-              getIcon={it=>it.icon}
-              getName={it=>it.name}
-              emptyText="強化できる装備がない"
-            />
-
             {upgradeItem && (
+              <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
               <div style={{ background:"#0d0d15", border:"1px solid #3a3a55", borderRadius:8, padding:12 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
                   <span style={{ fontSize:22 }}>{upgradeItem.icon}</span>
@@ -353,7 +372,20 @@ export default function ForgeTab() {
                   </div>
                 )}
               </div>
+              </div>
             )}
+
+            <ItemPicker
+              items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
+              selectedUid={sel}
+              onSelect={setSel}
+              getRarity={it=>it.rarity}
+              getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
+              getRarityLabel={r=>RARITY_LABEL[r]||r}
+              getIcon={it=>it.icon}
+              getName={it=>it.name}
+              emptyText="強化できる装備がない"
+            />
 
             <div style={{ background:"#0d0d15", border:"1px solid #3a3a55", borderRadius:6, padding:10 }}>
               <div style={{ fontSize:10, color:"#fb923c", letterSpacing:2, marginBottom:6 }}>所持素材</div>
@@ -372,20 +404,22 @@ export default function ForgeTab() {
         {/* 合成タブ */}
         {tab === "synth" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            <div style={{ fontSize:10, color:DIM }}>同じ種類・同じレアリティの装備2つで1段階上のレアリティに合成</div>
+            <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
+              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ種類・同じレアリティの装備2つで1段階上のレアリティに合成</div>
 
-            <SynthPreview
-              base={baseItem} mat={matItem} next={next}
-              cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
-              getIcon={it=>it.icon} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
-              hint="① ベース装備を選んでください"
-            />
+              <SynthPreview
+                base={baseItem} mat={matItem} next={next}
+                cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
+                getIcon={it=>it.icon} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
+                hint="① ベース装備を選んでください"
+              />
 
-            {(matItem?.abilities||[]).length > 0 && (
-              <div style={{ fontSize:10, color:"#a78bfa" }}>
-                継承: {matItem.abilities[0]?.label}{matItem.abilities[0]?.value}{matItem.abilities[0]?.suffix}
-              </div>
-            )}
+              {(matItem?.abilities||[]).length > 0 && (
+                <div style={{ fontSize:10, color:"#a78bfa", marginTop:8 }}>
+                  継承: {matItem.abilities[0]?.label}{matItem.abilities[0]?.value}{matItem.abilities[0]?.suffix}
+                </div>
+              )}
+            </div>
 
             <div>
               <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベース装備を選択</div>
@@ -425,14 +459,16 @@ export default function ForgeTab() {
         {/* スキル書合成タブ */}
         {tab === "book" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            <div style={{ fontSize:10, color:DIM }}>同じスキル書・同じレアリティ2冊で1段階上のレアリティに合成</div>
+            <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
+              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じスキル書・同じレアリティ2冊で1段階上のレアリティに合成</div>
 
-            <SynthPreview
-              base={bookItem} mat={bookMatItem} next={nextBookR}
-              cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
-              getIcon={b=>SKILL_BOOKS[b.id]?.icon} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
-              hint="① ベースのスキル書を選んでください"
-            />
+              <SynthPreview
+                base={bookItem} mat={bookMatItem} next={nextBookR}
+                cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
+                getIcon={b=>SKILL_BOOKS[b.id]?.icon} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+                hint="① ベースのスキル書を選んでください"
+              />
+            </div>
 
             <div>
               <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベースのスキル書を選択</div>
@@ -468,6 +504,7 @@ export default function ForgeTab() {
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

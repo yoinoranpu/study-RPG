@@ -33,11 +33,6 @@ export const NPC_EVENTS = [
 export const rollNpcEvent = () =>
   NPC_EVENTS[Math.floor(Math.random() * NPC_EVENTS.length)];
 
-// 宝箱レアリティ（後方互換）
-export const CHEST_RARITY = Object.values(CHEST_TYPES).map(c => ({
-  label: c.label, color: c.color, icon: c.icon, id: c.id,
-}));
-
 export const rollChest = () => {
   const id = rollChestRarity();
   return CHEST_TYPES[id] || CHEST_TYPES.common;
