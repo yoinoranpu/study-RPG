@@ -13,6 +13,15 @@ export default function AchievementTab() {
   const categories = [...new Set(ACHIEVEMENT_DEFS.map(a => a.category))];
   const totalDone = ACHIEVEMENT_DEFS.filter(a => a.get(player) >= a.target).length;
 
+  // 達成済み・未受取を一番上に、次に進行中、受取済みは一番下（同ランク内は元の並び順を維持）
+  const rank = (ach) => {
+    const done = ach.get(player) >= ach.target;
+    if (done && !claimed[ach.id]) return 0;
+    if (!done) return 1;
+    return 2;
+  };
+  const sortByRank = (list) => list.map((ach, i) => ({ ach, i })).sort((a, b) => rank(a.ach) - rank(b.ach) || a.i - b.i).map(x => x.ach);
+
   function claim(ach) {
     const progress = ach.get(player);
     if (progress < ach.target) return;
@@ -87,7 +96,7 @@ export default function AchievementTab() {
         {categories.map(cat => (
           <div key={cat}>
             <div style={{ fontSize:10, color:CATEGORY_COLOR[cat], letterSpacing:2, margin:"10px 0 6px", fontWeight:700 }}>{cat}</div>
-            {ACHIEVEMENT_DEFS.filter(a => a.category === cat).map(ach => <AchievementRow key={ach.id} ach={ach} />)}
+            {sortByRank(ACHIEVEMENT_DEFS.filter(a => a.category === cat)).map(ach => <AchievementRow key={ach.id} ach={ach} />)}
           </div>
         ))}
       </div>
