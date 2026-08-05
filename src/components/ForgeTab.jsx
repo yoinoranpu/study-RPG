@@ -2,6 +2,7 @@ import { useState } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { RARITY_COLOR, RARITY_LABEL, getItemStats, INNATE, SYNTHESIS_COST, getAbilitySlots } from "../data/items";
 import { SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_SYNTHESIS_COST, nextBookRarity, makeBook, mergeBookDex } from "../data/skills";
+import { makeInitialStats } from "../systems/achievements";
 
 const MILESTONE = {
   weapon:    { 5:{stat:"crit",val:1,label:"クリ率+1%"}, 10:{stat:"atk",val:5,label:"ATK+5"}, 15:{stat:"crit",val:2,label:"クリ率+2%"}, 20:{stat:"atk",val:10,label:"ATK+10"} },
@@ -114,7 +115,7 @@ export default function ForgeTab() {
   const [sel, setSel] = useState(null);
   const [matSel, setMatSel] = useState(null);
   const [msg, setMsg] = useState("");
-  const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex } = usePlayerStore();
+  const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex, stats } = usePlayerStore();
 
   const upgradeItem = itemBox.find(it => it.uid === sel);
   const matOpts = upgradeItem ? MAT_UP[upgradeItem.type] || [] : [];
@@ -131,10 +132,12 @@ export default function ForgeTab() {
     let msMsg = "";
     if (ms) { newB[ms.stat] = (newB[ms.stat] || 0) + ms.val; msMsg = ` ✨${ms.label}`; }
     const updated = { ...upgradeItem, upgradeLevel: newLv, bonuses: newB };
+    const prevStats = stats || makeInitialStats();
     updatePlayer({
       itemBox: itemBox.map(x => x.uid === upgradeItem.uid ? updated : x),
       gold: gold - cost,
       materials: { ...materials, [mo.mat]: (materials[mo.mat] || 0) - 1 },
+      stats: { ...prevStats, maxUpgradeLevelEver: Math.max(prevStats.maxUpgradeLevelEver||0, newLv) },
     });
     setMsg(`+${newLv}に強化！${msMsg}`);
     setTimeout(() => setMsg(""), 3000);
@@ -175,9 +178,19 @@ export default function ForgeTab() {
       }
     }
     synthesized.abilities = newAbilities.slice(0, newSlots);
+    const prevStats = stats || makeInitialStats();
     updatePlayer({
       itemBox: itemBox.filter(x => x.uid !== matItem.uid).map(x => x.uid === baseItem.uid ? synthesized : x),
       gold: gold - synthCost.gold,
+      stats: {
+        ...prevStats,
+        totalSynthesisCount: (prevStats.totalSynthesisCount||0) + 1,
+        flags: {
+          ...prevStats.flags,
+          hasOwnedMythic: prevStats.flags?.hasOwnedMythic || next === "mythic",
+          hasOwnedOrigin: prevStats.flags?.hasOwnedOrigin || next === "origin",
+        },
+      },
     });
     setSel(null); setMatSel(null);
     setMsg(`✨ ${synthesized.name}が${RARITY_LABEL[next]}になった！`);
@@ -201,12 +214,14 @@ export default function ForgeTab() {
       .filter(b => b.uid !== bookItem.uid && b.uid !== bookMatItem.uid)
       .concat(newBook);
     const replaceSlot = (uid) => uid === bookItem.uid ? newBook.uid : (uid === bookMatItem.uid ? null : uid);
+    const prevStats = stats || makeInitialStats();
     updatePlayer({
       skillBooks: newSkillBooks,
       activeSkillSlots: (activeSkillSlots||[]).map(replaceSlot),
       passiveSkillSlots: (passiveSkillSlots||[]).map(replaceSlot),
       skillBookDex: mergeBookDex(skillBookDex, [newBook]),
       gold: gold - bookSynthCost,
+      stats: { ...prevStats, totalSynthesisCount: (prevStats.totalSynthesisCount||0) + 1 },
     });
     setSel(null); setMatSel(null);
     setMsg(`✨ ${SKILL_BOOKS[bookItem.id].name}が${BOOK_RARITY_LABEL[nextBookR]}になった！`);

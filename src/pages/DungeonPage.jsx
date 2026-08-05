@@ -16,7 +16,8 @@ import { calcBookPassiveBonus, mergeBookDex, SKILL_BOOKS, BOOK_RARITY_COLOR, BOO
 import { openChest } from "../data/chest_table";
 import { RARITY_COLOR, SPECIAL_DB } from "../data/items";
 import { DUNGEON_FLOOR_COUNT, getDungeon, globalDepth, makeInitialDungeons } from "../systems/dungeons";
-import { resetQuestsIfNeeded } from "../systems/quests";
+import { resetQuestsIfNeeded, getTodayKey } from "../systems/quests";
+import { makeInitialStats } from "../systems/achievements";
 
 const EVENT_INTERVAL = 6 * 60 * 1000;
 const BASE_MAX_EVENTS = 4;
@@ -207,7 +208,7 @@ export default function DungeonPage({ onBack }) {
       setMonsterVisible(true);
       setMonsterArrived(false);
       const result = simulateBattle(buildPlayerStats(), [boss], { sessionScale: sessionScaleRef.current });
-      pendingBattleRef.current = { result, monsters:[boss], isBoss:true };
+      pendingBattleRef.current = { result, monsters:[boss], isBoss:true, startHp: Math.max(1, hpRef.current) };
       addLog(`🔥 ${boss.displayName}が現れた！`, "#ef4444");
     }, 3000);
     return () => clearTimeout(timer);
@@ -258,7 +259,7 @@ export default function DungeonPage({ onBack }) {
       setCurrentEvent(null); setEventVisible(false);
       setCurrentMonsters(monsters); setMonsterVisible(true); setMonsterArrived(false);
       const result = simulateBattle(buildPlayerStats(), monsters, { sessionScale: sessionScaleRef.current });
-      pendingBattleRef.current = { result, monsters };
+      pendingBattleRef.current = { result, monsters, startHp: Math.max(1, hpRef.current) };
 
     } else if (evType === "chest") {
       const chestRarity = rollChest();
@@ -369,6 +370,29 @@ export default function DungeonPage({ onBack }) {
       if (chest.type === "skillbook" && chest.book) { newSkillBooks.push(chest.book); addedBooks.push(chest.book); }
     });
     const prevDungeonState = (player.dungeons || makeInitialDungeons())[dungeonId] || { maxFloor:1, cleared:false };
+
+    // 実績: 継続日数・宝箱累計・獲得G累計・深夜プレイ
+    const prevStats = player.stats || makeInitialStats();
+    const todayKey = getTodayKey();
+    let newStreak = prevStats.currentStreak || 0;
+    if (prevStats.lastPlayDate !== todayKey) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      newStreak = prevStats.lastPlayDate === yesterday.toDateString() ? newStreak + 1 : 1;
+    }
+    const hour = new Date().getHours();
+    const newStatsFlags = { ...prevStats.flags };
+    if (hour >= 0 && hour < 4) newStatsFlags.midnightSession = true;
+    const newStats = {
+      ...prevStats,
+      totalChestsOpened: (prevStats.totalChestsOpened||0) + sessionChests.current.length,
+      totalGoldEarned: (prevStats.totalGoldEarned||0) + sessionGold.current,
+      lastPlayDate: todayKey,
+      currentStreak: newStreak,
+      bestStreak: Math.max(prevStats.bestStreak||0, newStreak),
+      flags: newStatsFlags,
+    };
+
     updatePlayer({
       totalExp: newTotalExp,
       gold:     player.gold + sessionGold.current,
@@ -396,6 +420,7 @@ export default function DungeonPage({ onBack }) {
         setsWeek: resetQuests.setsWeek + currentSet,
         chestsWeek: resetQuests.chestsWeek + sessionChests.current.length,
       },
+      stats: newStats,
     });
     setShowResult(false);
     onBack();
@@ -545,7 +570,34 @@ export default function DungeonPage({ onBack }) {
               if (!newBook[m.id]) newBook[m.id] = { count:0, name:m.name, tribe:m.tribe, material:m.material };
               newBook[m.id].count += 1;
             });
-            updatePlayer({ monsterBook: newBook });
+
+            // 実績: 戦闘結果に基づくフラグ更新
+            const prevStats = player.stats || makeInitialStats();
+            const newFlags = { ...prevStats.flags };
+            const flag = (key) => { newFlags[key] = true; };
+            if (pending.isBoss) flag("firstBossWin");
+            if (result.playerHpAfter === pending.startHp) {
+              flag("noDamageWin");
+              if (pending.isBoss) flag("bossNoDamageWin");
+            }
+            if (result.playerHpAfter >= 1 && result.playerHpAfter <= 9) flag("hp1DigitWin");
+            if (result.deathSaveUsed) flag("undyingWin");
+            if (result.killedByAssassinate) flag("assassinateKill");
+            if (result.killedByCounter) flag("counterKill");
+            if (result.killedByAlly) flag("summonFinish");
+            if (result.killedByPoison) flag("poisonKill");
+            if (result.killedByFreeze) flag("freezeKill");
+            if (result.bigCritHit) flag("bigCritHit");
+            if (result.aoeDoubleKill) flag("aoeDoubleKill");
+
+            updatePlayer({
+              monsterBook: newBook,
+              stats: {
+                ...prevStats,
+                totalMonstersDefeated: (prevStats.totalMonstersDefeated||0) + monsters.length,
+                flags: newFlags,
+              },
+            });
             if (Math.random() < 0.25 * (1 + (passiveBonusRef.current.chestBonus||0)/100)) {
               sessionChests.current.push(openChest(rollChest().id || "common", globalDepth(dungeonId, floorRef.current), dungeonId));
             }

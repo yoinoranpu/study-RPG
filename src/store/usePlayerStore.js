@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { savePlayerData } from "../firebase/saveLoad";
 import { makeInitialDungeons } from "../systems/dungeons";
 import { makeInitialQuests } from "../systems/quests";
+import { makeInitialStats, makeInitialAchievements, markResetAchievement } from "../systems/achievements";
 
 let saveTimer = null;
 const debounceSave = (uid, data) => {
@@ -39,6 +40,8 @@ const debounceSave = (uid, data) => {
       quests: data.quests || makeInitialQuests(),
       keyRescueDungeonId: data.keyRescueDungeonId ?? null,
       keyRescueClaimed: data.keyRescueClaimed || false,
+      stats: data.stats || makeInitialStats(),
+      achievements: data.achievements || makeInitialAchievements(),
     };
     savePlayerData(uid, saveData);
   }, 2000);
@@ -85,6 +88,8 @@ const usePlayerStore = create((set, get) => ({
   quests: makeInitialQuests(),
   keyRescueDungeonId: null,
   keyRescueClaimed: false,
+  stats: makeInitialStats(),
+  achievements: makeInitialAchievements(),
 
   setUid: (uid) => set({ uid }),
   setIsGuest: (isGuest) => set({ isGuest }),
@@ -100,6 +105,7 @@ const usePlayerStore = create((set, get) => ({
 
   resetPlayer: () => {
     const uid = get().uid;
+    markResetAchievement();
     const resetData = {
       totalExp: 0, gold: 500, currentDungeonId: 1, dungeons: makeInitialDungeons(),
       hp: 100, maxHp: 100,
@@ -119,6 +125,8 @@ const usePlayerStore = create((set, get) => ({
       quests: makeInitialQuests(),
       keyRescueDungeonId: null,
       keyRescueClaimed: false,
+      stats: makeInitialStats(),
+      achievements: makeInitialAchievements(),
     };
     set(resetData);
     debounceSave(uid, resetData);

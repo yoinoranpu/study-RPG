@@ -56,6 +56,10 @@ export const simulateBattle = (player, monsters, options = {}) => {
   let defBuff = 0;
   let critBuff = 0;
 
+  // 実績判定用（既存ロジックには影響しない）
+  let killedByAlly = false, killedByCounter = false, killedByFreeze = false,
+      killedByPoison = false, killedByAssassinate = false, bigCritHit = false, aoeDoubleKill = false;
+
   const pushTurn = (t) => turns.push(t);
 
   const playerEntity = {
@@ -108,6 +112,8 @@ export const simulateBattle = (player, monsters, options = {}) => {
       won: enemies.every(e => e.hp <= 0),
       monsters: monsters.map((m, i) => ({ ...m, hpLeft: enemies[i].hp })),
       sessionScaleAfter: sessionScale,
+      deathSaveUsed, killedByAlly, killedByCounter, killedByFreeze,
+      killedByPoison, killedByAssassinate, bigCritHit, aoeDoubleKill,
     };
   }
 
@@ -178,15 +184,20 @@ export const simulateBattle = (player, monsters, options = {}) => {
 
   const dealToEnemy = (enemy, dmg, isCrit, label, byWho="player", rarity=null) => {
     if (!enemy || enemy.hp <= 0) return;
+    const wasFrozen = enemy.statuses?.some(s => s.type === "freeze");
     enemy.hp = Math.max(0, enemy.hp - dmg);
     const prefix = byWho === "player" ? "" : `${byWho}の`;
     pushTurn({ actor:"player", target:enemy.idx, type:"attack", dmg, isCrit, label, rarity, hpLeft:enemy.hp,
       logText:`${prefix}${label ? label+"！" : "攻撃！"}${enemy.name}に${dmg}ダメージ`, logColor:isCrit?"#fbbf24":"#86efac" });
+    if (isCrit && dmg >= 100) bigCritHit = true;
     if (enemy.hp <= 0) {
       totalExp += enemy.expGain; totalGold += enemy.goldGain;
       if (Math.random() < 0.60) materials.push(enemy.material);
       pushTurn({ actor:"player", target:enemy.idx, type:"defeat", logText:`⚔ ${enemy.name}撃破！`, logColor:"#4ade80" });
       onEnemyKilled();
+      if (byWho !== "player") killedByAlly = true;
+      if (label === "カウンター") killedByCounter = true;
+      if (wasFrozen) killedByFreeze = true;
     }
   };
 
@@ -216,6 +227,7 @@ export const simulateBattle = (player, monsters, options = {}) => {
         totalExp += t.expGain; totalGold += t.goldGain;
         if (Math.random() < 0.60) materials.push(t.material);
         onEnemyKilled();
+        killedByAssassinate = true;
         return;
       }
     }
@@ -275,12 +287,15 @@ export const simulateBattle = (player, monsters, options = {}) => {
         const isCrit = Math.random() * 100 < myCrit;
         if (isCrit) onPlayerCrit();
         if (a.target === "all") {
+          let aoeKills = 0;
           aliveEnemies().forEach(e => {
             let dmg = calcDamage(Math.floor(baseStat * a.dmgMul), isMagic ? eMdef(e) : eDef(e));
             if (isCrit) dmg = Math.floor(dmg * playerEntity.critDmg / 100);
             dealToEnemy(e, dmg, isCrit, skill.name, "player", skill.rarity);
+            if (e.hp <= 0) aoeKills++;
             if (e.hp > 0) tryApplyStatus(e, a, myMag);
           });
+          if (aoeKills >= 2) aoeDoubleKill = true;
         } else {
           if (Math.random()*100 < eEva(target)) {
             pushTurn({ actor:"player", target:target.idx, type:"miss", logText:`${target.name}は回避！`, logColor:"#34d399" });
@@ -425,6 +440,7 @@ export const simulateBattle = (player, monsters, options = {}) => {
           if (Math.random() < 0.60) materials.push(entity.material);
           pushTurn({ actor:"player", target:entity.idx, type:"defeat", logText:`⚔ ${entity.name}を${def.name}で倒した！`, logColor:"#4ade80" });
           onEnemyKilled();
+          if (r.type === "poison") killedByPoison = true;
         }
       } else if (entity.side === "player") {
         if (entity.hp <= 0 && has("sb_undying") && !deathSaveUsed) {
@@ -481,5 +497,7 @@ export const simulateBattle = (player, monsters, options = {}) => {
     totalExp, totalGold, materials, drops, won,
     monsters: monsters.map((m, i) => ({ ...m, hpLeft: enemies[i].hp })),
     sessionScaleAfter: sessionScale,
+    deathSaveUsed, killedByAlly, killedByCounter, killedByFreeze,
+    killedByPoison, killedByAssassinate, bigCritHit, aoeDoubleKill,
   };
 };

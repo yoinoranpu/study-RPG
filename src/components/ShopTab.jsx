@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { generateShopStock, getShopPrice, makeItem, RARITY_COLOR, RARITY_LABEL, INNATE, SPECIAL_DB } from "../data/items";
 import { getGlobalUnlockDepth } from "../systems/dungeons";
+import { makeInitialStats } from "../systems/achievements";
 import usePlayerStore from "../store/usePlayerStore";
 
 const ITEM_BOX_MAX = 30;
@@ -10,7 +11,12 @@ const FAINT = "#5c5c82";
 export default function ShopTab() {
   const [sub, setSub] = useState("weapon");
   const [msg, setMsg] = useState("");
-  const { gold, itemBox, dungeons, keyRescueDungeonId, keyRescueClaimed, updatePlayer } = usePlayerStore();
+  const { gold, itemBox, dungeons, keyRescueDungeonId, keyRescueClaimed, stats, updatePlayer } = usePlayerStore();
+
+  const spendGold = (amount) => {
+    const prevStats = stats || makeInitialStats();
+    return { ...prevStats, totalGoldSpent: (prevStats.totalGoldSpent||0) + amount };
+  };
 
   const rescueKeyTmpl = (keyRescueDungeonId != null && !keyRescueClaimed)
     ? SPECIAL_DB.find(it => it.effect === `dungeon_key_${keyRescueDungeonId}`)
@@ -21,7 +27,7 @@ export default function ShopTab() {
     const price = getShopPrice(rescueKeyTmpl);
     if (gold < price) { setMsg("Gが不足！"); setTimeout(()=>setMsg(""),3000); return; }
     if ((itemBox||[]).length >= ITEM_BOX_MAX) { setMsg("BOXが満杯！"); setTimeout(()=>setMsg(""),3000); return; }
-    updatePlayer({ gold: gold - price, itemBox: [...(itemBox||[]), makeItem(rescueKeyTmpl)], keyRescueClaimed: true });
+    updatePlayer({ gold: gold - price, itemBox: [...(itemBox||[]), makeItem(rescueKeyTmpl)], keyRescueClaimed: true, stats: spendGold(price) });
     setMsg(`${rescueKeyTmpl.name}を購入！`);
     setTimeout(() => setMsg(""), 3000);
   }
@@ -47,7 +53,7 @@ export default function ShopTab() {
     if (gold < price) { setMsg("Gが不足！"); setTimeout(()=>setMsg(""),3000); return; }
     if ((itemBox||[]).length >= ITEM_BOX_MAX) { setMsg("BOXが満杯！"); setTimeout(()=>setMsg(""),3000); return; }
     const newItem = makeItem(tmpl);
-    updatePlayer({ gold: gold - price, itemBox: [...(itemBox||[]), newItem] });
+    updatePlayer({ gold: gold - price, itemBox: [...(itemBox||[]), newItem], stats: spendGold(price) });
     setSoldOut(s => {
       const next = new Set([...s, `${sub}_${index}`]);
       localStorage.setItem(`shop_soldout_${today}`, JSON.stringify([...next]));

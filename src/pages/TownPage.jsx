@@ -8,6 +8,7 @@ import SettingsPage from "./SettingsPage";
 import MonsterBookTab from "../components/MonsterBookTab";
 import SkillBookTab from "../components/SkillBookTab";
 import QuestTab from "../components/QuestTab";
+import AchievementTab from "../components/AchievementTab";
 import DebugItemTab from "../components/DebugItemTab";
 import { DUNGEONS, isDungeonUnlocked, getGlobalUnlockDepth } from "../systems/dungeons";
 import { resetQuestsIfNeeded } from "../systems/quests";
@@ -156,14 +157,18 @@ export default function TownPage({ onEnterDungeon }) {
               </div>
             )}
 
-            <div style={{ display:"flex", gap:8 }}>
-              <button onClick={() => setSubTab("book")} style={{ flex:1, padding:"12px 0", background:"#080810", border:"1px solid #60a5fa44", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+              <button onClick={() => setSubTab("book")} style={{ padding:"12px 0", background:"#080810", border:"1px solid #60a5fa44", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
                 <span style={{ fontSize:18 }}>📖</span>
                 <span style={{ fontSize:10, color:"#60a5fa" }}>図鑑</span>
               </button>
-              <button onClick={() => setSubTab("quest")} style={{ flex:1, padding:"12px 0", background:"#080810", border:"1px solid #fbbf2444", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+              <button onClick={() => setSubTab("quest")} style={{ padding:"12px 0", background:"#080810", border:"1px solid #fbbf2444", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
                 <span style={{ fontSize:18 }}>🎯</span>
                 <span style={{ fontSize:10, color:"#fbbf24" }}>クエスト</span>
+              </button>
+              <button onClick={() => setSubTab("achievement")} style={{ padding:"12px 0", background:"#080810", border:"1px solid #f8717144", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2, gridColumn:"1 / -1" }}>
+                <span style={{ fontSize:18 }}>🏆</span>
+                <span style={{ fontSize:10, color:"#f87171" }}>実績</span>
               </button>
             </div>
           </div>
@@ -192,6 +197,16 @@ export default function TownPage({ onEnterDungeon }) {
             <button onClick={() => setSubTab("home")} style={{ padding:"6px 12px", background:"transparent", border:"none", color:DIM, cursor:"pointer", fontSize:10, textAlign:"left", fontFamily:"monospace" }}>← 戻る</button>
             <div style={{ flex:1, overflow:"hidden" }}>
               <QuestTab />
+            </div>
+          </div>
+        )}
+
+        {/* 実績 */}
+        {tab === "home" && subTab === "achievement" && (
+          <div style={{ height:"100%", display:"flex", flexDirection:"column" }}>
+            <button onClick={() => setSubTab("home")} style={{ padding:"6px 12px", background:"transparent", border:"none", color:DIM, cursor:"pointer", fontSize:10, textAlign:"left", fontFamily:"monospace" }}>← 戻る</button>
+            <div style={{ flex:1, overflow:"hidden" }}>
+              <AchievementTab />
             </div>
           </div>
         )}

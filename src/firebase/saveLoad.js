@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { makeInitialDungeons } from "../systems/dungeons";
 import { makeInitialQuests } from "../systems/quests";
+import { makeInitialStats, makeInitialAchievements } from "../systems/achievements";
 
 // ゲストログイン
 export const loginAsGuest = async () => {
@@ -41,6 +42,8 @@ const normalizeLoadedData = (data) => {
     dungeons: migrateDungeons(data),
     currentDungeonId: data.currentDungeonId || 1,
     quests: data.quests || makeInitialQuests(),
+    stats: data.stats || makeInitialStats(),
+    achievements: data.achievements || makeInitialAchievements(),
   };
 };
 
@@ -77,6 +80,8 @@ export const savePlayerData = async (uid, data) => {
     quests: data.quests || makeInitialQuests(),
     keyRescueDungeonId: data.keyRescueDungeonId ?? null,
     keyRescueClaimed: data.keyRescueClaimed || false,
+    stats: data.stats || makeInitialStats(),
+    achievements: data.achievements || makeInitialAchievements(),
   };
 
   try {
