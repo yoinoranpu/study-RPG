@@ -159,7 +159,7 @@ export default function ShopTab() {
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:8 }}>
                     <span style={{ fontSize:13, color:selectedIsSold?FAINT:"#fbbf24", fontWeight:700 }}>{selectedPrice.toLocaleString()}G</span>
                     <button onClick={() => buy(selectedItem, selectedIdx)} disabled={!selectedCanBuy}
-                      style={{ padding:"6px 16px", background:selectedCanBuy?"#1a1000":"#0a0a0a", border:`1px solid ${selectedCanBuy?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:selectedCanBuy?"pointer":"default", color:selectedCanBuy?"#fbbf24":FAINT, fontSize:10, fontFamily:"monospace" }}>
+                      style={{ padding:"6px 16px", minHeight:"44px", minWidth:"44px", background:selectedCanBuy?"#1a1000":"#0a0a0a", border:`1px solid ${selectedCanBuy?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:selectedCanBuy?"pointer":"default", color:selectedCanBuy?"#fbbf24":FAINT, fontSize:10, fontFamily:"monospace", display:"flex", alignItems:"center", justifyContent:"center" }}>
                       {selectedIsSold ? "SOLD" : (itemBox||[]).length >= ITEM_BOX_MAX ? "BOX満杯" : gold < selectedPrice ? "G不足" : "購入"}
                     </button>
                   </div>
@@ -176,7 +176,7 @@ export default function ShopTab() {
         <div style={{ display:"flex", background:"rgba(8,8,16,0.75)", borderTop:"1px solid #1a1a2a", borderBottom:"1px solid #1a1a2a", flexShrink:0, marginTop:14 }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => { setSub(t.id); setSelectedIdx(0); }}
-              style={{ flex:1, padding:"11px 4px", background:sub===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${sub===t.id?"#fbbf24":"transparent"}`, cursor:"pointer", color:sub===t.id?"#fbbf24":DIM, fontSize:12, fontFamily:"monospace" }}>
+              style={{ flex:1, padding:"11px 4px", minHeight:"44px", background:sub===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${sub===t.id?"#fbbf24":"transparent"}`, cursor:"pointer", color:sub===t.id?"#fbbf24":DIM, fontSize:12, fontFamily:"monospace", display:"flex", alignItems:"center", justifyContent:"center" }}>
               {t.label}
             </button>
           ))}
@@ -199,7 +199,7 @@ export default function ShopTab() {
                 </div>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:10 }}>
                   <span style={{ fontSize:13, color:"#fbbf24", fontWeight:700 }}>{price.toLocaleString()}G</span>
-                  <button onClick={buyRescueKey} disabled={!canBuy} style={{ padding:"6px 16px", background:canBuy?"#0a2a0a":"#0a0a0a", border:`1px solid ${canBuy?"#4ade80":"#3a3a3a"}`, borderRadius:4, cursor:canBuy?"pointer":"default", color:canBuy?"#4ade80":FAINT, fontSize:10, fontFamily:"monospace" }}>
+                  <button onClick={buyRescueKey} disabled={!canBuy} style={{ padding:"6px 16px", minHeight:"44px", minWidth:"44px", background:canBuy?"#0a2a0a":"#0a0a0a", border:`1px solid ${canBuy?"#4ade80":"#3a3a3a"}`, borderRadius:4, cursor:canBuy?"pointer":"default", color:canBuy?"#4ade80":FAINT, fontSize:10, fontFamily:"monospace", display:"flex", alignItems:"center", justifyContent:"center" }}>
                     {(itemBox||[]).length >= ITEM_BOX_MAX ? "BOX満杯" : gold < price ? "G不足" : "購入"}
                   </button>
                 </div>
