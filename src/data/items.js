@@ -232,8 +232,6 @@ export const generateShopStock = (dateStr, unlockedFloor = 0) => {
 // ─── アイテムインスタンス生成 ───
 let _uid = 0;
 
-const VARIANCE_TABLE = [0.6, 0.2, 0.1, 0.05, 0.05]; // 基本値60%・±1 20%・±2 10%など
-
 const applyVariance = (val) => {
   if (!val || val === 0) return 0;
   const r = Math.random();

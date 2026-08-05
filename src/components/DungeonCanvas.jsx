@@ -35,7 +35,7 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused }) {
       const speed = isRunning && !isBreak && !isPaused ? dt * 0.15 : 0;
       s.offset = ((s.offset - speed) % W + W) % W;
       s.torchPhase = (s.torchPhase + dt * 0.006) % (Math.PI * 2);
-      draw(ctx, W, H, s, THEMES.stone, isBreak);
+      draw(ctx, W, H, s, THEMES.stone);
       frameRef.current = requestAnimationFrame(loop);
     };
 
@@ -48,7 +48,7 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused }) {
   );
 }
 
-function draw(ctx, W, H, state, C, isBreak) {
+function draw(ctx, W, H, state, C) {
   const { offset, torchPhase } = state;
   const FLOOR_Y = H * 0.72;
   const CEIL_Y  = H * 0.18;

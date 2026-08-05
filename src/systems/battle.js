@@ -1,5 +1,5 @@
 import { SKILL_BOOKS, getBookEffect } from "../data/skills";
-import { initStatusState, rankMul, changeRank, applyStatus, checkSkipTurn, tickStatuses, STATUS_DEFS } from "./status";
+import { initStatusState, rankMul, applyStatus, checkSkipTurn, tickStatuses, STATUS_DEFS } from "./status";
 
 export const calcDamage = (atk, def) =>
   Math.max(1, Math.floor(atk * (100 / (100 + def))));

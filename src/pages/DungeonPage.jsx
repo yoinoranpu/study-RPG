@@ -120,6 +120,12 @@ export default function DungeonPage({ onBack }) {
   const [showBossWarning, setShowBossWarning] = useState(false);
   const [bossFloor, setBossFloor] = useState(false);
   const [activeSummons, setActiveSummons] = useState([]);
+  // 以下はレンダー中にrefを直接読まないための表示用ミラー（floor/mappingと同じパターン）
+  const [sessionExpDisplay, setSessionExpDisplay] = useState(0);
+  const [sessionGoldDisplay, setSessionGoldDisplay] = useState(0);
+  const [sessionMatsDisplay, setSessionMatsDisplay] = useState({});
+  const [sessionChestsDisplay, setSessionChestsDisplay] = useState([]);
+  const [defeatedCount, setDefeatedCount] = useState(0);
 
   const logId         = useRef(1);
   const sessionExp    = useRef(0);
@@ -255,12 +261,14 @@ export default function DungeonPage({ onBack }) {
       if (result.type === "gold") {
         const bonusGold = Math.floor(result.gold * (1 + (passiveBonusRef.current.goldBonus||0)/100));
         sessionGold.current += bonusGold;
+        setSessionGoldDisplay(sessionGold.current);
         result.gold = bonusGold;
         addLog(`${result.chestType?.icon||"📦"} ${result.chestType?.label}を開けた！+${bonusGold}G`, "#fbbf24");
       } else {
         addLog(`${result.chestType?.icon||"📦"} ${result.chestType?.label}を発見！`, result.chestType?.color||"#fbbf24");
       }
       sessionChests.current.push(result);
+      setSessionChestsDisplay([...sessionChests.current]);
       setMonsterVisible(false); setCurrentMonsters([]);
       setCurrentEvent("chest"); setEventVisible(true); setMonsterArrived(false);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 6000);
@@ -297,6 +305,8 @@ export default function DungeonPage({ onBack }) {
           const gold = Math.floor(calcGold(workMin) * (1 + goldBonus / 100));
           sessionExp.current  += exp;
           sessionGold.current += gold;
+          setSessionExpDisplay(sessionExp.current);
+          setSessionGoldDisplay(sessionGold.current);
           addMapping(MAPPING_PER_SET);
           addLog(`✨ ${workMin}分完了！ +${exp}EXP +${gold}G`, "#fbbf24");
           if (currentSet >= totalSets) { setIsRunning(false); setShowResult(true); return 0; }
@@ -399,11 +409,11 @@ export default function DungeonPage({ onBack }) {
       <div style={{ fontSize:24, fontWeight:900, color:"#fff", letterSpacing:2 }}>探索終了</div>
       <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:"16px 24px", width:"100%", maxWidth:320 }}>
         {[
-          { label:"獲得EXP",  val:`+${sessionExp.current}`,             color:"#86efac" },
-          { label:"獲得G",    val:`+${sessionGold.current}`,            color:"#fbbf24" },
-          { label:"到達階層", val:`B${floorRef.current}F`,              color:"#60a5fa" },
-          { label:"マップ率", val:`${Math.floor(mappingRef.current)}%`, color:"#60a5fa" },
-          { label:"倒した敵", val:`${defeatedList.current.length}体`,   color:"#f87171" },
+          { label:"獲得EXP",  val:`+${sessionExpDisplay}`,        color:"#86efac" },
+          { label:"獲得G",    val:`+${sessionGoldDisplay}`,       color:"#fbbf24" },
+          { label:"到達階層", val:`B${floor}F`,                   color:"#60a5fa" },
+          { label:"マップ率", val:`${Math.floor(mapping)}%`,      color:"#60a5fa" },
+          { label:"倒した敵", val:`${defeatedCount}体`,           color:"#f87171" },
         ].map(({ label, val, color }) => (
           <div key={label} style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
             <span style={{ color:"#4a4a6a", fontSize:11 }}>{label}</span>
@@ -411,20 +421,20 @@ export default function DungeonPage({ onBack }) {
           </div>
         ))}
       </div>
-      {Object.keys(sessionMats.current).length > 0 && (
+      {Object.keys(sessionMatsDisplay).length > 0 && (
         <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:6, padding:"10px 16px", width:"100%", maxWidth:320 }}>
           <div style={{ fontSize:8, color:"#fb923c", marginBottom:6, letterSpacing:2 }}>獲得素材</div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-            {Object.entries(sessionMats.current).map(([name, cnt]) => (
+            {Object.entries(sessionMatsDisplay).map(([name, cnt]) => (
               <div key={name} style={{ background:"#080810", border:"1px solid #fb923c33", borderRadius:3, padding:"3px 8px", fontSize:9, color:"#fb923c" }}>{name}×{cnt}</div>
             ))}
           </div>
         </div>
       )}
-      {sessionChests.current.length > 0 && (
-        <ChestOpenSection chests={sessionChests.current} onAllOpened={() => setChestsAllOpened(true)} />
+      {sessionChestsDisplay.length > 0 && (
+        <ChestOpenSection chests={sessionChestsDisplay} onAllOpened={() => setChestsAllOpened(true)} />
       )}
-      {(sessionChests.current.length === 0 || chestsAllOpened) && (
+      {(sessionChestsDisplay.length === 0 || chestsAllOpened) && (
         <button onClick={handleResultClose} style={{ padding:"12px 32px", background:"#0a2a0a", border:"1px solid #4ade80", borderRadius:6, cursor:"pointer", color:"#4ade80", fontSize:12, letterSpacing:3, fontWeight:700 }}>
           街へ帰還 →
         </button>
@@ -521,6 +531,10 @@ export default function DungeonPage({ onBack }) {
               }
             });
             monsters.forEach(m => defeatedList.current.push(m));
+            setSessionExpDisplay(sessionExp.current);
+            setSessionGoldDisplay(sessionGold.current);
+            setSessionMatsDisplay({ ...sessionMats.current });
+            setDefeatedCount(defeatedList.current.length);
             const newBook = { ...(player.monsterBook||{}) };
             monsters.forEach(m => {
               if (!newBook[m.id]) newBook[m.id] = { count:0, name:m.name, tribe:m.tribe, material:m.material };
@@ -530,6 +544,7 @@ export default function DungeonPage({ onBack }) {
             if (Math.random() < 0.25 * (1 + (passiveBonusRef.current.chestBonus||0)/100)) {
               sessionChests.current.push(openChest(rollChest().id || "common", globalDepth(dungeonId, floorRef.current), dungeonId));
             }
+            setSessionChestsDisplay([...sessionChests.current]);
             addMapping(2);
           }
           setBattlePopup({ monsters, won:result.won, exp:result.totalExp, gold:result.totalGold, materials:result.materials, dangerStar:Math.max(...monsters.map(m=>m.dangerStar||1)) });
@@ -588,7 +603,7 @@ export default function DungeonPage({ onBack }) {
         <div style={{ color:"#60a5fa", fontSize:12, letterSpacing:2 }}>{dungeon.name} B{floor}F</div>
         <div style={{ flex:1 }} />
         <div style={{ color:"#86efac", fontSize:10 }}>Lv{lv}</div>
-        <div style={{ color:"#fbbf24", fontSize:10 }}>G {player.gold + sessionGold.current}</div>
+        <div style={{ color:"#fbbf24", fontSize:10 }}>G {player.gold + sessionGoldDisplay}</div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
           <span style={{ color:"#f87171", fontSize:10 }}>♥</span>
           <div style={{ width:50, height:5, background:"#1a0a0a", borderRadius:3, overflow:"hidden" }}>

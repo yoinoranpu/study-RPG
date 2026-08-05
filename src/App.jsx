@@ -24,7 +24,7 @@ export default function App() {
       } else {
         try {
           await loginAsGuest();
-        } catch (e) {
+        } catch {
           setLoading(false);
         }
       }
