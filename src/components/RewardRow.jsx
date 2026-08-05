@@ -22,7 +22,7 @@ export default function RewardRow({ label, desc, progress, target, claimed, done
           <span style={{ fontSize:9, color:DIM }}>受取済み</span>
         ) : (
           <button onClick={onClaim} disabled={!done}
-            style={{ padding:"5px 14px", background:done?"#0a1a0a":"#0a0a0a", border:`1px solid ${done?"#4ade80":"#3a3a3a"}`, borderRadius:4, cursor:done?"pointer":"default", color:done?"#4ade80":FAINT, fontSize:10, fontFamily:"monospace" }}>
+            style={{ padding:"5px 14px", minHeight:"44px", minWidth:"44px", background:done?"#0a1a0a":"#0a0a0a", border:`1px solid ${done?"#4ade80":"#3a3a3a"}`, borderRadius:4, cursor:done?"pointer":"default", color:done?"#4ade80":FAINT, fontSize:10, fontFamily:"monospace", display:"flex", alignItems:"center", justifyContent:"center" }}>
             受け取る
           </button>
         )}
