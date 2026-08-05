@@ -118,11 +118,17 @@ export default function ForgeTab() {
   const [sel, setSel] = useState(null);
   const [matSel, setMatSel] = useState(null);
   const [msg, flash] = useFlashMessage(3000);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const w = window.innerWidth;
+  const [isMobile, setIsMobile] = useState(w < 768);
+  const [isTablet, setIsTablet] = useState(w >= 768 && w < 1024);
   const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex, stats } = usePlayerStore();
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      const w = window.innerWidth;
+      setIsMobile(w < 768);
+      setIsTablet(w >= 768 && w < 1024);
+    };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -259,7 +265,7 @@ export default function ForgeTab() {
     <div style={{ position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
       {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（モバイルでは高さ制限） */}
       <div style={{ position:"absolute", inset:0, background:"#08080f" }} />
-      <div style={{ position:"absolute", top:0, left:0, right:0, maxHeight:isMobile?"100px":"auto", overflow:"hidden" }}>
+      <div style={{ position:"absolute", top:0, left:0, right:0, maxHeight:isMobile?"100px":isTablet?"140px":"auto", overflow:"hidden" }}>
         <img src="/assets/images/forge-banner.png" alt="" style={{ width:"100%", height:"auto", display:"block" }} />
         <div style={{
           position:"absolute", inset:0,
