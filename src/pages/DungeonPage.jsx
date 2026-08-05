@@ -93,6 +93,10 @@ export default function DungeonPage({ onBack }) {
   const dungeon = getDungeon(dungeonId);
   const dungeonState = (player.dungeons || makeInitialDungeons())[dungeonId] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
 
+  const w = window.innerWidth;
+  const [isMobile, setIsMobile] = useState(w < 768);
+  const [isTablet, setIsTablet] = useState(w >= 768 && w < 1024);
+
   const [workMin, setWorkMin]     = useState(player.timerWork);
   const [breakMin, setBreakMin]   = useState(player.timerBreak);
   const [totalSets, setTotalSets] = useState(player.timerSets);
@@ -146,6 +150,16 @@ export default function DungeonPage({ onBack }) {
   const luckBuffRef = useRef(0);   // % ボーナス（消耗品luck_up）
   const sessionScaleRef = useRef({ atk: 0, mag: 0 });
   const dungeonClearedRef = useRef(dungeonState.cleared || false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const w = window.innerWidth;
+      setIsMobile(w < 768);
+      setIsTablet(w >= 768 && w < 1024);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const bookBonus = calcBookPassiveBonus(player.passiveSkillSlots || [], player.skillBooks || []);
@@ -703,16 +717,16 @@ export default function DungeonPage({ onBack }) {
         </div>
       )}
 
-      <div style={{ padding:"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:12, position:"relative", zIndex:1 }}>
-        <button onClick={onBack} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 10px", cursor:"pointer", fontSize:10 }}>← 街へ</button>
-        <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 10px", cursor:"pointer", fontSize:10 }}>⚙</button>
-        <div style={{ color:"#60a5fa", fontSize:12, letterSpacing:2 }}>{dungeon.name} B{floor}F</div>
+      <div style={{ padding:isMobile?"6px 8px":"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:isMobile?6:12, position:"relative", zIndex:1, flexWrap:isMobile?"wrap":"nowrap" }}>
+        <button onClick={onBack} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:isMobile?"3px 6px":"4px 10px", cursor:"pointer", fontSize:isMobile?8:10, minWidth:isMobile?"auto":"auto" }}>← 街へ</button>
+        <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:isMobile?"3px 6px":"4px 10px", cursor:"pointer", fontSize:10, minHeight:isMobile?"32px":"auto" }}>⚙</button>
+        <div style={{ color:"#60a5fa", fontSize:isMobile?10:12, letterSpacing:2 }}>{dungeon.name} B{floor}F</div>
         <div style={{ flex:1 }} />
-        <div style={{ color:"#86efac", fontSize:10 }}>Lv{lv}</div>
-        <div style={{ color:"#fbbf24", fontSize:10 }}>G {player.gold + sessionGoldDisplay}</div>
-        <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+        {!isMobile && <div style={{ color:"#86efac", fontSize:10 }}>Lv{lv}</div>}
+        {!isMobile && <div style={{ color:"#fbbf24", fontSize:10 }}>G {player.gold + sessionGoldDisplay}</div>}
+        <div style={{ display:"flex", alignItems:"center", gap:4, minHeight:isMobile?"32px":"auto" }}>
           <span style={{ color:"#f87171", fontSize:10 }}>♥</span>
-          <div style={{ width:50, height:5, background:"#1a0a0a", borderRadius:3, overflow:"hidden" }}>
+          <div style={{ width:isMobile?40:50, height:5, background:"#1a0a0a", borderRadius:3, overflow:"hidden" }}>
             <div style={{ height:"100%", width:`${(hp/maxHp)*100}%`, background:hp/maxHp>0.5?"#4ade80":hp/maxHp>0.25?"#fbbf24":"#f87171", borderRadius:3, transition:"width 0.5s" }} />
           </div>
           <span style={{ color:"#555", fontSize:8 }}>{hp}</span>
@@ -728,10 +742,10 @@ export default function DungeonPage({ onBack }) {
               style={{ transition:"stroke-dasharray 0.5s linear", filter:`drop-shadow(0 0 6px ${accent})` }} />
           </svg>
           <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-            <div style={{ fontSize:36, fontWeight:900, color:"#fff", letterSpacing:2 }}>
+            <div style={{ fontSize:isMobile?24:36, fontWeight:900, color:"#fff", letterSpacing:2 }}>
               {String(mins).padStart(2,"0")}:{String(secs).padStart(2,"0")}
             </div>
-            <div style={{ fontSize:10, color:accent, marginTop:4 }}>
+            <div style={{ fontSize:isMobile?8:10, color:accent, marginTop:4 }}>
               {phase==="break" ? "🔥 休憩中" : `SET ${currentSet}/${totalSets}`}
             </div>
           </div>
@@ -753,7 +767,7 @@ export default function DungeonPage({ onBack }) {
           </div>
         </div>
 
-        <button onClick={() => setIsRunning(r => !r)} style={{ padding:"14px 40px", background:isRunning?"#2a0a0a":"#0a2a0a", border:`2px solid ${isRunning?"#f87171":"#4ade80"}`, borderRadius:8, cursor:"pointer", color:isRunning?"#f87171":"#4ade80", fontSize:16, letterSpacing:4, fontWeight:900 }}>
+        <button onClick={() => setIsRunning(r => !r)} style={{ padding:isMobile?"10px 24px":"14px 40px", background:isRunning?"#2a0a0a":"#0a2a0a", border:`2px solid ${isRunning?"#f87171":"#4ade80"}`, borderRadius:8, cursor:"pointer", color:isRunning?"#f87171":"#4ade80", fontSize:isMobile?14:16, letterSpacing:isMobile?2:4, fontWeight:900, minHeight:"44px", minWidth:"44px" }}>
           {isRunning ? "STOP" : "START"}
         </button>
 
