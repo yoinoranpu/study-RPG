@@ -26,10 +26,11 @@ export const calcFloorProgress = (currentMapping, addAmount) => {
 
 // レベル計算（緩やかに・装備が主役）
 // 目標: 毎日2セット → 1ヶ月でLv20〜25
+// 係数はタイマーEXP+戦闘EXPの実測想定値から逆算（毎日2セット×30日 ≒ 4100EXPでLv23前後になるよう調整）
 export const expToLevel = (totalExp) => {
   let lv = 1, used = 0;
   while (lv < 100) {
-    const need = Math.floor(15 * Math.pow(lv, 1.3));
+    const need = Math.floor(7 * Math.pow(lv, 1.3));
     if (used + need > totalExp) break;
     used += need;
     lv++;
@@ -37,21 +38,21 @@ export const expToLevel = (totalExp) => {
   return lv;
 };
 
-export const expForLevel = (lv) => Math.floor(15 * Math.pow(lv, 1.3));
+export const expForLevel = (lv) => Math.floor(7 * Math.pow(lv, 1.3));
 
 export const expUsedUpTo = (lv) => {
   let s = 0;
-  for (let i = 1; i < lv; i++) s += Math.floor(15 * Math.pow(i, 1.3));
+  for (let i = 1; i < lv; i++) s += Math.floor(7 * Math.pow(i, 1.3));
   return s;
 };
 
 // レベル解放コンテンツ
 export const LEVEL_UNLOCKS = {
-  5:  { label:"スキルツリー解放",        desc:"スキルを習得できるようになった！" },
+  5:  { label:"強化上限+3解放",          desc:"装備を+3まで強化できるようになった！" },
   10: { label:"強化上限+5解放",          desc:"装備を+5まで強化できるようになった！" },
   15: { label:"ショップ品揃え拡充",      desc:"ショップに新しいアイテムが並び始めた！" },
   20: { label:"強化上限+10解放",         desc:"装備を+10まで強化できるようになった！" },
-  25: { label:"B5F以降解放",             desc:"より深い階層への道が開けた！" },
+  25: { label:"上級装備の解放準備",       desc:"より強力な装備が視野に入ってきた！" },
   30: { label:"強化上限+15解放",         desc:"装備を+15まで強化できるようになった！" },
   40: { label:"強化上限+20解放",         desc:"装備を+20まで強化できるようになった！" },
   50: { label:"伝説装備解放",            desc:"伝説の装備が手に入るようになった！" },

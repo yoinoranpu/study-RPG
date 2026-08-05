@@ -1,12 +1,13 @@
 import { db, auth } from "./config";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { 
-  signInAnonymously, 
+import {
+  signInAnonymously,
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
   linkWithPopup,
 } from "firebase/auth";
+import { makeInitialDungeons } from "../systems/dungeons";
 
 // ゲストログイン
 export const loginAsGuest = async () => {
@@ -22,13 +23,22 @@ const normalizeSlotLength = (slots, len) => {
   return arr;
 };
 
-// ロードしたデータのスロット長を補正
+// 旧セーブ（単一100階ダンジョン）を3ダンジョン制へ移行。
+// レベル・ゴールド・装備・スキル書はそのまま、階層進行だけダンジョン1のB1Fからやり直しにする。
+const migrateDungeons = (data) => {
+  if (data.dungeons) return data.dungeons;
+  return makeInitialDungeons();
+};
+
+// ロードしたデータのスロット長・ダンジョン構造を補正
 const normalizeLoadedData = (data) => {
   if (!data) return data;
   return {
     ...data,
     activeSkillSlots: normalizeSlotLength(data.activeSkillSlots, 4),
     passiveSkillSlots: normalizeSlotLength(data.passiveSkillSlots, 6),
+    dungeons: migrateDungeons(data),
+    currentDungeonId: data.currentDungeonId || 1,
   };
 };
 
@@ -37,9 +47,8 @@ export const savePlayerData = async (uid, data) => {
   const saveData = {
     totalExp: data.totalExp || 0,
     gold: data.gold || 500,
-    floor: data.floor || 1,
-    maxFloor: data.maxFloor || 1,
-    floorMapping: data.floorMapping || 0,
+    currentDungeonId: data.currentDungeonId || 1,
+    dungeons: data.dungeons || makeInitialDungeons(),
     hp: data.hp || 100,
     maxHp: data.maxHp || 100,
     equippedWeapon: data.equippedWeapon || null,

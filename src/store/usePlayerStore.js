@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { savePlayerData } from "../firebase/saveLoad";
+import { makeInitialDungeons } from "../systems/dungeons";
 
 let saveTimer = null;
 const debounceSave = (uid, data) => {
@@ -9,9 +10,8 @@ const debounceSave = (uid, data) => {
     const saveData = {
       totalExp: data.totalExp,
       gold: data.gold,
-      floor: data.floor,
-      maxFloor: data.maxFloor,
-      floorMapping: data.floorMapping,
+      currentDungeonId: data.currentDungeonId || 1,
+      dungeons: data.dungeons || makeInitialDungeons(),
       hp: data.hp,
       maxHp: data.maxHp,
       equippedWeapon: data.equippedWeapon,
@@ -47,9 +47,8 @@ const usePlayerStore = create((set, get) => ({
 
   totalExp: 0,
   gold: 500,
-  floor: 1,
-  maxFloor: 1,
-  floorMapping: 0,
+  currentDungeonId: 1,
+  dungeons: makeInitialDungeons(),
   hp: 100,
   maxHp: 100,
 
@@ -95,8 +94,8 @@ const usePlayerStore = create((set, get) => ({
   resetPlayer: () => {
     const uid = get().uid;
     const resetData = {
-      totalExp: 0, gold: 500, floor: 1, maxFloor: 1,
-      floorMapping: 0, hp: 100, maxHp: 100,
+      totalExp: 0, gold: 500, currentDungeonId: 1, dungeons: makeInitialDungeons(),
+      hp: 100, maxHp: 100,
       equippedWeapon: null, equippedArmor: null,
       equippedAcc1: null, equippedAcc2: null,
       specialSlots: [null, null, null],

@@ -3,7 +3,7 @@
 // 確率を変えたい時はここだけ修正すればOK
 // ═══════════════════════════════════════════════════════
 
-import { WEAPON_DB, ARMOR_DB, ACCESSORY_DB, CONSUMABLE_DB, makeItem, getRarity } from "./items";
+import { WEAPON_DB, ARMOR_DB, ACCESSORY_DB, CONSUMABLE_DB, SPECIAL_DB, makeItem, getRarity } from "./items";
 import { makeBook, rollBookRarity, rollBookId } from "./skills";
 
 // ─── 宝箱レアリティ定義 ───
@@ -69,7 +69,8 @@ export const CHEST_CONTENT_TABLE = {
 };
 
 // ─── 宝箱から中身を生成 ───
-export const openChest = (chestRarityId, currentFloor = 1) => {
+// currentFloorは「全ダンジョン通算の深度(globalDepth)」を渡す想定（呼び出し側で計算）
+export const openChest = (chestRarityId, currentFloor = 1, dungeonId = 1) => {
   const table = CHEST_CONTENT_TABLE[chestRarityId] || CHEST_CONTENT_TABLE.common;
   const chestType = CHEST_TYPES[chestRarityId] || CHEST_TYPES.common;
 
@@ -126,10 +127,9 @@ export const openChest = (chestRarityId, currentFloor = 1) => {
   }
 
   if (category === "key") {
-    // フロアに応じた鍵
-    const keyTmpl = currentFloor >= 25
-      ? { id:"KEY002", name:"封印の鍵", icon:"🔑", rarity:"rare",     type:"special", effect:"boss_key_2", desc:"B40F〜B70Fのボス部屋を開ける" }
-      : { id:"KEY001", name:"古びた鍵", icon:"🗝", rarity:"uncommon", type:"special", effect:"boss_key_1", desc:"B5F〜B35Fのボス部屋を開ける" };
+    // 今いるダンジョンの鍵（1ダンジョン=1種類）
+    const keyId = `KEY00${dungeonId}`;
+    const keyTmpl = SPECIAL_DB.find(it => it.id === keyId) || SPECIAL_DB.find(it => it.id === "KEY001");
     return { type:"item", item: makeItem(keyTmpl), chestType };
   }
 

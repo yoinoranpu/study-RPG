@@ -36,27 +36,33 @@ export const MONSTER_BASE = [
     actions:[{type:"matk",pct:50,label:"炎ブレス"},{type:"atk",pct:40,label:"炎爪"},{type:"def",pct:10,label:"炎を纏う"}]},
 ];
 // ─── ボスモンスターデータ ───
+// 3ダンジョン×30階（各ダンジョン5階ごと=6体）に再構成。
+// ボスの強さはhpMul/atkMul/defMulで完結し、階層のfmスケールは受けない（固定の強敵として設計）。
 export const BOSS_DATA = [
-  // B5F〜B35F（既存強化版）
-  { floor:5,  baseId:"slime",      name:"大スライム",     hpMul:8,  atkMul:2.0, defMul:1.5 },
-  { floor:10, baseId:"skeleton",   name:"骸骨の将",         hpMul:8,  atkMul:2.0, defMul:1.5 },
-  { floor:15, baseId:"kobold",     name:"コボルト族長",     hpMul:8,  atkMul:2.0, defMul:1.5 },
-  { floor:20, baseId:"moss_slime", name:"古代苔の巨躯",     hpMul:8,  atkMul:2.0, defMul:1.5 },
-  { floor:25, baseId:"imp",        name:"魔王の使い",       hpMul:10, atkMul:2.2, defMul:1.8 },
-  { floor:30, baseId:"wolf",       name:"白銀の狼王",       hpMul:10, atkMul:2.2, defMul:1.8 },
-  { floor:35, baseId:"goblin",     name:"ゴブリン大将",     hpMul:10, atkMul:2.2, defMul:1.8 },
-  { floor:40, baseId:"giant_slime",name:"原初の大スライム", hpMul:12, atkMul:2.5, defMul:2.0 },
-  { floor:45, baseId:"death_knight",name:"冥府の騎士王",   hpMul:12, atkMul:2.5, defMul:2.0 },
-  { floor:50, baseId:"demon_soldier",name:"魔界将軍",       hpMul:12, atkMul:2.5, defMul:2.0 },
-  { floor:55, baseId:"world_tree", name:"世界樹の守護者",   hpMul:15, atkMul:2.8, defMul:2.2 },
-  { floor:60, baseId:"goblin_king",name:"ゴブリン大王",     hpMul:15, atkMul:2.8, defMul:2.2 },
-  { floor:65, baseId:"fenrir",     name:"神狼フェンリル",   hpMul:15, atkMul:2.8, defMul:2.2 },
-  { floor:70, baseId:"fire_dragon",name:"炎竜王イフリート", hpMul:18, atkMul:3.0, defMul:2.5 },
-  // B75F〜B100F: 専用ボス（将来追加）
-  // { floor:75, baseId:null, name:"???", ... },
+  // ─── ダンジョン1 ───
+  { dungeonId:1, floor:5,  baseId:"slime",      name:"大スライム",       hpMul:8,  atkMul:2.0, defMul:1.5 },
+  { dungeonId:1, floor:10, baseId:"skeleton",   name:"骸骨の将",         hpMul:8,  atkMul:2.0, defMul:1.5 },
+  { dungeonId:1, floor:15, baseId:"kobold",     name:"コボルト族長",     hpMul:8,  atkMul:2.0, defMul:1.5 },
+  { dungeonId:1, floor:20, baseId:"moss_slime", name:"古代苔の巨躯",     hpMul:8,  atkMul:2.0, defMul:1.5 },
+  { dungeonId:1, floor:25, baseId:"imp",        name:"魔王の使い",       hpMul:10, atkMul:2.2, defMul:1.8 },
+  { dungeonId:1, floor:30, baseId:"wolf",       name:"白銀の狼王",       hpMul:10, atkMul:2.2, defMul:1.8 },
+  // ─── ダンジョン2 ───
+  { dungeonId:2, floor:5,  baseId:"goblin",       name:"ゴブリン大将",     hpMul:10, atkMul:2.2, defMul:1.8 },
+  { dungeonId:2, floor:10, baseId:"giant_slime",  name:"原初の大スライム", hpMul:12, atkMul:2.5, defMul:2.0 },
+  { dungeonId:2, floor:15, baseId:"death_knight", name:"冥府の騎士王",     hpMul:12, atkMul:2.5, defMul:2.0 },
+  { dungeonId:2, floor:20, baseId:"demon_soldier",name:"魔界将軍",         hpMul:12, atkMul:2.5, defMul:2.0 },
+  { dungeonId:2, floor:25, baseId:"world_tree",   name:"世界樹の守護者",   hpMul:15, atkMul:2.8, defMul:2.2 },
+  { dungeonId:2, floor:30, baseId:"goblin_king",  name:"ゴブリン大王",     hpMul:15, atkMul:2.8, defMul:2.2 },
+  // ─── ダンジョン3 ───
+  { dungeonId:3, floor:5,  baseId:"fenrir",       name:"神狼フェンリル",   hpMul:15, atkMul:2.8, defMul:2.2 },
+  { dungeonId:3, floor:10, baseId:"fire_dragon",  name:"炎竜王イフリート", hpMul:18, atkMul:3.0, defMul:2.5 },
+  { dungeonId:3, floor:15, baseId:"dire_wolf",    name:"深淵の魔狼",       hpMul:20, atkMul:3.2, defMul:2.6 },
+  { dungeonId:3, floor:20, baseId:"demon_soldier",name:"魔界大将軍",       hpMul:22, atkMul:3.4, defMul:2.8 },
+  { dungeonId:3, floor:25, baseId:"death_knight", name:"堕天の騎士王",     hpMul:25, atkMul:3.6, defMul:3.0 },
+  { dungeonId:3, floor:30, baseId:"fire_dragon",  name:"終焉竜アポカリプス", hpMul:30, atkMul:4.0, defMul:3.3 },
 ];
 
-export const getBossData = (floor) => BOSS_DATA.find(b => b.floor === floor);
+export const getBossData = (dungeonId, floor) => BOSS_DATA.find(b => b.dungeonId === dungeonId && b.floor === floor);
 
 export const generateBoss = (bossData) => {
   const base = MONSTER_BASE.find(m => m.id === bossData.baseId);
@@ -75,8 +81,8 @@ export const generateBoss = (bossData) => {
     speed: 60,  // ← 追加
     rarity: { id:"legend", label:"BOSS", color:"#ef4444", mul:1 },
     dangerStar: 10,
-    expGain:  Math.floor(base.expGain  * bossData.hpMul * 2),
-    goldGain: Math.floor(base.goldGain * bossData.hpMul * 2),
+    expGain:  Math.floor(10 * base.expMul * bossData.hpMul),
+    goldGain: Math.floor(20 * base.gMul  * bossData.hpMul),
   };
 };
 

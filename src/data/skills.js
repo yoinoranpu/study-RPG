@@ -359,6 +359,7 @@ const BOOK_DROP_WEIGHT_BY_CHEST = {
   epic:     [10, 25, 30, 25, 10],
 };
 
+// floorは「全ダンジョン通算の深度(globalDepth)」を渡す想定（呼び出し側で計算）
 export const rollBookRarity = (chestRarityId = "common", floor = 1) => {
   const maxTier = floor >= 75 ? 4 : floor >= 50 ? 3 : floor >= 25 ? 2 : floor >= 10 ? 1 : 0;
   const weights = BOOK_DROP_WEIGHT_BY_CHEST[chestRarityId] || BOOK_DROP_WEIGHT_BY_CHEST.common;

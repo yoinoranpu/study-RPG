@@ -158,9 +158,9 @@ export const SPECIAL_DB = [
   { id:"S001", name:"スキルリセット石",icon:"🔮", rarity:"rare",     type:"special", effect:"skill_reset", desc:"習得スキルをリセット",     shopWeight:2 },
   { id:"S002", name:"レア素材パック",  icon:"📦", rarity:"rare",     type:"special", effect:"mat_pack",    desc:"ランダム素材×5個",         shopWeight:3 },
   { id:"S003", name:"強化の秘石",      icon:"💠", rarity:"epic",     type:"special", effect:"forge_up_2",  desc:"選択装備を+2強化",         shopWeight:1 },
-  { id:"KEY001", name:"古びた鍵",   icon:"🗝", rarity:"uncommon", type:"special", effect:"boss_key_1", desc:"B5F〜B35Fのボス部屋を開ける",  shopWeight:0, dropWeight:2 },
-  { id:"KEY002", name:"封印の鍵",   icon:"🔑", rarity:"rare",     type:"special", effect:"boss_key_2", desc:"B40F〜B70Fのボス部屋を開ける", shopWeight:0, dropWeight:1 },
-  { id:"KEY003", name:"禁忌の鍵",   icon:"⚜", rarity:"epic",     type:"special", effect:"boss_key_3", desc:"B75F〜のボス部屋を開ける",     shopWeight:0, dropWeight:0 },
+  { id:"KEY001", name:"古びた鍵",   icon:"🗝", rarity:"uncommon", type:"special", effect:"dungeon_key_1", desc:"ダンジョン1のボス部屋を開ける", shopWeight:0, dropWeight:2 },
+  { id:"KEY002", name:"封印の鍵",   icon:"🔑", rarity:"rare",     type:"special", effect:"dungeon_key_2", desc:"ダンジョン2のボス部屋を開ける", shopWeight:0, dropWeight:1 },
+  { id:"KEY003", name:"禁忌の鍵",   icon:"⚜", rarity:"epic",     type:"special", effect:"dungeon_key_3", desc:"ダンジョン3のボス部屋を開ける", shopWeight:0, dropWeight:1 },
 ];
 
 // ─── 全アイテムDB（統合） ───
@@ -193,6 +193,7 @@ export const getSellPrice = (item) =>
 // ─── 日替わりショップ在庫生成 ───
 const RARITY_WEIGHT = { common:40, uncommon:30, rare:20, epic:8, legendary:2, mythic:0, origin:0 };
 
+// unlockedFloorは「全ダンジョン通算の深度(globalDepth)」を渡す想定（呼び出し側で計算）
 export const generateShopStock = (dateStr, unlockedFloor = 0) => {
   const seed = dateStr.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const rng = (s) => { let x = Math.sin(s) * 10000; return x - Math.floor(x); };

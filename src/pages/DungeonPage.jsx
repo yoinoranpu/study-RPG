@@ -14,7 +14,8 @@ import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
 import { calcBookPassiveBonus, mergeBookDex, SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
 import { openChest } from "../data/chest_table";
-import { RARITY_COLOR } from "../data/items";
+import { RARITY_COLOR, SPECIAL_DB } from "../data/items";
+import { DUNGEON_FLOOR_COUNT, getDungeon, globalDepth, makeInitialDungeons } from "../systems/dungeons";
 
 const EVENT_INTERVAL = 6 * 60 * 1000;
 const BASE_MAX_EVENTS = 4;
@@ -86,6 +87,10 @@ export default function DungeonPage({ onBack }) {
   const player = usePlayerStore();
   const { updatePlayer } = usePlayerStore();
 
+  const dungeonId = player.currentDungeonId || 1;
+  const dungeon = getDungeon(dungeonId);
+  const dungeonState = (player.dungeons || makeInitialDungeons())[dungeonId] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
+
   const [workMin, setWorkMin]     = useState(player.timerWork);
   const [breakMin, setBreakMin]   = useState(player.timerBreak);
   const [totalSets, setTotalSets] = useState(player.timerSets);
@@ -94,8 +99,8 @@ export default function DungeonPage({ onBack }) {
   const [seconds, setSeconds]     = useState(player.timerWork * 60);
   const [totalSec, setTotalSec]   = useState(player.timerWork * 60);
   const [isRunning, setIsRunning] = useState(false);
-  const [mapping, setMapping]     = useState(player.floorMapping || 0);
-  const [floor, setFloor]         = useState(player.floor || 1);
+  const [mapping, setMapping]     = useState(dungeonState.floorMapping || 0);
+  const [floor, setFloor]         = useState(dungeonState.floor || 1);
   const [hp, setHp]               = useState(player.hp || 100);
   const [eventCount, setEventCount] = useState(0);
   const [logs, setLogs]           = useState([{ id:0, text:"ダンジョンに到着した…", color:"#86efac" }]);
@@ -121,13 +126,14 @@ export default function DungeonPage({ onBack }) {
   const sessionMats   = useRef({});
   const sessionChests = useRef([]);
   const defeatedList  = useRef([]);
-  const floorRef      = useRef(player.floor || 1);
-  const mappingRef    = useRef(player.floorMapping || 0);
+  const floorRef      = useRef(dungeonState.floor || 1);
+  const mappingRef    = useRef(dungeonState.floorMapping || 0);
   const hpRef         = useRef(player.hp || 100);
   const eventCountRef = useRef(0);
   const pendingBattleRef = useRef(null);
   const passiveBonusRef  = useRef({});
   const sessionScaleRef = useRef({ atk: 0, mag: 0 });
+  const dungeonClearedRef = useRef(dungeonState.cleared || false);
 
   useEffect(() => {
     passiveBonusRef.current = calcBookPassiveBonus(player.passiveSkillSlots || [], player.skillBooks || []);
@@ -153,7 +159,7 @@ export default function DungeonPage({ onBack }) {
   // 鍵なしボス階層：自動退却
   useEffect(() => {
     if (!bossFloor) return;
-    const keyEffect = floor <= 35 ? "boss_key_1" : floor <= 70 ? "boss_key_2" : "boss_key_3";
+    const keyEffect = dungeon.keyEffect;
     const hasKey = (player.specialSlots||[]).some(s => s?.effect === keyEffect)
       || (player.itemBox||[]).some(it => it.effect === keyEffect);
     if (!hasKey) {
@@ -167,12 +173,12 @@ export default function DungeonPage({ onBack }) {
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [bossFloor, floor, player.specialSlots, player.itemBox, addLog]);
+  }, [bossFloor, dungeon.keyEffect, player.specialSlots, player.itemBox, addLog]);
 
   // 鍵ありボス階層：自動挑戦
   useEffect(() => {
     if (!bossFloor) return;
-    const keyEffect = floor <= 35 ? "boss_key_1" : floor <= 70 ? "boss_key_2" : "boss_key_3";
+    const keyEffect = dungeon.keyEffect;
     const keyItem = (player.specialSlots||[]).find(s => s?.effect === keyEffect)
       || (player.itemBox||[]).find(it => it.effect === keyEffect);
     if (!keyItem) return;
@@ -180,7 +186,7 @@ export default function DungeonPage({ onBack }) {
       const newSlots = (player.specialSlots||[]).map(s => s?.effect === keyEffect ? null : s);
       const newBox = (player.itemBox||[]).filter(it => it.uid !== keyItem.uid);
       updatePlayer({ specialSlots: newSlots, itemBox: newBox });
-      const bossData = getBossData(floor);
+      const bossData = getBossData(dungeonId, floor);
       if (!bossData) return;
       const boss = generateBoss(bossData);
       if (!boss) return;
@@ -193,7 +199,7 @@ export default function DungeonPage({ onBack }) {
       addLog(`🔥 ${boss.displayName}が現れた！`, "#ef4444");
     }, 3000);
     return () => clearTimeout(timer);
-  }, [bossFloor, floor, player.specialSlots, player.itemBox, addLog, updatePlayer, buildPlayerStats]);
+  }, [bossFloor, dungeon.keyEffect, dungeonId, floor, player.specialSlots, player.itemBox, addLog, updatePlayer, buildPlayerStats]);
 
   const addMapping = useCallback((amount) => {
     const bonus = passiveBonusRef.current.mapBonus || 0;
@@ -201,25 +207,31 @@ export default function DungeonPage({ onBack }) {
     const result = calcFloorProgress(mappingRef.current, actual);
     mappingRef.current = result.mapping;
     if (result.newFloor) {
-      floorRef.current += 1;
-      setFloor(floorRef.current);
-      addLog(`🗺 B${floorRef.current}Fに到達！`, "#60a5fa");
-      if (floorRef.current % 5 === 0) {
-        setTimeout(() => {
-          setShowBossWarning(true);
-          setTimeout(() => { setShowBossWarning(false); setBossFloor(true); }, 3000);
-        }, 500);
-        addLog(`⚠ B${floorRef.current}F ボス階層！`, "#ef4444");
-      }
-      const RARITY_UNLOCKS = { 10:"uncommon", 25:"rare", 50:"epic", 75:"legendary" };
-      const unlocked = RARITY_UNLOCKS[floorRef.current];
-      if (unlocked) {
-        setTimeout(() => { updatePlayer({ unlockedRarity: unlocked, maxFloor: floorRef.current }); }, 0);
-        addLog(`🎉 ${unlocked.toUpperCase()}装備が解放された！`, "#fbbf24");
+      if (floorRef.current < DUNGEON_FLOOR_COUNT) {
+        floorRef.current += 1;
+        setFloor(floorRef.current);
+        addLog(`🗺 B${floorRef.current}Fに到達！`, "#60a5fa");
+        if (floorRef.current % 5 === 0) {
+          setTimeout(() => {
+            setShowBossWarning(true);
+            setTimeout(() => { setShowBossWarning(false); setBossFloor(true); }, 3000);
+          }, 500);
+          addLog(`⚠ B${floorRef.current}F ボス階層！`, "#ef4444");
+        }
+        // レアリティ解放は全ダンジョン通算の深度で判定（ダンジョンが変わってもコモンに逆戻りしない）
+        const RARITY_UNLOCKS = { 10:"uncommon", 25:"rare", 50:"epic", 75:"legendary" };
+        const unlocked = RARITY_UNLOCKS[globalDepth(dungeonId, floorRef.current)];
+        if (unlocked) {
+          setTimeout(() => { updatePlayer({ unlockedRarity: unlocked }); }, 0);
+          addLog(`🎉 ${unlocked.toUpperCase()}装備が解放された！`, "#fbbf24");
+        }
+      } else {
+        // ダンジョン最終階：これ以上は進まずマップ済みのまま据え置き
+        mappingRef.current = 99;
       }
     }
-    setMapping(result.mapping);
-  }, [addLog, updatePlayer]);
+    setMapping(mappingRef.current);
+  }, [addLog, updatePlayer, dungeonId]);
 
   const fireEvent = useCallback(() => {
     if (eventCountRef.current >= BASE_MAX_EVENTS) return;
@@ -228,7 +240,7 @@ export default function DungeonPage({ onBack }) {
     setEventCount(eventCountRef.current);
 
     if (evType === "battle") {
-      const monsters = pickMonsters(floorRef.current);
+      const monsters = pickMonsters(globalDepth(dungeonId, floorRef.current));
       addLog(`⚔ ${monsters.map(m=>m.displayName).join("と")}が現れた！`, "#f87171");
       setCurrentEvent(null); setEventVisible(false);
       setCurrentMonsters(monsters); setMonsterVisible(true); setMonsterArrived(false);
@@ -237,7 +249,7 @@ export default function DungeonPage({ onBack }) {
 
     } else if (evType === "chest") {
       const chestRarity = rollChest();
-      const result = openChest(chestRarity.id || "common", floorRef.current);
+      const result = openChest(chestRarity.id || "common", globalDepth(dungeonId, floorRef.current), dungeonId);
       if (result.type === "gold") {
         const bonusGold = Math.floor(result.gold * (1 + (passiveBonusRef.current.goldBonus||0)/100));
         sessionGold.current += bonusGold;
@@ -269,7 +281,7 @@ export default function DungeonPage({ onBack }) {
       setEventVisible(true); setMonsterArrived(false);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 5000);
     }
-  }, [addLog, addMapping, player, buildPlayerStats]);
+  }, [addLog, addMapping, player, buildPlayerStats, dungeonId]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -336,12 +348,19 @@ export default function DungeonPage({ onBack }) {
       if (chest.type === "item" && chest.item && newItemBox.length < 30) newItemBox.push(chest.item);
       if (chest.type === "skillbook" && chest.book) { newSkillBooks.push(chest.book); addedBooks.push(chest.book); }
     });
+    const prevDungeonState = (player.dungeons || makeInitialDungeons())[dungeonId] || { maxFloor:1, cleared:false };
     updatePlayer({
       totalExp: newTotalExp,
       gold:     player.gold + sessionGold.current,
-      floor:    floorRef.current,
-      maxFloor: Math.max(player.maxFloor||1, floorRef.current),
-      floorMapping: mappingRef.current,
+      dungeons: {
+        ...(player.dungeons || makeInitialDungeons()),
+        [dungeonId]: {
+          floor: floorRef.current,
+          maxFloor: Math.max(prevDungeonState.maxFloor||1, floorRef.current),
+          floorMapping: mappingRef.current,
+          cleared: prevDungeonState.cleared || dungeonClearedRef.current,
+        },
+      },
       hp:       hpRef.current,
       materials: newMats,
       itemBox:  newItemBox,
@@ -469,13 +488,18 @@ export default function DungeonPage({ onBack }) {
 
           if (result.won) {
             if (pending.isBoss) {
-              const bossGold = Math.floor(500 * (floor / 5));
-              const bossExp  = Math.floor(100 * (floor / 5));
+              const depth = globalDepth(dungeonId, floorRef.current);
+              const bossGold = Math.floor(500 * (depth / 5));
+              const bossExp  = Math.floor(100 * (depth / 5));
               sessionGold.current += bossGold;
               sessionExp.current  += bossExp;
               addLog(`🏆 ボス撃破！ +${bossExp}EXP +${bossGold}G`, "#fbbf24");
-              sessionChests.current.push(openChest(rollChest().id || "rare", floorRef.current));
-              sessionChests.current.push(openChest(rollChest().id || "rare", floorRef.current));
+              sessionChests.current.push(openChest(rollChest().id || "rare", depth, dungeonId));
+              sessionChests.current.push(openChest(rollChest().id || "rare", depth, dungeonId));
+              if (floorRef.current >= DUNGEON_FLOOR_COUNT) {
+                dungeonClearedRef.current = true;
+                addLog(`🎊 ${dungeon.name}クリア！`, "#fbbf24");
+              }
             }
             sessionExp.current += result.totalExp;
             sessionGold.current += result.totalGold;
@@ -493,7 +517,7 @@ export default function DungeonPage({ onBack }) {
             });
             updatePlayer({ monsterBook: newBook });
             if (Math.random() < 0.25 * (1 + (passiveBonusRef.current.chestBonus||0)/100)) {
-              sessionChests.current.push(openChest(rollChest().id || "common", floorRef.current));
+              sessionChests.current.push(openChest(rollChest().id || "common", globalDepth(dungeonId, floorRef.current), dungeonId));
             }
             addMapping(2);
           }
@@ -522,10 +546,11 @@ export default function DungeonPage({ onBack }) {
           <div style={{ fontSize:9, letterSpacing:4, color:"#ef4444" }}>BOSS FLOOR</div>
           <div style={{ fontSize:22, fontWeight:900, color:"#fff" }}>B{floor}F</div>
           {(() => {
-            const keyEffect = floor <= 35 ? "boss_key_1" : floor <= 70 ? "boss_key_2" : "boss_key_3";
+            const keyEffect = dungeon.keyEffect;
             const keyItem = (player.specialSlots||[]).find(s => s?.effect === keyEffect)
               || (player.itemBox||[]).find(it => it.effect === keyEffect);
             const hasKey = !!keyItem;
+            const keyName = keyItem?.name || SPECIAL_DB.find(it => it.effect === keyEffect)?.name || "鍵";
             return (
               <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
                 <div style={{ fontSize:10, color:hasKey?"#4ade80":"#f87171" }}>
@@ -534,7 +559,7 @@ export default function DungeonPage({ onBack }) {
                 {!hasKey && (
                   <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
                     <div style={{ fontSize:8, color:"#4a4a6a", textAlign:"center" }}>
-                      {floor <= 35 ? "古びた鍵" : floor <= 70 ? "封印の鍵" : "禁忌の鍵"}を入手してください
+                      {keyName}を入手してください
                     </div>
                     <div style={{ fontSize:8, color:"#f87171" }}>自動的に前の階層に戻ります…</div>
                   </div>
@@ -549,7 +574,7 @@ export default function DungeonPage({ onBack }) {
       <div style={{ padding:"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:12, position:"relative", zIndex:1 }}>
         <button onClick={onBack} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 10px", cursor:"pointer", fontSize:10 }}>← 街へ</button>
         <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 10px", cursor:"pointer", fontSize:10 }}>⚙</button>
-        <div style={{ color:"#60a5fa", fontSize:12, letterSpacing:2 }}>B{floor}F</div>
+        <div style={{ color:"#60a5fa", fontSize:12, letterSpacing:2 }}>{dungeon.name} B{floor}F</div>
         <div style={{ flex:1 }} />
         <div style={{ color:"#86efac", fontSize:10 }}>Lv{lv}</div>
         <div style={{ color:"#fbbf24", fontSize:10 }}>G {player.gold + sessionGold.current}</div>
