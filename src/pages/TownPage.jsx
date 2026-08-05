@@ -149,6 +149,13 @@ export default function TownPage({ onEnterDungeon }) {
               })}
             </div>
 
+            {player.keyRescueDungeonId != null && (
+              <div style={{ background:"#0d0d1a", border:"1px solid #60a5fa44", borderRadius:6, padding:"8px 12px", display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ fontSize:16 }}>🔑</span>
+                <span style={{ fontSize:10, color:"#60a5fa" }}>5階ごとのボス部屋には鍵が必要です。宝箱で入手できます（ショップにも並ぶことがあります）</span>
+              </div>
+            )}
+
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={() => setSubTab("book")} style={{ flex:1, padding:"12px 0", background:"#080810", border:"1px solid #60a5fa44", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
                 <span style={{ fontSize:18 }}>📖</span>
