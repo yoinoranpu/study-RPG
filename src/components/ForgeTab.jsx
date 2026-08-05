@@ -296,7 +296,7 @@ export default function ForgeTab() {
         <div style={{ display:"flex", background:"rgba(8,8,16,0.75)", borderTop:"1px solid #1a1a2a", borderBottom:"1px solid #1a1a2a", flexShrink:0, marginTop:14 }}>
           {[{id:"upgrade",label:"⬆ 強化"},{id:"synth",label:"✨ 合成"},{id:"book",label:"📖 スキル書"}].map(t => (
             <button key={t.id} onClick={() => { setTab(t.id); setSel(null); setMatSel(null); }}
-              style={{ flex:1, padding:"11px 4px", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#fb923c":"transparent"}`, cursor:"pointer", color:tab===t.id?"#fb923c":DIM, fontSize:12, fontFamily:"monospace" }}>
+              style={{ flex:1, padding:"11px 4px", minHeight:"44px", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#fb923c":"transparent"}`, cursor:"pointer", color:tab===t.id?"#fb923c":DIM, fontSize:12, fontFamily:"monospace", display:"flex", alignItems:"center", justifyContent:"center" }}>
               {t.label}
             </button>
           ))}
@@ -364,7 +364,7 @@ export default function ForgeTab() {
                       </div>
                       <div style={{ fontSize:10, color:have>=1?"#fb923c":FAINT }}>×{have}</div>
                       <button onClick={() => upgrade(mo)} disabled={!can}
-                        style={{ padding:"6px 14px", background:can?"#1a1000":"#0a0a0a", border:`1px solid ${can?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:can?"pointer":"default", color:can?"#fbbf24":FAINT, fontSize:10, fontFamily:"monospace" }}>
+                        style={{ padding:"6px 14px", minHeight:"44px", minWidth:"44px", background:can?"#1a1000":"#0a0a0a", border:`1px solid ${can?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:can?"pointer":"default", color:can?"#fbbf24":FAINT, fontSize:10, fontFamily:"monospace", display:"flex", alignItems:"center", justifyContent:"center" }}>
                         強化
                       </button>
                     </div>
