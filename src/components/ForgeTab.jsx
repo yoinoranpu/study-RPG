@@ -61,6 +61,54 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
   );
 }
 
+// ─── 合成プレビュー共通部品：⬜+⬜=>⬜ を常に上部に表示 ───
+function SynthBox({ icon, color, empty }) {
+  return (
+    <div style={{ width:52, height:52, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0,
+      background: empty ? "#0a0a14" : `${color}30`,
+      border: empty ? "2px dashed #3a3a55" : `2px solid ${color}`,
+      boxShadow: empty ? "none" : `0 0 8px ${color}55` }}>
+      {empty ? "" : icon}
+    </div>
+  );
+}
+
+function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getName, getColor, getRarityLabel, hint }) {
+  const baseColor = base ? getColor(base) : "#3a3a55";
+  const matColor  = mat  ? getColor(mat)  : "#3a3a55";
+  const nextColor = next ? getColor({ rarity:next }) : "#3a3a55";
+  const ready = base && mat && next;
+  return (
+    <div style={{ background:"#0d0d15", border:`1px solid ${ready?nextColor:"#3a3a55"}`, borderRadius:8, padding:12 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+        <SynthBox icon={base && getIcon(base)} color={baseColor} empty={!base} />
+        <span style={{ fontSize:16, color:DIM, fontWeight:700 }}>+</span>
+        <SynthBox icon={mat && getIcon(mat)} color={matColor} empty={!mat} />
+        <span style={{ fontSize:16, color:DIM, fontWeight:700 }}>⇒</span>
+        <SynthBox icon={base && getIcon(base)} color={nextColor} empty={!ready} />
+      </div>
+      <div style={{ textAlign:"center", fontSize:10, color:DIM, marginTop:8 }}>
+        {base
+          ? mat
+            ? next
+              ? <span>{getName(base)} <span style={{ color:nextColor, fontWeight:700 }}>→ {getRarityLabel(next)}</span></span>
+              : "これ以上合成できません（最大レアリティ）"
+            : "② 素材を選んでください"
+          : hint}
+      </div>
+      {ready && (
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10 }}>
+          <span style={{ fontSize:10, color:"#fbbf24" }}>コスト: {cost?.toLocaleString()}G</span>
+          <button onClick={onSynth} disabled={!canAfford}
+            style={{ padding:"8px 20px", background:"#0a001a", border:`1px solid ${nextColor}`, borderRadius:4, cursor:canAfford?"pointer":"default", color:canAfford?nextColor:FAINT, fontSize:11, fontFamily:"monospace", fontWeight:700 }}>
+            ✨ 合成
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ForgeTab() {
   const [tab, setTab] = useState("upgrade");
   const [sel, setSel] = useState(null);
@@ -280,6 +328,19 @@ export default function ForgeTab() {
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <div style={{ fontSize:10, color:DIM }}>同じ種類・同じレアリティの装備2つで1段階上のレアリティに合成</div>
 
+            <SynthPreview
+              base={baseItem} mat={matItem} next={next}
+              cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
+              getIcon={it=>it.icon} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
+              hint="① ベース装備を選んでください"
+            />
+
+            {(matItem?.abilities||[]).length > 0 && (
+              <div style={{ fontSize:10, color:"#a78bfa" }}>
+                継承: {matItem.abilities[0]?.label}{matItem.abilities[0]?.value}{matItem.abilities[0]?.suffix}
+              </div>
+            )}
+
             <div>
               <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベース装備を選択</div>
               <ItemPicker
@@ -312,65 +373,6 @@ export default function ForgeTab() {
                 />
               </div>
             )}
-
-            {/* 選択アイテム詳細 */}
-            {(baseItem || matItem) && (
-              <div style={{ display:"flex", gap:8 }}>
-                {baseItem && (
-                  <div style={{ flex:1, background:"#0d0d15", border:`1px solid ${RARITY_COLOR[baseItem.rarity]||"#3a3a55"}`, borderRadius:6, padding:8 }}>
-                    <div style={{ fontSize:9, color:"#a78bfa", marginBottom:4 }}>ベース</div>
-                    <div style={{ fontSize:10, color:"#e8e0d0", marginBottom:4 }}>{baseItem.icon} {baseItem.name}</div>
-                    <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
-                      {Object.entries(getItemStats(baseItem)).filter(([,v])=>v>0).map(([k,v])=>(
-                        <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"1px 4px", borderRadius:2 }}>{k.toUpperCase()} {v}</span>
-                      ))}
-                    </div>
-                    {(baseItem.abilities||[]).map((ab,i)=>(
-                      <div key={i} style={{ fontSize:10, color:"#a78bfa", marginTop:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
-                    ))}
-                  </div>
-                )}
-                {matItem && (
-                  <div style={{ flex:1, background:"#0d0d15", border:`1px solid ${RARITY_COLOR[matItem.rarity]||"#3a3a55"}`, borderRadius:6, padding:8 }}>
-                    <div style={{ fontSize:9, color:DIM, marginBottom:4 }}>素材</div>
-                    <div style={{ fontSize:10, color:"#e8e0d0", marginBottom:4 }}>{matItem.icon} {matItem.name}</div>
-                    <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
-                      {Object.entries(getItemStats(matItem)).filter(([,v])=>v>0).map(([k,v])=>(
-                        <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"1px 4px", borderRadius:2 }}>{k.toUpperCase()} {v}</span>
-                      ))}
-                    </div>
-                    {(matItem.abilities||[]).map((ab,i)=>(
-                      <div key={i} style={{ fontSize:10, color:"#a78bfa", marginTop:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {baseItem && matItem && next && (
-              <div style={{ background:"#0d0d15", border:`1px solid ${RARITY_COLOR[next]||"#3a3a55"}`, borderRadius:8, padding:12 }}>
-                <div style={{ fontSize:10, color:DIM, marginBottom:6 }}>合成プレビュー</div>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, fontSize:10 }}>
-                  <span style={{ color:RARITY_COLOR[baseItem.rarity] }}>{baseItem.name}</span>
-                  <span style={{ color:DIM }}>+</span>
-                  <span style={{ color:RARITY_COLOR[matItem.rarity] }}>{matItem.name}</span>
-                  <span style={{ color:DIM }}>→</span>
-                  <span style={{ color:RARITY_COLOR[next], fontWeight:700 }}>{baseItem.name} {RARITY_LABEL[next]}</span>
-                </div>
-                {(matItem.abilities||[]).length > 0 && (
-                  <div style={{ fontSize:10, color:"#a78bfa", marginBottom:8 }}>
-                    継承: {matItem.abilities[0]?.label}{matItem.abilities[0]?.value}{matItem.abilities[0]?.suffix}
-                  </div>
-                )}
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <span style={{ fontSize:10, color:"#fbbf24" }}>コスト: {synthCost?.gold?.toLocaleString()}G</span>
-                  <button onClick={synthesize} disabled={gold < (synthCost?.gold||0)}
-                    style={{ padding:"8px 20px", background:"#0a001a", border:`1px solid ${RARITY_COLOR[next]}`, borderRadius:4, cursor:"pointer", color:RARITY_COLOR[next], fontSize:11, fontFamily:"monospace", fontWeight:700 }}>
-                    ✨ 合成
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -378,6 +380,13 @@ export default function ForgeTab() {
         {tab === "book" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <div style={{ fontSize:10, color:DIM }}>同じスキル書・同じレアリティ2冊で1段階上のレアリティに合成</div>
+
+            <SynthPreview
+              base={bookItem} mat={bookMatItem} next={nextBookR}
+              cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
+              getIcon={b=>SKILL_BOOKS[b.id]?.icon} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+              hint="① ベースのスキル書を選んでください"
+            />
 
             <div>
               <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベースのスキル書を選択</div>
@@ -409,26 +418,6 @@ export default function ForgeTab() {
                   getName={b=>SKILL_BOOKS[b.id]?.name||""}
                   emptyText="合成できる素材がない（同じ書・同じレアリティが必要）"
                 />
-              </div>
-            )}
-
-            {bookItem && bookMatItem && nextBookR && (
-              <div style={{ background:"#0d0d15", border:`1px solid ${BOOK_RARITY_COLOR[nextBookR]||"#3a3a55"}`, borderRadius:8, padding:12 }}>
-                <div style={{ fontSize:10, color:DIM, marginBottom:6 }}>合成プレビュー</div>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, fontSize:10 }}>
-                  <span style={{ color:BOOK_RARITY_COLOR[bookItem.rarity] }}>{SKILL_BOOKS[bookItem.id].name}</span>
-                  <span style={{ color:DIM }}>+</span>
-                  <span style={{ color:BOOK_RARITY_COLOR[bookMatItem.rarity] }}>{SKILL_BOOKS[bookMatItem.id].name}</span>
-                  <span style={{ color:DIM }}>→</span>
-                  <span style={{ color:BOOK_RARITY_COLOR[nextBookR], fontWeight:700 }}>{SKILL_BOOKS[bookItem.id].name} {BOOK_RARITY_LABEL[nextBookR]}</span>
-                </div>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <span style={{ fontSize:10, color:"#fbbf24" }}>コスト: {bookSynthCost?.toLocaleString()}G</span>
-                  <button onClick={synthesizeBook} disabled={gold < (bookSynthCost||0)}
-                    style={{ padding:"8px 20px", background:"#0a001a", border:`1px solid ${BOOK_RARITY_COLOR[nextBookR]}`, borderRadius:4, cursor:"pointer", color:BOOK_RARITY_COLOR[nextBookR], fontSize:11, fontFamily:"monospace", fontWeight:700 }}>
-                    ✨ 合成
-                  </button>
-                </div>
               </div>
             )}
           </div>
