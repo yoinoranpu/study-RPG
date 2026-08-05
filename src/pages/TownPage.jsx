@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
 import ShopTab from "../components/ShopTab";
@@ -21,6 +21,7 @@ export default function TownPage({ onEnterDungeon }) {
   const [subTab, setSubTab] = useState("home");
   const [bookTab, setBookTab] = useState("monster");
   const [showSettings, setShowSettings] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const player = usePlayerStore();
   const { updatePlayer } = usePlayerStore();
   const lv = expToLevel(player.totalExp);
@@ -29,7 +30,12 @@ export default function TownPage({ onEnterDungeon }) {
   const lvPct = need > 0 ? Math.min(1, (player.totalExp - used) / need) : 1;
   const DEBUG = import.meta.env.DEV;
 
-  // セッションを跨がずに日付/週が変わっていた場合の保険リセット（表示の陳腐化防止）
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     const { quests: resetQuests, dailyReset, weeklyReset } = resetQuestsIfNeeded(player.quests);
     if (dailyReset || weeklyReset) {
@@ -73,9 +79,9 @@ export default function TownPage({ onEnterDungeon }) {
       {/* タブ */}
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:"7px 2px", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#a78bfa":"transparent"}`, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
-            <span style={{ fontSize:13 }}>{t.icon}</span>
-            <span style={{ fontSize:10, color:tab===t.id?"#a78bfa":DIM }}>{t.label}</span>
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:isMobile?"8px 2px":"7px 2px", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#a78bfa":"transparent"}`, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:isMobile?0:1 }}>
+            <span style={{ fontSize:isMobile?14:13 }}>{t.icon}</span>
+            {!isMobile && <span style={{ fontSize:10, color:tab===t.id?"#a78bfa":DIM }}>{t.label}</span>}
           </button>
         ))}
       </div>
@@ -86,9 +92,9 @@ export default function TownPage({ onEnterDungeon }) {
         {/* ホーム */}
         {tab === "home" && subTab === "home" && (
           <div style={{ position:"relative", margin:"-14px", overflow:"hidden" }}>
-            {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（切れ防止） */}
+            {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（モバイルでは高さ制限） */}
             <div style={{ position:"absolute", inset:0, background:"#08080f" }} />
-            <div style={{ position:"absolute", top:0, left:0, right:0 }}>
+            <div style={{ position:"absolute", top:0, left:0, right:0, maxHeight:isMobile?"120px":"auto", overflow:"hidden" }}>
               <img src="/assets/images/town-banner.png" alt="" style={{ width:"100%", height:"auto", display:"block" }} />
               <div style={{
                 position:"absolute", inset:0,
@@ -96,7 +102,7 @@ export default function TownPage({ onEnterDungeon }) {
               }} />
             </div>
 
-            <div style={{ position:"relative", zIndex:1, padding:"150px 14px 14px", display:"flex", flexDirection:"column", gap:10 }}>
+            <div style={{ position:"relative", zIndex:1, padding:isMobile?"100px 10px 10px":"150px 14px 14px", display:"flex", flexDirection:"column", gap:isMobile?6:10 }}>
             <div style={{ background:"rgba(13,13,26,0.88)", border:"1px solid #3a3a55", borderRadius:8, padding:14 }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
                 <span style={{ fontSize:28 }}>🧙</span>

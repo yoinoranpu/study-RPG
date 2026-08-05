@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { generateShopStock, getShopPrice, makeItem, RARITY_COLOR, RARITY_LABEL, INNATE, SPECIAL_DB } from "../data/items";
 import { getGlobalUnlockDepth } from "../systems/dungeons";
 import { makeInitialStats } from "../systems/achievements";
@@ -15,7 +15,14 @@ export default function ShopTab() {
   const [sub, setSub] = useState("weapon");
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [msg, flash] = useFlashMessage(3000);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { gold, itemBox, dungeons, keyRescueDungeonId, keyRescueClaimed, stats, updatePlayer } = usePlayerStore();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const spendGold = (amount) => {
     const prevStats = stats || makeInitialStats();
@@ -80,10 +87,9 @@ export default function ShopTab() {
 
   return (
     <div style={{ position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
-      {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（cover/固定高さだと画面幅によって左右が見切れるため、
-          高さを画像側に決めさせて絶対に切れないようにする） */}
+      {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（モバイルでは高さ制限） */}
       <div style={{ position:"absolute", inset:0, background:"#08080f" }} />
-      <div style={{ position:"absolute", top:0, left:0, right:0 }}>
+      <div style={{ position:"absolute", top:0, left:0, right:0, maxHeight:isMobile?"100px":"auto", overflow:"hidden" }}>
         <img src="/assets/images/shop-banner.png" alt="" style={{ width:"100%", height:"auto", display:"block" }} />
         <div style={{
           position:"absolute", inset:0,

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { RARITY_COLOR, RARITY_LABEL, getItemStats, INNATE, SYNTHESIS_COST, getAbilitySlots } from "../data/items";
 import { SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_SYNTHESIS_COST, nextBookRarity, makeBook, mergeBookDex } from "../data/skills";
@@ -118,7 +118,14 @@ export default function ForgeTab() {
   const [sel, setSel] = useState(null);
   const [matSel, setMatSel] = useState(null);
   const [msg, flash] = useFlashMessage(3000);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex, stats } = usePlayerStore();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const upgradeItem = itemBox.find(it => it.uid === sel);
   const matOpts = upgradeItem ? MAT_UP[upgradeItem.type] || [] : [];
@@ -250,9 +257,9 @@ export default function ForgeTab() {
 
   return (
     <div style={{ position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
-      {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（切れ防止） */}
+      {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（モバイルでは高さ制限） */}
       <div style={{ position:"absolute", inset:0, background:"#08080f" }} />
-      <div style={{ position:"absolute", top:0, left:0, right:0 }}>
+      <div style={{ position:"absolute", top:0, left:0, right:0, maxHeight:isMobile?"100px":"auto", overflow:"hidden" }}>
         <img src="/assets/images/forge-banner.png" alt="" style={{ width:"100%", height:"auto", display:"block" }} />
         <div style={{
           position:"absolute", inset:0,
