@@ -1,7 +1,7 @@
 import { useState } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { RARITY_COLOR, RARITY_LABEL, getItemStats, INNATE, SYNTHESIS_COST, getAbilitySlots } from "../data/items";
-import { SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_SYNTHESIS_COST, nextBookRarity, makeBook } from "../data/skills";
+import { SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_SYNTHESIS_COST, nextBookRarity, makeBook, mergeBookDex } from "../data/skills";
 
 const MILESTONE = {
   weapon:    { 5:{stat:"crit",val:1,label:"クリ率+1%"}, 10:{stat:"atk",val:5,label:"ATK+5"}, 15:{stat:"crit",val:2,label:"クリ率+2%"}, 20:{stat:"atk",val:10,label:"ATK+10"} },
@@ -24,7 +24,7 @@ export default function ForgeTab() {
   const [sel, setSel] = useState(null);
   const [matSel, setMatSel] = useState(null);
   const [msg, setMsg] = useState("");
-  const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots } = usePlayerStore();
+  const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex } = usePlayerStore();
 
   const upgradeItem = itemBox.find(it => it.uid === sel);
   const matOpts = upgradeItem ? MAT_UP[upgradeItem.type] || [] : [];
@@ -115,6 +115,7 @@ export default function ForgeTab() {
       skillBooks: newSkillBooks,
       activeSkillSlots: (activeSkillSlots||[]).map(replaceSlot),
       passiveSkillSlots: (passiveSkillSlots||[]).map(replaceSlot),
+      skillBookDex: mergeBookDex(skillBookDex, [newBook]),
       gold: gold - bookSynthCost,
     });
     setSel(null); setMatSel(null);

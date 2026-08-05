@@ -34,6 +34,7 @@ const debounceSave = (uid, data) => {
       studyMinutesWeek: data.studyMinutesWeek,
       unlockedRarity: data.unlockedRarity || "common",
       monsterBook: data.monsterBook || {},
+      skillBookDex: data.skillBookDex || {},
     };
     savePlayerData(uid, saveData);
   }, 2000);
@@ -77,6 +78,7 @@ const usePlayerStore = create((set, get) => ({
   studyMinutesWeek: 0,
 
   monsterBook: {},
+  skillBookDex: {},
 
   setUid: (uid) => set({ uid }),
   setIsGuest: (isGuest) => set({ isGuest }),
@@ -106,6 +108,7 @@ const usePlayerStore = create((set, get) => ({
       battleStyle: "balanced",
       studyMinutesTotal: 0, studyMinutesToday: 0, studyMinutesWeek: 0,
       monsterBook: {},
+      skillBookDex: {},
       unlockedRarity: "common",
     };
     set(resetData);

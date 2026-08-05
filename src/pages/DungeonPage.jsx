@@ -12,7 +12,7 @@ import MonsterSprite from "../components/MonsterSprite";
 import EventSprite from "../components/EventSprite";
 import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
-import { calcBookPassiveBonus, SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
+import { calcBookPassiveBonus, mergeBookDex, SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
 import { openChest } from "../data/chest_table";
 import { RARITY_COLOR } from "../data/items";
 
@@ -331,9 +331,10 @@ export default function DungeonPage({ onBack }) {
     }
     const newItemBox = [...(player.itemBox||[])];
     const newSkillBooks = [...(player.skillBooks||[])];
+    const addedBooks = [];
     sessionChests.current.forEach(chest => {
       if (chest.type === "item" && chest.item && newItemBox.length < 30) newItemBox.push(chest.item);
-      if (chest.type === "skillbook" && chest.book) newSkillBooks.push(chest.book);
+      if (chest.type === "skillbook" && chest.book) { newSkillBooks.push(chest.book); addedBooks.push(chest.book); }
     });
     updatePlayer({
       totalExp: newTotalExp,
@@ -345,6 +346,7 @@ export default function DungeonPage({ onBack }) {
       materials: newMats,
       itemBox:  newItemBox,
       skillBooks: newSkillBooks,
+      skillBookDex: mergeBookDex(player.skillBookDex, addedBooks),
       timerWork: workMin, timerBreak: breakMin, timerSets: totalSets,
       studyMinutesTotal: (player.studyMinutesTotal||0) + studiedMinutes,
       studyMinutesToday: (player.studyMinutesToday||0) + studiedMinutes,

@@ -31,6 +31,18 @@ export const BOOK_SYNTHESIS_COST = {
   mythic:    50000,
 };
 
+// ─── 売却価格 ───
+export const BOOK_SELL_PRICE = {
+  common:    40,
+  uncommon:  120,
+  rare:      350,
+  epic:      900,
+  legendary: 2200,
+  mythic:    6000,
+  origin:    16000,
+};
+export const getBookSellPrice = (rarity) => BOOK_SELL_PRICE[rarity] || 40;
+
 export const BOOK_RARITY_COLOR = {
   common:    "#9ca3af",
   uncommon:  "#4ade80",
@@ -365,6 +377,23 @@ export const rollBookRarity = (chestRarityId = "common", floor = 1) => {
 export const rollBookId = () => {
   const ids = Object.keys(SKILL_BOOKS);
   return ids[Math.floor(Math.random() * ids.length)];
+};
+
+// ─── スキル図鑑：入手済みスキル書を記録（一度入手すれば売却/合成消費後も図鑑には残る）───
+export const mergeBookDex = (dex = {}, newBooks = []) => {
+  const next = { ...dex };
+  newBooks.forEach(b => {
+    if (!b) return;
+    const rarityIdx = BOOK_RARITY_ORDER.indexOf(b.rarity);
+    const cur = next[b.id];
+    if (!cur) {
+      next[b.id] = { count: 1, bestRarity: b.rarity };
+    } else {
+      const curIdx = BOOK_RARITY_ORDER.indexOf(cur.bestRarity);
+      next[b.id] = { count: cur.count + 1, bestRarity: rarityIdx > curIdx ? b.rarity : cur.bestRarity };
+    }
+  });
+  return next;
 };
 
 // ─── セット中パッシブ書のボーナス集計（収集系のみ）───

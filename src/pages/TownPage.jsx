@@ -6,11 +6,13 @@ import ForgeTab from "../components/ForgeTab";
 import CharacterPage from "./CharacterPage";
 import SettingsPage from "./SettingsPage";
 import MonsterBookTab from "../components/MonsterBookTab";
+import SkillBookTab from "../components/SkillBookTab";
 import DebugItemTab from "../components/DebugItemTab";
 
 export default function TownPage({ onEnterDungeon }) {
   const [tab, setTab] = useState("home");
   const [subTab, setSubTab] = useState("home");
+  const [bookTab, setBookTab] = useState("monster");
   const [showSettings, setShowSettings] = useState(false);
   const player = usePlayerStore();
   const lv = expToLevel(player.totalExp);
@@ -128,8 +130,15 @@ export default function TownPage({ onEnterDungeon }) {
         {tab === "home" && subTab === "book" && (
           <div style={{ height:"100%", display:"flex", flexDirection:"column" }}>
             <button onClick={() => setSubTab("home")} style={{ padding:"6px 12px", background:"transparent", border:"none", color:"#4a4a6a", cursor:"pointer", fontSize:10, textAlign:"left", fontFamily:"monospace" }}>← 戻る</button>
+            <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
+              {[{id:"monster",label:"👾 モンスター"},{id:"skill",label:"📖 スキル書"}].map(t=>(
+                <button key={t.id} onClick={()=>setBookTab(t.id)} style={{ flex:1, padding:"8px 0", background:bookTab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${bookTab===t.id?"#a78bfa":"transparent"}`, cursor:"pointer", color:bookTab===t.id?"#a78bfa":"#4a4a6a", fontSize:10, fontFamily:"monospace" }}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
             <div style={{ flex:1, overflow:"hidden" }}>
-              <MonsterBookTab />
+              {bookTab === "monster" ? <MonsterBookTab /> : <SkillBookTab />}
             </div>
           </div>
         )}

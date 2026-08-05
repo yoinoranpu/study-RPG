@@ -3,7 +3,7 @@ import usePlayerStore from "../store/usePlayerStore";
 import { calcPlayerStats } from "../systems/playerStats";
 import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
 import { RARITY_COLOR, RARITY_LABEL, INNATE, getItemStats, getSellPrice } from "../data/items";
-import { SKILL_BOOKS, getBookEffect, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
+import { SKILL_BOOKS, getBookEffect, getBookSellPrice, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
 
 const EQUIP_SLOTS = [
   { key:"equippedWeapon", label:"武器",    icon:"⚔" },
@@ -85,6 +85,18 @@ export default function CharacterPage() {
     updatePlayer({ passiveSkillSlots: s });
   }
 
+  function sellBook(uid) {
+    const owned = (skillBooks||[]).find(b => b.uid === uid);
+    if (!owned) return;
+    const price = getBookSellPrice(owned.rarity);
+    updatePlayer({
+      skillBooks: (skillBooks||[]).filter(b => b.uid !== uid),
+      activeSkillSlots: actSlots.map(s => s === uid ? null : s),
+      passiveSkillSlots: pasSlots.map(s => s === uid ? null : s),
+      gold: player.gold + price,
+    });
+  }
+
   const books = skillBooks || [];
   const ownedActive  = books.filter(b => SKILL_BOOKS[b.id]?.type === "active");
   const ownedPassive = books.filter(b => SKILL_BOOKS[b.id]?.type === "passive");
@@ -95,6 +107,7 @@ export default function CharacterPage() {
     const rc = BOOK_RARITY_COLOR[owned.rarity] || "#888";
     const equipped = slots.includes(owned.uid);
     const empty = slots.findIndex(s => !s);
+    const sellPrice = getBookSellPrice(owned.rarity);
     return (
       <div style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 8px", background:equipped?`${color}18`:"#080810", border:`1px solid ${equipped?color:rc+"44"}`, borderRadius:4, marginBottom:4 }}>
         <span style={{ fontSize:14 }}>{book.icon}</span>
@@ -106,6 +119,7 @@ export default function CharacterPage() {
         </div>
         {!equipped && empty>=0 && <button onClick={()=>setSlot(empty, owned.uid)} style={{ padding:"3px 8px", background:`${color}18`, border:`1px solid ${color}`, borderRadius:3, cursor:"pointer", color, fontSize:8, fontFamily:"monospace" }}>セット</button>}
         {equipped && <span style={{ fontSize:7, color, border:`1px solid ${color}44`, padding:"1px 4px", borderRadius:2 }}>セット中</span>}
+        <button onClick={()=>sellBook(owned.uid)} title="売却" style={{ padding:"3px 8px", background:"#1a0a0a", border:"1px solid #f8717166", borderRadius:3, cursor:"pointer", color:"#f87171", fontSize:8, fontFamily:"monospace" }}>売却{sellPrice}G</button>
       </div>
     );
   }

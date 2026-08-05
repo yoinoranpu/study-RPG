@@ -62,6 +62,7 @@ export const savePlayerData = async (uid, data) => {
     studyMinutesWeek: data.studyMinutesWeek || 0,
     unlockedRarity: data.unlockedRarity || "common",
     monsterBook: data.monsterBook || {},
+    skillBookDex: data.skillBookDex || {},
   };
 
   try {

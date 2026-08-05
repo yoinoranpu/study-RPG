@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ALL_ITEMS, makeItem, RARITY_COLOR, RARITY_LABEL } from "../data/items";
-import { SKILL_BOOKS, SKILL_BOOK_LIST, makeBook, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_RARITY_ORDER } from "../data/skills";
+import { SKILL_BOOKS, SKILL_BOOK_LIST, makeBook, mergeBookDex, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_RARITY_ORDER } from "../data/skills";
 import usePlayerStore from "../store/usePlayerStore";
 
 const ITEM_BOX_MAX = 30;
@@ -9,7 +9,7 @@ export default function DebugItemTab() {
   const [sub, setSub] = useState("weapon");
   const [bookRarity, setBookRarity] = useState("common");
   const [msg, setMsg] = useState("");
-  const { itemBox, skillBooks, updatePlayer } = usePlayerStore();
+  const { itemBox, skillBooks, skillBookDex, updatePlayer } = usePlayerStore();
 
   const tabs = [
     { id:"weapon",     label:"⚔武器"   },
@@ -39,13 +39,13 @@ export default function DebugItemTab() {
   function giveBook(bookId) {
     const book = makeBook(bookId, bookRarity);
     if (!book) return;
-    updatePlayer({ skillBooks: [...(skillBooks||[]), book] });
+    updatePlayer({ skillBooks: [...(skillBooks||[]), book], skillBookDex: mergeBookDex(skillBookDex, [book]) });
     flash(`${SKILL_BOOKS[bookId].name}(${BOOK_RARITY_LABEL[bookRarity]})を取得！`);
   }
 
   function giveAllBooks() {
     const newBooks = SKILL_BOOK_LIST.map(b => makeBook(b.id, bookRarity)).filter(Boolean);
-    updatePlayer({ skillBooks: [...(skillBooks||[]), ...newBooks] });
+    updatePlayer({ skillBooks: [...(skillBooks||[]), ...newBooks], skillBookDex: mergeBookDex(skillBookDex, newBooks) });
     flash(`スキル書${newBooks.length}冊取得！`);
   }
 
