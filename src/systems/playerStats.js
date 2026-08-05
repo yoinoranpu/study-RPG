@@ -1,4 +1,5 @@
 import { getItemStats } from "../data/items";
+import { expToLevel } from "./timer";
 
 export const calcPlayerStats = (player) => {
   let atk=10, mag=10, def=10, mdef=10, hp=100, eva=5, crit=5;
@@ -19,7 +20,7 @@ export const calcPlayerStats = (player) => {
   });
 
   // レベルボーナス（微量）
-  const lv = player.totalExp ? Math.floor(Math.sqrt(player.totalExp / 15)) + 1 : 1;
+  const lv = expToLevel(player.totalExp || 0);
   hp  += lv * 2;
   def += Math.floor(lv * 0.3);
 
