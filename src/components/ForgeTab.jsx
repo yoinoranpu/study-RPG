@@ -19,6 +19,48 @@ const upgradeCost = (lv) => lv <= 0 ? 100 : Math.floor(100 * lv * (1 + lv * 0.1)
 const RARITY_ORDER = ["common","uncommon","rare","epic","legendary","mythic","origin"];
 const nextRarity = (r) => RARITY_ORDER[RARITY_ORDER.indexOf(r) + 1] || null;
 
+const DIM = "#7a7a9a";
+const FAINT = "#5c5c82";
+
+// ─── 選択グリッド共通部品：レアリティ別グループ化＋検索＋拡大カード ───
+function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getName, emptyText, isMaxed }) {
+  const [query, setQuery] = useState("");
+  const filtered = query ? items.filter(it => getName(it).toLowerCase().includes(query.toLowerCase())) : items;
+  const groups = {};
+  filtered.forEach(it => { const r = getRarity(it); (groups[r] = groups[r] || []).push(it); });
+
+  return (
+    <div>
+      <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="🔍 名前で検索..."
+        style={{ width:"100%", boxSizing:"border-box", padding:"6px 10px", marginBottom:8, background:"#080810", border:"1px solid #3a3a55", borderRadius:5, color:"#e8e0d0", fontSize:10, fontFamily:"monospace" }} />
+      {items.length === 0 && <div style={{ fontSize:10, color:FAINT, padding:8, textAlign:"center" }}>{emptyText}</div>}
+      {items.length > 0 && filtered.length === 0 && <div style={{ fontSize:10, color:FAINT, padding:8, textAlign:"center" }}>該当なし</div>}
+      {RARITY_ORDER.filter(r => groups[r]?.length).map(r => (
+        <div key={r} style={{ marginBottom:8 }}>
+          <div style={{ fontSize:10, color:getColor({ rarity:r }), letterSpacing:1, marginBottom:4, fontWeight:700 }}>
+            {getRarityLabel(r)} ({groups[r].length})
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6 }}>
+            {groups[r].map(it => {
+              const rc = getColor(it);
+              const isSel = selectedUid === it.uid;
+              const maxed = isMaxed?.(it);
+              return (
+                <div key={it.uid} onClick={() => !maxed && onSelect(isSel ? null : it.uid)}
+                  style={{ aspectRatio:"1", position:"relative", background:isSel?`${rc}55`:maxed?"#12121a":`${rc}30`, border:`2px solid ${isSel?rc:maxed?"#3a3a55":rc+"88"}`, borderRadius:8, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:maxed?"default":"pointer", padding:3, opacity:maxed?0.5:1, boxShadow:isSel?`0 0 10px ${rc}aa`:maxed?"none":`0 0 5px ${rc}44` }}>
+                  {maxed && <div style={{ position:"absolute", top:2, right:3, fontSize:7, color:"#fbbf24", fontWeight:700 }}>MAX</div>}
+                  <div style={{ fontSize:22, filter:maxed?"grayscale(0.6)":"none" }}>{getIcon(it)}</div>
+                  <div style={{ fontSize:9, color:maxed?DIM:"#e8e0d0", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", marginTop:2 }}>{getName(it).slice(0,7)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ForgeTab() {
   const [tab, setTab] = useState("upgrade");
   const [sel, setSel] = useState(null);
@@ -123,20 +165,18 @@ export default function ForgeTab() {
     setTimeout(() => setMsg(""), 4000);
   }
 
-  const TYPE_COLOR = { weapon:"#f87171", armor:"#60a5fa", accessory:"#fbbf24" };
-
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
       <div style={{ padding:"8px 12px", background:"#080810", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-        <div style={{ fontSize:9, color:"#fb923c", letterSpacing:2 }}>🔨 FORGE</div>
-        <div style={{ fontSize:8, color:"#4a4a6a", marginTop:2 }}>所持G: {gold.toLocaleString()}</div>
-        {msg && <div style={{ fontSize:9, color:"#4ade80", marginTop:3 }}>{msg}</div>}
+        <div style={{ fontSize:10, color:"#fb923c", letterSpacing:2 }}>🔨 FORGE</div>
+        <div style={{ fontSize:10, color:DIM, marginTop:2 }}>所持G: {gold.toLocaleString()}</div>
+        {msg && <div style={{ fontSize:10, color:"#4ade80", marginTop:3 }}>{msg}</div>}
       </div>
 
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
         {[{id:"upgrade",label:"⬆ 強化"},{id:"synth",label:"✨ 合成"},{id:"book",label:"📖 スキル書"}].map(t => (
           <button key={t.id} onClick={() => { setTab(t.id); setSel(null); setMatSel(null); }}
-            style={{ flex:1, padding:"8px 0", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#fb923c":"transparent"}`, cursor:"pointer", color:tab===t.id?"#fb923c":"#4a4a6a", fontSize:11, fontFamily:"monospace" }}>
+            style={{ flex:1, padding:"8px 0", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#fb923c":"transparent"}`, cursor:"pointer", color:tab===t.id?"#fb923c":DIM, fontSize:11, fontFamily:"monospace" }}>
             {t.label}
           </button>
         ))}
@@ -147,33 +187,30 @@ export default function ForgeTab() {
         {/* 強化タブ */}
         {tab === "upgrade" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3 }}>
-              {itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type)).map(it => {
-                const tc = TYPE_COLOR[it.type] || "#888";
-                const isSel = sel === it.uid;
-                return (
-                  <div key={it.uid} onClick={() => setSel(isSel?null:it.uid)}
-                    style={{ aspectRatio:"1", background:isSel?"#12122a":"#080810", border:`2px solid ${isSel?tc:tc+"33"}`, borderRadius:5, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:1, position:"relative" }}>
-                    <div style={{ fontSize:13 }}>{it.icon}</div>
-                    {it.upgradeLevel > 0 && <div style={{ position:"absolute", top:1, right:2, fontSize:7, color:"#fbbf24" }}>+{it.upgradeLevel}</div>}
-                    <div style={{ fontSize:4, color:tc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", paddingLeft:1 }}>{it.name.slice(0,4)}</div>
-                  </div>
-                );
-              })}
-            </div>
+            <ItemPicker
+              items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
+              selectedUid={sel}
+              onSelect={setSel}
+              getRarity={it=>it.rarity}
+              getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
+              getRarityLabel={r=>RARITY_LABEL[r]||r}
+              getIcon={it=>it.icon}
+              getName={it=>it.name}
+              emptyText="強化できる装備がない"
+            />
 
             {upgradeItem && (
-              <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:12 }}>
+              <div style={{ background:"#0d0d15", border:"1px solid #3a3a55", borderRadius:8, padding:12 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
                   <span style={{ fontSize:22 }}>{upgradeItem.icon}</span>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>
                       {upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span>
                     </div>
-                    <div style={{ fontSize:8, color:RARITY_COLOR[upgradeItem.rarity]||"#888" }}>{RARITY_LABEL[upgradeItem.rarity]}</div>
+                    <div style={{ fontSize:10, color:RARITY_COLOR[upgradeItem.rarity]||"#888" }}>{RARITY_LABEL[upgradeItem.rarity]}</div>
                   </div>
                   <div style={{ textAlign:"right" }}>
-                    <div style={{ fontSize:9, color:"#4a4a6a" }}>強化コスト</div>
+                    <div style={{ fontSize:10, color:DIM }}>強化コスト</div>
                     <div style={{ fontSize:14, color:"#fbbf24", fontWeight:700 }}>{cost}G</div>
                   </div>
                 </div>
@@ -181,24 +218,24 @@ export default function ForgeTab() {
                 {/* 現在のステータス */}
                 <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
                   {Object.entries(getItemStats(upgradeItem)).filter(([,v])=>v>0).map(([k,v])=>(
-                    <span key={k} style={{ fontSize:9, color:"#86efac", background:"#080810", padding:"2px 6px", borderRadius:3 }}>{k.toUpperCase()} {v}</span>
+                    <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"2px 6px", borderRadius:3 }}>{k.toUpperCase()} {v}</span>
                   ))}
                 </div>
 
                 {/* 固有能力 */}
                 {upgradeItem.innate && upgradeItem.innate !== "none" && INNATE[upgradeItem.innate] && (
-                  <div style={{ fontSize:9, color:"#fb923c", marginBottom:6 }}>◆ {INNATE[upgradeItem.innate].label}</div>
+                  <div style={{ fontSize:10, color:"#fb923c", marginBottom:6 }}>◆ {INNATE[upgradeItem.innate].label}</div>
                 )}
 
                 {/* ランダム能力 */}
                 {(upgradeItem.abilities||[]).map((ab,i)=>(
-                  <div key={i} style={{ fontSize:9, color:"#a78bfa", marginBottom:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
+                  <div key={i} style={{ fontSize:10, color:"#a78bfa", marginBottom:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
                 ))}
 
                 {/* 節目ボーナス */}
                 <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10, padding:"6px 8px", background:"#080810", borderRadius:4 }}>
                   {Object.entries(MILESTONE[upgradeItem.type]||{}).map(([lv,b])=>(
-                    <span key={lv} style={{ fontSize:8, color:upgradeItem.upgradeLevel>=(+lv)?"#fbbf24":"#2a2a3a" }}>
+                    <span key={lv} style={{ fontSize:10, color:upgradeItem.upgradeLevel>=(+lv)?"#fbbf24":FAINT }}>
                       +{lv} {b.label}{upgradeItem.upgradeLevel>=(+lv)&&" ✓"}
                     </span>
                   ))}
@@ -211,11 +248,11 @@ export default function ForgeTab() {
                     <div key={mo.mat} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:"#080810", borderRadius:5, marginBottom:6 }}>
                       <div style={{ flex:1 }}>
                         <div style={{ fontSize:10, color:"#e8e0d0" }}>{mo.mat}</div>
-                        <div style={{ fontSize:8, color:"#4a4a6a" }}>{mo.label}</div>
+                        <div style={{ fontSize:10, color:DIM }}>{mo.label}</div>
                       </div>
-                      <div style={{ fontSize:9, color:have>=1?"#fb923c":"#3a3a3a" }}>×{have}</div>
+                      <div style={{ fontSize:10, color:have>=1?"#fb923c":FAINT }}>×{have}</div>
                       <button onClick={() => upgrade(mo)} disabled={!can}
-                        style={{ padding:"6px 14px", background:can?"#1a1000":"#0a0a0a", border:`1px solid ${can?"#fbbf24":"#2a2a2a"}`, borderRadius:4, cursor:can?"pointer":"default", color:can?"#fbbf24":"#333", fontSize:10, fontFamily:"monospace" }}>
+                        style={{ padding:"6px 14px", background:can?"#1a1000":"#0a0a0a", border:`1px solid ${can?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:can?"pointer":"default", color:can?"#fbbf24":FAINT, fontSize:10, fontFamily:"monospace" }}>
                         強化
                       </button>
                     </div>
@@ -224,13 +261,13 @@ export default function ForgeTab() {
               </div>
             )}
 
-            <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:6, padding:10 }}>
-              <div style={{ fontSize:8, color:"#fb923c", letterSpacing:2, marginBottom:6 }}>所持素材</div>
+            <div style={{ background:"#0d0d15", border:"1px solid #3a3a55", borderRadius:6, padding:10 }}>
+              <div style={{ fontSize:10, color:"#fb923c", letterSpacing:2, marginBottom:6 }}>所持素材</div>
               {Object.keys(materials||{}).length === 0
-                ? <div style={{ fontSize:9, color:"#2a2a2a" }}>素材なし</div>
+                ? <div style={{ fontSize:10, color:FAINT }}>素材なし</div>
                 : <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                     {Object.entries(materials).map(([name,cnt])=>(
-                      <div key={name} style={{ background:"#080810", border:"1px solid #fb923c33", borderRadius:3, padding:"4px 8px", fontSize:9, color:"#fb923c" }}>{name}×{cnt}</div>
+                      <div key={name} style={{ background:"#080810", border:"1px solid #fb923c33", borderRadius:3, padding:"4px 8px", fontSize:10, color:"#fb923c" }}>{name}×{cnt}</div>
                     ))}
                   </div>
               }
@@ -241,44 +278,38 @@ export default function ForgeTab() {
         {/* 合成タブ */}
         {tab === "synth" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            <div style={{ fontSize:8, color:"#4a4a6a" }}>同じ種類・同じレアリティの装備2つで1段階上のレアリティに合成</div>
+            <div style={{ fontSize:10, color:DIM }}>同じ種類・同じレアリティの装備2つで1段階上のレアリティに合成</div>
 
             <div>
-              <div style={{ fontSize:8, color:"#a78bfa", marginBottom:6 }}>① ベース装備を選択</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3 }}>
-                {itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type) && nextRarity(it.rarity)).map(it => {
-                  const rc = RARITY_COLOR[it.rarity] || "#888";
-                  const isSel = sel === it.uid;
-                  return (
-                    <div key={it.uid} onClick={() => { setSel(isSel?null:it.uid); setMatSel(null); }}
-                      style={{ aspectRatio:"1", background:isSel?"#12122a":"#080810", border:`2px solid ${isSel?rc:rc+"33"}`, borderRadius:5, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:1 }}>
-                      <div style={{ fontSize:13 }}>{it.icon}</div>
-                      <div style={{ fontSize:4, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", paddingLeft:1 }}>{it.name.slice(0,4)}</div>
-                    </div>
-                  );
-                })}
-              </div>
+              <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベース装備を選択</div>
+              <ItemPicker
+                items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
+                selectedUid={sel}
+                onSelect={(uid)=>{ setSel(uid); setMatSel(null); }}
+                getRarity={it=>it.rarity}
+                getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
+                getRarityLabel={r=>RARITY_LABEL[r]||r}
+                getIcon={it=>it.icon}
+                getName={it=>it.name}
+                isMaxed={it=>!nextRarity(it.rarity)}
+                emptyText="合成できる装備がない"
+              />
             </div>
 
             {baseItem && (
               <div>
-                <div style={{ fontSize:8, color:"#a78bfa", marginBottom:6 }}>② 素材装備を選択</div>
-                {synthCandidates.length === 0
-                  ? <div style={{ fontSize:9, color:"#2a2a2a", padding:8 }}>合成できる素材がない</div>
-                  : <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3 }}>
-                      {synthCandidates.map(it => {
-                        const rc = RARITY_COLOR[it.rarity] || "#888";
-                        const isSel = matSel === it.uid;
-                        return (
-                          <div key={it.uid} onClick={() => setMatSel(isSel?null:it.uid)}
-                            style={{ aspectRatio:"1", background:isSel?"#1a0a2a":"#080810", border:`2px solid ${isSel?"#a78bfa":rc+"33"}`, borderRadius:5, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:1 }}>
-                            <div style={{ fontSize:13 }}>{it.icon}</div>
-                            <div style={{ fontSize:4, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", paddingLeft:1 }}>{it.name.slice(0,4)}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                }
+                <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>② 素材装備を選択</div>
+                <ItemPicker
+                  items={synthCandidates}
+                  selectedUid={matSel}
+                  onSelect={setMatSel}
+                  getRarity={it=>it.rarity}
+                  getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
+                  getRarityLabel={r=>RARITY_LABEL[r]||r}
+                  getIcon={it=>it.icon}
+                  getName={it=>it.name}
+                  emptyText="合成できる素材がない（同じ種類・同じレアリティが必要）"
+                />
               </div>
             )}
 
@@ -286,30 +317,30 @@ export default function ForgeTab() {
             {(baseItem || matItem) && (
               <div style={{ display:"flex", gap:8 }}>
                 {baseItem && (
-                  <div style={{ flex:1, background:"#0d0d15", border:`1px solid ${RARITY_COLOR[baseItem.rarity]||"#2a2a3a"}`, borderRadius:6, padding:8 }}>
-                    <div style={{ fontSize:7, color:"#a78bfa", marginBottom:4 }}>ベース</div>
+                  <div style={{ flex:1, background:"#0d0d15", border:`1px solid ${RARITY_COLOR[baseItem.rarity]||"#3a3a55"}`, borderRadius:6, padding:8 }}>
+                    <div style={{ fontSize:9, color:"#a78bfa", marginBottom:4 }}>ベース</div>
                     <div style={{ fontSize:10, color:"#e8e0d0", marginBottom:4 }}>{baseItem.icon} {baseItem.name}</div>
                     <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
                       {Object.entries(getItemStats(baseItem)).filter(([,v])=>v>0).map(([k,v])=>(
-                        <span key={k} style={{ fontSize:8, color:"#86efac", background:"#080810", padding:"1px 4px", borderRadius:2 }}>{k.toUpperCase()} {v}</span>
+                        <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"1px 4px", borderRadius:2 }}>{k.toUpperCase()} {v}</span>
                       ))}
                     </div>
                     {(baseItem.abilities||[]).map((ab,i)=>(
-                      <div key={i} style={{ fontSize:8, color:"#a78bfa", marginTop:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
+                      <div key={i} style={{ fontSize:10, color:"#a78bfa", marginTop:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
                     ))}
                   </div>
                 )}
                 {matItem && (
-                  <div style={{ flex:1, background:"#0d0d15", border:`1px solid ${RARITY_COLOR[matItem.rarity]||"#2a2a3a"}`, borderRadius:6, padding:8 }}>
-                    <div style={{ fontSize:7, color:"#4a4a6a", marginBottom:4 }}>素材</div>
+                  <div style={{ flex:1, background:"#0d0d15", border:`1px solid ${RARITY_COLOR[matItem.rarity]||"#3a3a55"}`, borderRadius:6, padding:8 }}>
+                    <div style={{ fontSize:9, color:DIM, marginBottom:4 }}>素材</div>
                     <div style={{ fontSize:10, color:"#e8e0d0", marginBottom:4 }}>{matItem.icon} {matItem.name}</div>
                     <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
                       {Object.entries(getItemStats(matItem)).filter(([,v])=>v>0).map(([k,v])=>(
-                        <span key={k} style={{ fontSize:8, color:"#86efac", background:"#080810", padding:"1px 4px", borderRadius:2 }}>{k.toUpperCase()} {v}</span>
+                        <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"1px 4px", borderRadius:2 }}>{k.toUpperCase()} {v}</span>
                       ))}
                     </div>
                     {(matItem.abilities||[]).map((ab,i)=>(
-                      <div key={i} style={{ fontSize:8, color:"#a78bfa", marginTop:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
+                      <div key={i} style={{ fontSize:10, color:"#a78bfa", marginTop:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
                     ))}
                   </div>
                 )}
@@ -317,17 +348,17 @@ export default function ForgeTab() {
             )}
 
             {baseItem && matItem && next && (
-              <div style={{ background:"#0d0d15", border:`1px solid ${RARITY_COLOR[next]||"#2a2a3a"}`, borderRadius:8, padding:12 }}>
-                <div style={{ fontSize:8, color:"#4a4a6a", marginBottom:6 }}>合成プレビュー</div>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, fontSize:9 }}>
+              <div style={{ background:"#0d0d15", border:`1px solid ${RARITY_COLOR[next]||"#3a3a55"}`, borderRadius:8, padding:12 }}>
+                <div style={{ fontSize:10, color:DIM, marginBottom:6 }}>合成プレビュー</div>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, fontSize:10 }}>
                   <span style={{ color:RARITY_COLOR[baseItem.rarity] }}>{baseItem.name}</span>
-                  <span style={{ color:"#4a4a6a" }}>+</span>
+                  <span style={{ color:DIM }}>+</span>
                   <span style={{ color:RARITY_COLOR[matItem.rarity] }}>{matItem.name}</span>
-                  <span style={{ color:"#4a4a6a" }}>→</span>
+                  <span style={{ color:DIM }}>→</span>
                   <span style={{ color:RARITY_COLOR[next], fontWeight:700 }}>{baseItem.name} {RARITY_LABEL[next]}</span>
                 </div>
                 {(matItem.abilities||[]).length > 0 && (
-                  <div style={{ fontSize:8, color:"#a78bfa", marginBottom:8 }}>
+                  <div style={{ fontSize:10, color:"#a78bfa", marginBottom:8 }}>
                     継承: {matItem.abilities[0]?.label}{matItem.abilities[0]?.value}{matItem.abilities[0]?.suffix}
                   </div>
                 )}
@@ -346,60 +377,49 @@ export default function ForgeTab() {
         {/* スキル書合成タブ */}
         {tab === "book" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            <div style={{ fontSize:8, color:"#4a4a6a" }}>同じスキル書・同じレアリティ2冊で1段階上のレアリティに合成</div>
+            <div style={{ fontSize:10, color:DIM }}>同じスキル書・同じレアリティ2冊で1段階上のレアリティに合成</div>
 
             <div>
-              <div style={{ fontSize:8, color:"#a78bfa", marginBottom:6 }}>① ベースのスキル書を選択</div>
-              {(skillBooks||[]).filter(b => nextBookRarity(b.rarity)).length === 0
-                ? <div style={{ fontSize:9, color:"#2a2a2a", padding:8 }}>合成できるスキル書がない</div>
-                : <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3 }}>
-                    {(skillBooks||[]).filter(b => nextBookRarity(b.rarity)).map(b => {
-                      const rc = BOOK_RARITY_COLOR[b.rarity] || "#888";
-                      const isSel = sel === b.uid;
-                      const book = SKILL_BOOKS[b.id];
-                      return (
-                        <div key={b.uid} onClick={() => { setSel(isSel?null:b.uid); setMatSel(null); }}
-                          style={{ aspectRatio:"1", background:isSel?"#12122a":"#080810", border:`2px solid ${isSel?rc:rc+"33"}`, borderRadius:5, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:1 }}>
-                          <div style={{ fontSize:13 }}>{book?.icon}</div>
-                          <div style={{ fontSize:4, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", paddingLeft:1 }}>{book?.name.slice(0,4)}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-              }
+              <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベースのスキル書を選択</div>
+              <ItemPicker
+                items={skillBooks||[]}
+                selectedUid={sel}
+                onSelect={(uid)=>{ setSel(uid); setMatSel(null); }}
+                getRarity={b=>b.rarity}
+                getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
+                getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+                getIcon={b=>SKILL_BOOKS[b.id]?.icon}
+                getName={b=>SKILL_BOOKS[b.id]?.name||""}
+                isMaxed={b=>!nextBookRarity(b.rarity)}
+                emptyText="合成できるスキル書がない"
+              />
             </div>
 
             {bookItem && (
               <div>
-                <div style={{ fontSize:8, color:"#a78bfa", marginBottom:6 }}>② 素材のスキル書を選択</div>
-                {bookCandidates.length === 0
-                  ? <div style={{ fontSize:9, color:"#2a2a2a", padding:8 }}>合成できる素材がない（同じ書・同じレアリティが必要）</div>
-                  : <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3 }}>
-                      {bookCandidates.map(b => {
-                        const rc = BOOK_RARITY_COLOR[b.rarity] || "#888";
-                        const isSel = matSel === b.uid;
-                        const book = SKILL_BOOKS[b.id];
-                        return (
-                          <div key={b.uid} onClick={() => setMatSel(isSel?null:b.uid)}
-                            style={{ aspectRatio:"1", background:isSel?"#1a0a2a":"#080810", border:`2px solid ${isSel?"#a78bfa":rc+"33"}`, borderRadius:5, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", padding:1 }}>
-                            <div style={{ fontSize:13 }}>{book?.icon}</div>
-                            <div style={{ fontSize:4, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", paddingLeft:1 }}>{book?.name.slice(0,4)}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                }
+                <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>② 素材のスキル書を選択</div>
+                <ItemPicker
+                  items={bookCandidates}
+                  selectedUid={matSel}
+                  onSelect={setMatSel}
+                  getRarity={b=>b.rarity}
+                  getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
+                  getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+                  getIcon={b=>SKILL_BOOKS[b.id]?.icon}
+                  getName={b=>SKILL_BOOKS[b.id]?.name||""}
+                  emptyText="合成できる素材がない（同じ書・同じレアリティが必要）"
+                />
               </div>
             )}
 
             {bookItem && bookMatItem && nextBookR && (
-              <div style={{ background:"#0d0d15", border:`1px solid ${BOOK_RARITY_COLOR[nextBookR]||"#2a2a3a"}`, borderRadius:8, padding:12 }}>
-                <div style={{ fontSize:8, color:"#4a4a6a", marginBottom:6 }}>合成プレビュー</div>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, fontSize:9 }}>
+              <div style={{ background:"#0d0d15", border:`1px solid ${BOOK_RARITY_COLOR[nextBookR]||"#3a3a55"}`, borderRadius:8, padding:12 }}>
+                <div style={{ fontSize:10, color:DIM, marginBottom:6 }}>合成プレビュー</div>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, fontSize:10 }}>
                   <span style={{ color:BOOK_RARITY_COLOR[bookItem.rarity] }}>{SKILL_BOOKS[bookItem.id].name}</span>
-                  <span style={{ color:"#4a4a6a" }}>+</span>
+                  <span style={{ color:DIM }}>+</span>
                   <span style={{ color:BOOK_RARITY_COLOR[bookMatItem.rarity] }}>{SKILL_BOOKS[bookMatItem.id].name}</span>
-                  <span style={{ color:"#4a4a6a" }}>→</span>
+                  <span style={{ color:DIM }}>→</span>
                   <span style={{ color:BOOK_RARITY_COLOR[nextBookR], fontWeight:700 }}>{SKILL_BOOKS[bookItem.id].name} {BOOK_RARITY_LABEL[nextBookR]}</span>
                 </div>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>

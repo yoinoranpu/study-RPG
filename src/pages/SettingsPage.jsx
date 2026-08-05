@@ -40,11 +40,11 @@ export default function SettingsPage({ onClose }) {
 
         {/* アカウント情報 */}
         <div style={{ background:"#080810", border:"1px solid #1a1a2a", borderRadius:6, padding:12, marginBottom:14 }}>
-          <div style={{ fontSize:8, color:"#4a4a6a", letterSpacing:2, marginBottom:6 }}>ACCOUNT</div>
+          <div style={{ fontSize:9, color:"#7a7a9a", letterSpacing:2, marginBottom:6 }}>ACCOUNT</div>
           <div style={{ fontSize:10, color: isGuest ? "#fbbf24" : "#4ade80", marginBottom:4 }}>
             {isGuest ? "👤 ゲストプレイ中" : "✅ Googleアカウント連携済み"}
           </div>
-          <div style={{ fontSize:8, color:"#3a3a5a" }}>UID: {uid?.slice(0, 12)}...</div>
+          <div style={{ fontSize:9, color:"#5c5c82" }}>UID: {uid?.slice(0, 12)}...</div>
         </div>
 
         {msg && (
