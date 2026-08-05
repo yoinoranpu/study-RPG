@@ -14,7 +14,7 @@ import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
 import { calcBookPassiveBonus, mergeBookDex, SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
 import { openChest } from "../data/chest_table";
-import { RARITY_COLOR, SPECIAL_DB } from "../data/items";
+import { RARITY_COLOR, SPECIAL_DB, getEquippedInnateBonus } from "../data/items";
 import { DUNGEON_FLOOR_COUNT, getDungeon, globalDepth, makeInitialDungeons } from "../systems/dungeons";
 import { resetQuestsIfNeeded, getTodayKey } from "../systems/quests";
 import { makeInitialStats } from "../systems/achievements";
@@ -140,27 +140,66 @@ export default function DungeonPage({ onBack }) {
   const eventCountRef = useRef(0);
   const pendingBattleRef = useRef(null);
   const passiveBonusRef  = useRef({});
+  const sessionBuffsConsumedRef = useRef(false);
+  const atkBuffRef  = useRef(0);   // % ボーナス（消耗品atk_up_20）
+  const expBuffRef  = useRef(0);   // % ボーナス（消耗品exp_up_50）
+  const luckBuffRef = useRef(0);   // % ボーナス（消耗品luck_up）
   const sessionScaleRef = useRef({ atk: 0, mag: 0 });
   const dungeonClearedRef = useRef(dungeonState.cleared || false);
 
   useEffect(() => {
-    passiveBonusRef.current = calcBookPassiveBonus(player.passiveSkillSlots || [], player.skillBooks || []);
-  }, [player.passiveSkillSlots, player.skillBooks]);
+    const bookBonus = calcBookPassiveBonus(player.passiveSkillSlots || [], player.skillBooks || []);
+    const innateBonus = getEquippedInnateBonus({
+      equippedWeapon: player.equippedWeapon, equippedArmor: player.equippedArmor,
+      equippedAcc1: player.equippedAcc1, equippedAcc2: player.equippedAcc2,
+    });
+    passiveBonusRef.current = {
+      ...bookBonus,
+      mapBonus:  (bookBonus.mapBonus  || 0) + (innateBonus.mapBonus  || 0),
+      dropBonus: (bookBonus.dropBonus || 0) + (innateBonus.dropBonus || 0),
+      expBonus:  (bookBonus.expBonus  || 0) + (innateBonus.expBonus  || 0),
+    };
+  }, [player.passiveSkillSlots, player.skillBooks, player.equippedWeapon, player.equippedArmor, player.equippedAcc1, player.equippedAcc2]);
 
   const addLog = useCallback((text, color="#666") => {
     setLogs(l => [...l, { id:logId.current++, text, color }]);
   }, []);
 
+  // セッション開始時に特殊スロットのatk_up_20/exp_up_50/luck_upを消費し、探索中ずっと効くバフにする
+  useEffect(() => {
+    if (!isRunning || sessionBuffsConsumedRef.current) return;
+    sessionBuffsConsumedRef.current = true;
+    const slots = [...(player.specialSlots || [null,null,null])];
+    const buffEffects = { atk_up_20:20, exp_up_50:50, luck_up:20 };
+    let changed = false;
+    let newItemBox = [...(player.itemBox || [])];
+    slots.forEach((slot, i) => {
+      const pct = slot && buffEffects[slot.effect];
+      if (!pct) return;
+      if (slot.effect === "atk_up_20")  { atkBuffRef.current  = pct; addLog(`⚗ ${slot.name}を使用！探索中ATK+${pct}%`, "#f87171"); }
+      if (slot.effect === "exp_up_50")  { expBuffRef.current  = pct; addLog(`📖 ${slot.name}を使用！探索中EXP+${pct}%`, "#86efac"); }
+      if (slot.effect === "luck_up")    { luckBuffRef.current = pct; addLog(`🍀 ${slot.name}を使用！探索中レア出現率+${pct}%`, "#fbbf24"); }
+      newItemBox = newItemBox.filter(x => x.uid !== slot.uid);
+      slots[i] = null;
+      changed = true;
+    });
+    if (changed) updatePlayer({ specialSlots: slots, itemBox: newItemBox });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunning]);
+
   const buildPlayerStats = useCallback(() => {
     const baseStats = calcPlayerStats(player);
+    const atkBuff = atkBuffRef.current || 0;
     return {
       ...baseStats,
+      atk: atkBuff ? Math.floor(baseStats.atk * (1 + atkBuff / 100)) : baseStats.atk,
       hp: Math.max(1, hpRef.current),
       maxHp: baseStats.maxHp,
       skillBooks: player.skillBooks || [],
       activeSkillSlots: player.activeSkillSlots || [],
       passiveSkillSlots: player.passiveSkillSlots || [],
       skillMode: player.skillMode || "order",
+      innateBonus: getEquippedInnateBonus(player),
     };
   }, [player]);
 
@@ -254,7 +293,7 @@ export default function DungeonPage({ onBack }) {
     setEventCount(eventCountRef.current);
 
     if (evType === "battle") {
-      const monsters = pickMonsters(globalDepth(dungeonId, floorRef.current), dungeonId);
+      const monsters = pickMonsters(globalDepth(dungeonId, floorRef.current), dungeonId, luckBuffRef.current);
       addLog(`⚔ ${monsters.map(m=>m.displayName).join("と")}が現れた！`, "#f87171");
       setCurrentEvent(null); setEventVisible(false);
       setCurrentMonsters(monsters); setMonsterVisible(true); setMonsterArrived(false);
@@ -305,7 +344,7 @@ export default function DungeonPage({ onBack }) {
       setSeconds(s => {
         if (s > 1) return s - 1;
         if (phase === "work") {
-          const expBonus  = passiveBonusRef.current.expBonus  || 0;
+          const expBonus  = (passiveBonusRef.current.expBonus || 0) + (expBuffRef.current || 0);
           const goldBonus = passiveBonusRef.current.goldBonus || 0;
           const exp  = Math.floor(calcExp(workMin)  * (1 + expBonus  / 100));
           const gold = Math.floor(calcGold(workMin) * (1 + goldBonus / 100));
@@ -425,6 +464,16 @@ export default function DungeonPage({ onBack }) {
     setShowResult(false);
     onBack();
   };
+
+  const escapeItem = (player.specialSlots || []).find(s => s?.effect === "escape") || null;
+  function useEscapeScroll() {
+    if (!escapeItem) return;
+    const slots = (player.specialSlots || []).map(s => s?.uid === escapeItem.uid ? null : s);
+    updatePlayer({ specialSlots: slots });
+    addLog(`📜 ${escapeItem.name}を使って帰還する…`, "#fbbf24");
+    setIsRunning(false);
+    setShowResult(true);
+  }
 
   const mins   = Math.floor(seconds / 60);
   const secs   = seconds % 60;
@@ -707,6 +756,12 @@ export default function DungeonPage({ onBack }) {
         <button onClick={() => setIsRunning(r => !r)} style={{ padding:"14px 40px", background:isRunning?"#2a0a0a":"#0a2a0a", border:`2px solid ${isRunning?"#f87171":"#4ade80"}`, borderRadius:8, cursor:"pointer", color:isRunning?"#f87171":"#4ade80", fontSize:16, letterSpacing:4, fontWeight:900 }}>
           {isRunning ? "STOP" : "START"}
         </button>
+
+        {escapeItem && isRunning && (
+          <button onClick={useEscapeScroll} style={{ padding:"8px 20px", background:"#1a1000", border:"1px solid #fbbf2488", borderRadius:6, cursor:"pointer", color:"#fbbf24", fontSize:10, fontFamily:"monospace" }}>
+            📜 {escapeItem.name}を使って帰還
+          </button>
+        )}
 
         {DEBUG && (
           <div style={{ display:"flex", gap:6 }}>

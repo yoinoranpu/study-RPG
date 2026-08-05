@@ -51,6 +51,13 @@ export const simulateBattle = (player, monsters, options = {}) => {
   const skillMode = player.skillMode || "order";
   let skillIndex = 0;
 
+  // 装備固有能力（items.jsのgetEquippedInnateBonus()の集計結果）
+  const innate = {
+    armorPierceMul: 1, vampiricPct: 0, berserkerActive: false, guardianPct: 0, swiftSpd: 0,
+    fireDmgChance: 0, thunderStunChance: 0, poisonBladeChance: 0,
+    ...(player.innateBonus || {}),
+  };
+
   const has = (id) => passiveIds.has(id);
   let deathSaveUsed = false;
   let defBuff = 0;
@@ -67,7 +74,7 @@ export const simulateBattle = (player, monsters, options = {}) => {
     hp: player.hp, maxHp: player.maxHp,
     atk: player.atk, mag: player.mag, def: player.def, mdef: player.mdef,
     eva: player.eva, crit: player.crit, critDmg: player.critDmg || 150,
-    speed: 100 + player.eva,
+    speed: 100 + player.eva + innate.swiftSpd,
     position:"front",
     ...initStatusState(),
   };
@@ -89,13 +96,19 @@ export const simulateBattle = (player, monsters, options = {}) => {
 
   const eAtk = (e) => {
     const bonus = e.side === "player" ? (sessionScale.atk + battleAtk) : 0;
-    return Math.floor((e.atk + bonus) * rankMul(e.ranks?.atk));
+    let atk = Math.floor((e.atk + bonus) * rankMul(e.ranks?.atk));
+    if (e.side === "player" && innate.berserkerActive && e.hp <= e.maxHp * 0.5) atk = Math.floor(atk * 1.3);
+    return atk;
   };
   const eMag = (e) => {
     const bonus = e.side === "player" ? sessionScale.mag : 0;
     return Math.floor((e.mag + bonus) * rankMul(e.ranks?.mag));
   };
-  const eDef  = (e) => Math.floor((e.def + (e.side==="player" ? defBuff : 0)) * rankMul(e.ranks?.def));
+  const eDef  = (e) => {
+    let def = Math.floor((e.def + (e.side==="player" ? defBuff : 0)) * rankMul(e.ranks?.def));
+    if (e.side === "enemy") def = Math.floor(def * innate.armorPierceMul);
+    return def;
+  };
   const eMdef = (e) => Math.floor(e.mdef * rankMul(e.ranks?.mdef));
   const eSpd  = (e) => Math.floor(e.speed * rankMul(e.ranks?.spd));
   const eEva = (e) => {
@@ -190,6 +203,21 @@ export const simulateBattle = (player, monsters, options = {}) => {
     pushTurn({ actor:"player", target:enemy.idx, type:"attack", dmg, isCrit, label, rarity, hpLeft:enemy.hp,
       logText:`${prefix}${label ? label+"！" : "攻撃！"}${enemy.name}に${dmg}ダメージ`, logColor:isCrit?"#fbbf24":"#86efac" });
     if (isCrit && dmg >= 100) bigCritHit = true;
+
+    if (byWho === "player" && dmg > 0) {
+      if (innate.vampiricPct > 0) {
+        const heal = Math.max(1, Math.floor(dmg * innate.vampiricPct / 100));
+        playerEntity.hp = Math.min(playerEntity.maxHp, playerEntity.hp + heal);
+      }
+      if (enemy.hp > 0 && (innate.fireDmgChance > 0 || innate.thunderStunChance > 0 || innate.poisonBladeChance > 0)) {
+        tryApplyStatus(enemy, {
+          burn: innate.fireDmgChance / 100,
+          stun: innate.thunderStunChance / 100,
+          poison: innate.poisonBladeChance / 100,
+        }, eMag(playerEntity));
+      }
+    }
+
     if (enemy.hp <= 0) {
       totalExp += enemy.expGain; totalGold += enemy.goldGain;
       if (Math.random() < 0.60) materials.push(enemy.material);
@@ -402,6 +430,8 @@ export const simulateBattle = (player, monsters, options = {}) => {
     if (isCrit) dmg = Math.floor(dmg * 1.5);
     // 鉄壁（被ダメ軽減）
     if (has("sb_tetsuwall")) dmg = Math.floor(dmg * 0.85);
+    // 守護（装備固有能力：被ダメ軽減）
+    if (innate.guardianPct > 0) dmg = Math.floor(dmg * (1 - innate.guardianPct / 100));
     playerEntity.hp = Math.max(0, playerEntity.hp - dmg);
     onPlayerHurt();
 

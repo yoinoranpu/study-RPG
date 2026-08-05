@@ -70,18 +70,49 @@ export const getAbilityTier = (rarityId) => {
 };
 
 // ─── 固有能力定義 ───
+// 命中時の状態異常付与(fire_dmg/thunder_stun/poison_blade)はsystems/status.jsの
+// burn/stun/poisonをそのまま使う。詳細な数値ロジックはgetEquippedInnateBonus()参照。
 export const INNATE = {
   none:          { key:"none",          label:"",              desc:"" },
-  fire_dmg:      { key:"fire_dmg",      label:"火属性+20%",    desc:"火属性ダメージ+20%（将来実装）" },
-  thunder_stun:  { key:"thunder_stun",  label:"感電+15%",      desc:"感電付与率+15%（将来実装）" },
-  armor_pierce:  { key:"armor_pierce",  label:"防御貫通+10%",  desc:"防御を10%無視する" },
-  vampiric:      { key:"vampiric",      label:"吸血+5%",       desc:"与ダメの5%をHP回復" },
+  fire_dmg:      { key:"fire_dmg",      label:"火傷付与+20%",  desc:"攻撃命中時20%の確率で火傷を付与する" },
+  thunder_stun:  { key:"thunder_stun",  label:"感電+15%",      desc:"攻撃命中時15%の確率でスタンを付与する" },
+  armor_pierce:  { key:"armor_pierce",  label:"防御貫通+10%",  desc:"敵の防御力を10%無視してダメージを与える" },
+  vampiric:      { key:"vampiric",      label:"吸血+5%",       desc:"与えたダメージの5%をHP回復する" },
   explorer:      { key:"explorer",      label:"探索+10%",      desc:"マッピング速度+10%" },
   lucky:         { key:"lucky",         label:"幸運+10%",      desc:"ドロップ率+10%" },
-  berserker:     { key:"berserker",     label:"狂戦士",        desc:"HP50%以下でATK+30%（将来実装）" },
-  guardian:      { key:"guardian",      label:"守護+15%",      desc:"被ダメージ-15%（将来実装）" },
-  swift:         { key:"swift",         label:"迅速",          desc:"先攻率+20%" },
-  poison_blade:  { key:"poison_blade",  label:"毒刃",          desc:"毒付与率+20%（将来実装）" },
+  berserker:     { key:"berserker",     label:"狂戦士",        desc:"HPが50%以下の時ATK+30%" },
+  guardian:      { key:"guardian",      label:"守護+15%",      desc:"被ダメージ-15%" },
+  swift:         { key:"swift",         label:"迅速",          desc:"素早さ+20（先手を取りやすくなる）" },
+  poison_blade:  { key:"poison_blade",  label:"毒刃+20%",      desc:"攻撃命中時20%の確率で毒を付与する" },
+  exp_bonus:     { key:"exp_bonus",     label:"経験値+10%",    desc:"EXP獲得+10%" },
+};
+
+// ─── 装備中アイテムの固有能力を集計 ───
+// calcBookPassiveBonus(スキル書パッシブの集計)と同じ「マージして1オブジェクトを返す」形。
+// mapBonus/dropBonus/expBonusはDungeonPage.jsx側でpassiveBonusRefにそのまま加算マージされる。
+export const getEquippedInnateBonus = (player) => {
+  const bonus = {
+    armorPierceMul: 1, vampiricPct: 0, berserkerActive: false, guardianPct: 0, swiftSpd: 0,
+    fireDmgChance: 0, thunderStunChance: 0, poisonBladeChance: 0,
+    mapBonus: 0, dropBonus: 0, expBonus: 0,
+  };
+  const items = [player?.equippedWeapon, player?.equippedArmor, player?.equippedAcc1, player?.equippedAcc2];
+  items.forEach(it => {
+    const key = it?.innate;
+    if (!key || key === "none") return;
+    if (key === "armor_pierce") bonus.armorPierceMul = Math.min(bonus.armorPierceMul, 0.9);
+    if (key === "vampiric")     bonus.vampiricPct += 5;
+    if (key === "berserker")    bonus.berserkerActive = true;
+    if (key === "guardian")     bonus.guardianPct += 15;
+    if (key === "swift")        bonus.swiftSpd += 20;
+    if (key === "fire_dmg")     bonus.fireDmgChance += 20;
+    if (key === "thunder_stun") bonus.thunderStunChance += 15;
+    if (key === "poison_blade") bonus.poisonBladeChance += 20;
+    if (key === "explorer")     bonus.mapBonus += 10;
+    if (key === "lucky")        bonus.dropBonus += 10;
+    if (key === "exp_bonus")    bonus.expBonus += 10;
+  });
+  return bonus;
 };
 
 // ─── 武器データ ───
@@ -150,17 +181,17 @@ export const CONSUMABLE_DB = [
   { id:"C001", name:"小ポーション",   icon:"🧪", rarity:"common",   type:"consumable", effect:"heal_30",   desc:"HPを30%回復",           shopWeight:15 },
   { id:"C002", name:"中ポーション",   icon:"🧪", rarity:"uncommon", type:"consumable", effect:"heal_50",   desc:"HPを50%回復",           shopWeight:10 },
   { id:"C003", name:"大ポーション",   icon:"🧪", rarity:"rare",     type:"consumable", effect:"heal_100",  desc:"HPを全回復",            shopWeight:4  },
-  { id:"C004", name:"攻撃の秘薬",     icon:"⚗", rarity:"uncommon", type:"consumable", effect:"atk_up_20", desc:"1セット中ATK+20%",      shopWeight:6  },
-  { id:"C005", name:"帰還の巻物",     icon:"📜", rarity:"uncommon", type:"consumable", effect:"escape",    desc:"ダンジョンから即帰還",  shopWeight:5  },
-  { id:"C006", name:"経験値の書",     icon:"📖", rarity:"rare",     type:"consumable", effect:"exp_up_50", desc:"次のセットEXP+50%",     shopWeight:3  },
-  { id:"C007", name:"幸運のお守り",   icon:"🍀", rarity:"rare",     type:"consumable", effect:"luck_up",   desc:"次のセットレア率+20%",  shopWeight:3  },
+  { id:"C004", name:"攻撃の秘薬",     icon:"⚗", rarity:"uncommon", type:"consumable", effect:"atk_up_20", desc:"特殊スロットにセットし探索開始すると消費され、その探索中ずっとATK+20%",      shopWeight:6  },
+  { id:"C005", name:"帰還の巻物",     icon:"📜", rarity:"uncommon", type:"consumable", effect:"escape",    desc:"特殊スロットにセットすると、探索中いつでもボタン一つでダンジョンから即帰還できる（それまでの成果は失わない）",  shopWeight:5  },
+  { id:"C006", name:"経験値の書",     icon:"📖", rarity:"rare",     type:"consumable", effect:"exp_up_50", desc:"特殊スロットにセットし探索開始すると消費され、その探索中ずっとEXP+50%",     shopWeight:3  },
+  { id:"C007", name:"幸運のお守り",   icon:"🍀", rarity:"rare",     type:"consumable", effect:"luck_up",   desc:"特殊スロットにセットし探索開始すると消費され、その探索中ずっとレア敵出現率+20%",  shopWeight:3  },
 ];
 
 // ─── 特殊アイテムデータ ───
 export const SPECIAL_DB = [
-  { id:"S001", name:"スキルリセット石",icon:"🔮", rarity:"rare",     type:"special", effect:"skill_reset", desc:"習得スキルをリセット",     shopWeight:2 },
-  { id:"S002", name:"レア素材パック",  icon:"📦", rarity:"rare",     type:"special", effect:"mat_pack",    desc:"ランダム素材×5個",         shopWeight:3 },
-  { id:"S003", name:"強化の秘石",      icon:"💠", rarity:"epic",     type:"special", effect:"forge_up_2",  desc:"選択装備を+2強化",         shopWeight:1 },
+  { id:"S001", name:"スキルリセット石",icon:"🔮", rarity:"rare",     type:"special", effect:"skill_reset", desc:"キャラ画面から使用可能。セット中のスキル書を全て外す",     shopWeight:2 },
+  { id:"S002", name:"レア素材パック",  icon:"📦", rarity:"rare",     type:"special", effect:"mat_pack",    desc:"キャラ画面から使用可能。ランダムな素材を5個入手する",         shopWeight:3 },
+  { id:"S003", name:"強化の秘石",      icon:"💠", rarity:"epic",     type:"special", effect:"forge_up_2",  desc:"鍛冶屋の強化タブから使用可能。選択した装備を無料で+2強化する",         shopWeight:1 },
   { id:"KEY001", name:"古びた鍵",   icon:"🗝", rarity:"uncommon", type:"special", effect:"dungeon_key_1", desc:"ダンジョン1のボス部屋を開ける", shopWeight:0, dropWeight:2 },
   { id:"KEY002", name:"封印の鍵",   icon:"🔑", rarity:"rare",     type:"special", effect:"dungeon_key_2", desc:"ダンジョン2のボス部屋を開ける", shopWeight:0, dropWeight:1 },
   { id:"KEY003", name:"禁忌の鍵",   icon:"⚜", rarity:"epic",     type:"special", effect:"dungeon_key_3", desc:"ダンジョン3のボス部屋を開ける", shopWeight:0, dropWeight:1 },

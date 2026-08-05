@@ -51,13 +51,23 @@ export const RARITY_LIST = [
   { id:"legend", label:"伝説", color:"#fbbf24", mul:3.0, prob:0.02 },
 ];
 
-export const rollRarity = () => {
+// boostPct: 消耗品「幸運のお守り」等によるレア出現率ボーナス(%)。
+// none(通常)の確率を削り、他ランクへ比率に応じて再配分する。
+export const rollRarity = (boostPct = 0) => {
+  let list = RARITY_LIST;
+  if (boostPct > 0) {
+    const shift = list[0].prob * Math.min(1, boostPct / 100);
+    const restTotal = list.slice(1).reduce((s, x) => s + x.prob, 0);
+    list = list.map((x, i) => i === 0
+      ? { ...x, prob: x.prob - shift }
+      : { ...x, prob: x.prob + shift * (x.prob / restTotal) });
+  }
   let r = Math.random(), acc = 0;
-  for (const x of RARITY_LIST) {
+  for (const x of list) {
     acc += x.prob;
     if (r < acc) return x;
   }
-  return RARITY_LIST[0];
+  return list[0];
 };
 
 // 二つ名

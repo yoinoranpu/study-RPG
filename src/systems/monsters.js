@@ -124,8 +124,8 @@ export const TRIBES = ["粘体","獣","ゴブリン","不死","悪魔","植物",
 
 
 // モンスター生成
-export const generateMonster = (base, floor = 1) => {
-  const rarity = rollRarity();
+export const generateMonster = (base, floor = 1, luckBoost = 0) => {
+  const rarity = rollRarity(luckBoost);
   const titles = rollTitles();
   const fm = 1 + (floor - 1) * 0.05;
 
@@ -166,7 +166,7 @@ export const generateMonster = (base, floor = 1) => {
 
 // 出現モンスター抽選
 // floorはglobalDepth(難易度スケール用)、dungeonIdは出現種族プールの絞り込みに使う
-export const pickMonsters = (floor = 1, dungeonId = 1) => {
+export const pickMonsters = (floor = 1, dungeonId = 1, luckBoost = 0) => {
   const dungeonPool = MONSTER_BASE.filter(m => (m.dungeonTier || 1) === dungeonId);
   const basePool = dungeonPool.length > 0 ? dungeonPool : MONSTER_BASE;
 
@@ -179,12 +179,12 @@ export const pickMonsters = (floor = 1, dungeonId = 1) => {
   const tribePool = pool.length > 0 ? pool : basePool.filter(m => m.tribe === tribe);
   const src = tribePool.length > 0 ? tribePool : basePool;
   const base = src[Math.floor(Math.random() * src.length)];
-  const result = [generateMonster(base, floor)];
+  const result = [generateMonster(base, floor, luckBoost)];
 
   // 20%で2体出現
   if (Math.random() < 0.20) {
     const base2 = src[Math.floor(Math.random() * src.length)];
-    result.push(generateMonster(base2, floor));
+    result.push(generateMonster(base2, floor, luckBoost));
   }
   return result;
 };

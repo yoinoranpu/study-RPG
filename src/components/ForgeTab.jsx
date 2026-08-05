@@ -120,6 +120,20 @@ export default function ForgeTab() {
   const upgradeItem = itemBox.find(it => it.uid === sel);
   const matOpts = upgradeItem ? MAT_UP[upgradeItem.type] || [] : [];
   const cost = upgradeItem ? upgradeCost(upgradeItem.upgradeLevel) : 0;
+  const forgeStone = itemBox.find(it => it.effect === "forge_up_2");
+
+  function useForgeStone() {
+    if (!upgradeItem || !forgeStone) return;
+    const newLv = upgradeItem.upgradeLevel + 2;
+    const updated = { ...upgradeItem, upgradeLevel: newLv };
+    const prevStats = stats || makeInitialStats();
+    updatePlayer({
+      itemBox: itemBox.filter(x => x.uid !== forgeStone.uid).map(x => x.uid === upgradeItem.uid ? updated : x),
+      stats: { ...prevStats, maxUpgradeLevelEver: Math.max(prevStats.maxUpgradeLevelEver||0, newLv) },
+    });
+    setMsg(`💠 ${forgeStone.name}を使って+${newLv}に強化！`);
+    setTimeout(() => setMsg(""), 3000);
+  }
 
   function upgrade(mo) {
     if (!upgradeItem) return;
@@ -287,7 +301,10 @@ export default function ForgeTab() {
 
                 {/* 固有能力 */}
                 {upgradeItem.innate && upgradeItem.innate !== "none" && INNATE[upgradeItem.innate] && (
-                  <div style={{ fontSize:10, color:"#fb923c", marginBottom:6 }}>◆ {INNATE[upgradeItem.innate].label}</div>
+                  <div style={{ marginBottom:6 }}>
+                    <div style={{ fontSize:10, color:"#fb923c" }}>◆ {INNATE[upgradeItem.innate].label}</div>
+                    <div style={{ fontSize:9, color:DIM }}>{INNATE[upgradeItem.innate].desc}</div>
+                  </div>
                 )}
 
                 {/* ランダム能力 */}
@@ -321,6 +338,20 @@ export default function ForgeTab() {
                     </div>
                   );
                 })}
+
+                {forgeStone && (
+                  <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:"#0a0818", border:"1px solid #a78bfa66", borderRadius:5, marginTop:6 }}>
+                    <span style={{ fontSize:18 }}>{forgeStone.icon}</span>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:10, color:"#e8e0d0" }}>{forgeStone.name}</div>
+                      <div style={{ fontSize:9, color:DIM }}>所持中の秘石で無料で+2強化できます</div>
+                    </div>
+                    <button onClick={useForgeStone}
+                      style={{ padding:"6px 14px", background:"#140a2a", border:"1px solid #a78bfa", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:10, fontFamily:"monospace" }}>
+                      💠 +2強化
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

@@ -152,7 +152,13 @@ export default function ShopTab() {
                 <div style={{ marginBottom:4, padding:"3px 8px", background:"#0a0800", border:"1px solid #fb923c33", borderRadius:4 }}>
                   <div style={{ fontSize:10, color:DIM, marginBottom:1 }}>固有能力</div>
                   <div style={{ fontSize:10, color:"#fb923c" }}>◆ {innate.label}</div>
+                  <div style={{ fontSize:9, color:DIM, marginTop:1 }}>{innate.desc}</div>
                 </div>
+              )}
+
+              {/* アイテム効果説明 */}
+              {tmpl.desc && (
+                <div style={{ fontSize:9, color:DIM, marginBottom:4 }}>{tmpl.desc}</div>
               )}
 
               {/* ランダム能力 */}

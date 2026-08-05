@@ -4,6 +4,9 @@ import { calcPlayerStats } from "../systems/playerStats";
 import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
 import { RARITY_COLOR, RARITY_LABEL, INNATE, getItemStats, getSellPrice } from "../data/items";
 import { SKILL_BOOKS, getBookSellPrice, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
+import { TRIBE_MAT } from "../systems/events";
+
+const INSTANT_USE_EFFECTS = ["skill_reset", "mat_pack"];
 
 const EQUIP_SLOTS = [
   { key:"equippedWeapon", label:"武器",    icon:"⚔", drop:"weapon" },
@@ -89,6 +92,27 @@ export default function CharacterPage() {
         slots[empty] = it;
         updatePlayer({ specialSlots: slots, itemBox: newItemBox });
       }
+    }
+    setSel(null);
+  }
+
+  // 即時使用アイテム(スキルリセット石・レア素材パック)：特殊スロットを介さずその場で消費
+  function consumeItem(it) {
+    const newItemBox = (itemBox||[]).filter(x => x.uid !== it.uid);
+    if (it.effect === "skill_reset") {
+      updatePlayer({
+        itemBox: newItemBox,
+        activeSkillSlots: [null,null,null,null],
+        passiveSkillSlots: [null,null,null,null,null,null],
+      });
+    } else if (it.effect === "mat_pack") {
+      const pool = Object.values(TRIBE_MAT);
+      const newMats = { ...(player.materials||{}) };
+      for (let i=0;i<5;i++) {
+        const name = pool[Math.floor(Math.random()*pool.length)];
+        newMats[name] = (newMats[name]||0) + 1;
+      }
+      updatePlayer({ itemBox: newItemBox, materials: newMats });
     }
     setSel(null);
   }
@@ -319,13 +343,23 @@ export default function CharacterPage() {
                 ))}
               </div>
               {selItem.innate && selItem.innate!=="none" && INNATE[selItem.innate] && (
-                <div style={{ fontSize:10, color:"#fb923c", marginBottom:3 }}>◆ {INNATE[selItem.innate].label}</div>
+                <div style={{ marginBottom:4 }}>
+                  <div style={{ fontSize:10, color:"#fb923c" }}>◆ {INNATE[selItem.innate].label}</div>
+                  <div style={{ fontSize:9, color:DIM }}>{INNATE[selItem.innate].desc}</div>
+                </div>
+              )}
+              {selItem.desc && (
+                <div style={{ fontSize:9, color:DIM, marginBottom:4 }}>{selItem.desc}</div>
               )}
               {(selItem.abilities||[]).map((ab,i)=>(
                 <div key={i} style={{ fontSize:10, color:"#a78bfa", marginBottom:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
               ))}
               <div style={{ display:"flex", gap:8, marginTop:8 }}>
-                {["weapon","armor","accessory","consumable","special"].includes(selItem.type) && (
+                {INSTANT_USE_EFFECTS.includes(selItem.effect) ? (
+                  <button onClick={()=>consumeItem(selItem)} style={{ flex:2, padding:"8px 0", background:"#0a1a0a", border:"1px solid #4ade80", borderRadius:4, cursor:"pointer", color:"#4ade80", fontSize:10, fontFamily:"monospace" }}>
+                    使う
+                  </button>
+                ) : ["weapon","armor","accessory","consumable","special"].includes(selItem.type) && (
                   <button onClick={()=>equipItem(selItem)} style={{ flex:2, padding:"8px 0", background:"#0a1a0a", border:"1px solid #4ade80", borderRadius:4, cursor:"pointer", color:"#4ade80", fontSize:10, fontFamily:"monospace" }}>
                     {["consumable","special"].includes(selItem.type) ? "スロットにセット" : "装備する"}
                   </button>
@@ -358,7 +392,10 @@ export default function CharacterPage() {
                   ))}
                 </div>
                 {eq.innate && eq.innate!=="none" && INNATE[eq.innate] && (
-                  <div style={{ fontSize:10, color:"#fb923c", marginBottom:3 }}>◆ {INNATE[eq.innate].label}</div>
+                  <div style={{ marginBottom:4 }}>
+                    <div style={{ fontSize:10, color:"#fb923c" }}>◆ {INNATE[eq.innate].label}</div>
+                    <div style={{ fontSize:9, color:DIM }}>{INNATE[eq.innate].desc}</div>
+                  </div>
                 )}
                 {(eq.abilities||[]).map((ab,i)=>(
                   <div key={i} style={{ fontSize:10, color:"#a78bfa", marginBottom:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
