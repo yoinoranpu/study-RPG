@@ -177,10 +177,15 @@ export default function DungeonPage({ onBack }) {
         mappingRef.current = 99;
         setMapping(99);
         addLog(`🔒 鍵がなく退却…B${floorRef.current}Fに戻った`, "#f87171");
+        // 初めて鍵不足で詰まった時だけ、救済としてショップで鍵を購入できるようにする(一回限り)
+        if (player.keyRescueDungeonId == null) {
+          updatePlayer({ keyRescueDungeonId: dungeonId });
+          addLog(`💡 ショップで鍵が買えるようになった`, "#60a5fa");
+        }
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [bossFloor, dungeon.keyEffect, player.specialSlots, player.itemBox, addLog]);
+  }, [bossFloor, dungeon.keyEffect, player.specialSlots, player.itemBox, addLog, dungeonId, player.keyRescueDungeonId, updatePlayer]);
 
   // 鍵ありボス階層：自動挑戦
   useEffect(() => {

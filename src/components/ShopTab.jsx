@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { generateShopStock, getShopPrice, makeItem, RARITY_COLOR, RARITY_LABEL, INNATE } from "../data/items";
+import { generateShopStock, getShopPrice, makeItem, RARITY_COLOR, RARITY_LABEL, INNATE, SPECIAL_DB } from "../data/items";
 import { getGlobalUnlockDepth } from "../systems/dungeons";
 import usePlayerStore from "../store/usePlayerStore";
 
@@ -10,7 +10,21 @@ const FAINT = "#5c5c82";
 export default function ShopTab() {
   const [sub, setSub] = useState("weapon");
   const [msg, setMsg] = useState("");
-  const { gold, itemBox, dungeons, updatePlayer } = usePlayerStore();
+  const { gold, itemBox, dungeons, keyRescueDungeonId, keyRescueClaimed, updatePlayer } = usePlayerStore();
+
+  const rescueKeyTmpl = (keyRescueDungeonId != null && !keyRescueClaimed)
+    ? SPECIAL_DB.find(it => it.effect === `dungeon_key_${keyRescueDungeonId}`)
+    : null;
+
+  function buyRescueKey() {
+    if (!rescueKeyTmpl) return;
+    const price = getShopPrice(rescueKeyTmpl);
+    if (gold < price) { setMsg("Gが不足！"); setTimeout(()=>setMsg(""),3000); return; }
+    if ((itemBox||[]).length >= ITEM_BOX_MAX) { setMsg("BOXが満杯！"); setTimeout(()=>setMsg(""),3000); return; }
+    updatePlayer({ gold: gold - price, itemBox: [...(itemBox||[]), makeItem(rescueKeyTmpl)], keyRescueClaimed: true });
+    setMsg(`${rescueKeyTmpl.name}を購入！`);
+    setTimeout(() => setMsg(""), 3000);
+  }
 
   const today = new Date().toDateString();
 
@@ -70,6 +84,28 @@ export default function ShopTab() {
       </div>
 
       <div style={{ flex:1, overflowY:"auto", padding:12 }}>
+        {sub === "special" && rescueKeyTmpl && (() => {
+          const price = getShopPrice(rescueKeyTmpl);
+          const canBuy = gold >= price && (itemBox||[]).length < ITEM_BOX_MAX;
+          return (
+            <div style={{ background:"#0d1a15", borderLeft:"3px solid #4ade80", border:"1px solid #4ade8066", borderRadius:6, padding:"12px 14px", marginBottom:10 }}>
+              <div style={{ fontSize:10, color:"#4ade80", letterSpacing:1, marginBottom:6 }}>💡 初回限定サポート</div>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                <span style={{ fontSize:20 }}>{rescueKeyTmpl.icon}</span>
+                <div style={{ flex:1 }}>
+                  <span style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>{rescueKeyTmpl.name}</span>
+                  <div style={{ fontSize:10, color:DIM }}>{rescueKeyTmpl.desc}</div>
+                </div>
+              </div>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:10 }}>
+                <span style={{ fontSize:13, color:"#fbbf24", fontWeight:700 }}>{price.toLocaleString()}G</span>
+                <button onClick={buyRescueKey} disabled={!canBuy} style={{ padding:"6px 16px", background:canBuy?"#0a2a0a":"#0a0a0a", border:`1px solid ${canBuy?"#4ade80":"#3a3a3a"}`, borderRadius:4, cursor:canBuy?"pointer":"default", color:canBuy?"#4ade80":FAINT, fontSize:10, fontFamily:"monospace" }}>
+                  {(itemBox||[]).length >= ITEM_BOX_MAX ? "BOX満杯" : gold < price ? "G不足" : "購入"}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
         {allItems.map((tmpl, i) => {
           const isSold = soldOut.has(`${sub}_${i}`);
           const price = getShopPrice(tmpl);
@@ -132,7 +168,7 @@ export default function ShopTab() {
             </div>
           );
         })}
-        {allItems.length === 0 && (
+        {allItems.length === 0 && !(sub === "special" && rescueKeyTmpl) && (
           <div style={{ textAlign:"center", color:FAINT, fontSize:10, padding:30 }}>
             在庫なし（探索を進めると解放）
           </div>

@@ -75,6 +75,8 @@ export const savePlayerData = async (uid, data) => {
     monsterBook: data.monsterBook || {},
     skillBookDex: data.skillBookDex || {},
     quests: data.quests || makeInitialQuests(),
+    keyRescueDungeonId: data.keyRescueDungeonId ?? null,
+    keyRescueClaimed: data.keyRescueClaimed || false,
   };
 
   try {

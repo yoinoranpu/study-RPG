@@ -37,6 +37,8 @@ const debounceSave = (uid, data) => {
       monsterBook: data.monsterBook || {},
       skillBookDex: data.skillBookDex || {},
       quests: data.quests || makeInitialQuests(),
+      keyRescueDungeonId: data.keyRescueDungeonId ?? null,
+      keyRescueClaimed: data.keyRescueClaimed || false,
     };
     savePlayerData(uid, saveData);
   }, 2000);
@@ -81,6 +83,8 @@ const usePlayerStore = create((set, get) => ({
   monsterBook: {},
   skillBookDex: {},
   quests: makeInitialQuests(),
+  keyRescueDungeonId: null,
+  keyRescueClaimed: false,
 
   setUid: (uid) => set({ uid }),
   setIsGuest: (isGuest) => set({ isGuest }),
@@ -113,6 +117,8 @@ const usePlayerStore = create((set, get) => ({
       skillBookDex: {},
       unlockedRarity: "common",
       quests: makeInitialQuests(),
+      keyRescueDungeonId: null,
+      keyRescueClaimed: false,
     };
     set(resetData);
     debounceSave(uid, resetData);
