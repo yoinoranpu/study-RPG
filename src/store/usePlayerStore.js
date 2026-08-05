@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { savePlayerData } from "../firebase/saveLoad";
 import { makeInitialDungeons } from "../systems/dungeons";
+import { makeInitialQuests } from "../systems/quests";
 
 let saveTimer = null;
 const debounceSave = (uid, data) => {
@@ -35,6 +36,7 @@ const debounceSave = (uid, data) => {
       unlockedRarity: data.unlockedRarity || "common",
       monsterBook: data.monsterBook || {},
       skillBookDex: data.skillBookDex || {},
+      quests: data.quests || makeInitialQuests(),
     };
     savePlayerData(uid, saveData);
   }, 2000);
@@ -78,6 +80,7 @@ const usePlayerStore = create((set, get) => ({
 
   monsterBook: {},
   skillBookDex: {},
+  quests: makeInitialQuests(),
 
   setUid: (uid) => set({ uid }),
   setIsGuest: (isGuest) => set({ isGuest }),
@@ -109,6 +112,7 @@ const usePlayerStore = create((set, get) => ({
       monsterBook: {},
       skillBookDex: {},
       unlockedRarity: "common",
+      quests: makeInitialQuests(),
     };
     set(resetData);
     debounceSave(uid, resetData);

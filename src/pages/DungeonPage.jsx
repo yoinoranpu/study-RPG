@@ -16,6 +16,7 @@ import { calcBookPassiveBonus, mergeBookDex, SKILL_BOOKS, BOOK_RARITY_COLOR, BOO
 import { openChest } from "../data/chest_table";
 import { RARITY_COLOR, SPECIAL_DB } from "../data/items";
 import { DUNGEON_FLOOR_COUNT, getDungeon, globalDepth, makeInitialDungeons } from "../systems/dungeons";
+import { resetQuestsIfNeeded } from "../systems/quests";
 
 const EVENT_INTERVAL = 6 * 60 * 1000;
 const BASE_MAX_EVENTS = 4;
@@ -333,6 +334,9 @@ export default function DungeonPage({ onBack }) {
     const newMats = { ...(player.materials||{}) };
     Object.entries(sessionMats.current).forEach(([k,v]) => { newMats[k] = (newMats[k]||0)+v; });
     const studiedMinutes = workMin * currentSet;
+    const { quests: resetQuests, dailyReset, weeklyReset } = resetQuestsIfNeeded(player.quests);
+    const baseMinutesToday = dailyReset ? 0 : (player.studyMinutesToday||0);
+    const baseMinutesWeek  = weeklyReset ? 0 : (player.studyMinutesWeek||0);
     const oldLv = expToLevel(player.totalExp);
     const newTotalExp = player.totalExp + sessionExp.current;
     const newLv = expToLevel(newTotalExp);
@@ -369,8 +373,14 @@ export default function DungeonPage({ onBack }) {
       skillBookDex: mergeBookDex(player.skillBookDex, addedBooks),
       timerWork: workMin, timerBreak: breakMin, timerSets: totalSets,
       studyMinutesTotal: (player.studyMinutesTotal||0) + studiedMinutes,
-      studyMinutesToday: (player.studyMinutesToday||0) + studiedMinutes,
-      studyMinutesWeek:  (player.studyMinutesWeek||0)  + studiedMinutes,
+      studyMinutesToday: baseMinutesToday + studiedMinutes,
+      studyMinutesWeek:  baseMinutesWeek  + studiedMinutes,
+      quests: {
+        ...resetQuests,
+        setsToday: resetQuests.setsToday + currentSet,
+        setsWeek: resetQuests.setsWeek + currentSet,
+        chestsWeek: resetQuests.chestsWeek + sessionChests.current.length,
+      },
     });
     setShowResult(false);
     onBack();

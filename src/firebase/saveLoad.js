@@ -8,6 +8,7 @@ import {
   linkWithPopup,
 } from "firebase/auth";
 import { makeInitialDungeons } from "../systems/dungeons";
+import { makeInitialQuests } from "../systems/quests";
 
 // ゲストログイン
 export const loginAsGuest = async () => {
@@ -39,6 +40,7 @@ const normalizeLoadedData = (data) => {
     passiveSkillSlots: normalizeSlotLength(data.passiveSkillSlots, 6),
     dungeons: migrateDungeons(data),
     currentDungeonId: data.currentDungeonId || 1,
+    quests: data.quests || makeInitialQuests(),
   };
 };
 
@@ -72,6 +74,7 @@ export const savePlayerData = async (uid, data) => {
     unlockedRarity: data.unlockedRarity || "common",
     monsterBook: data.monsterBook || {},
     skillBookDex: data.skillBookDex || {},
+    quests: data.quests || makeInitialQuests(),
   };
 
   try {

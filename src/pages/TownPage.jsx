@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
 import ShopTab from "../components/ShopTab";
@@ -7,8 +7,10 @@ import CharacterPage from "./CharacterPage";
 import SettingsPage from "./SettingsPage";
 import MonsterBookTab from "../components/MonsterBookTab";
 import SkillBookTab from "../components/SkillBookTab";
+import QuestTab from "../components/QuestTab";
 import DebugItemTab from "../components/DebugItemTab";
 import { DUNGEONS, isDungeonUnlocked, getGlobalUnlockDepth } from "../systems/dungeons";
+import { resetQuestsIfNeeded } from "../systems/quests";
 
 const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
@@ -25,6 +27,19 @@ export default function TownPage({ onEnterDungeon }) {
   const need = expForLevel(lv);
   const lvPct = need > 0 ? Math.min(1, (player.totalExp - used) / need) : 1;
   const DEBUG = import.meta.env.DEV;
+
+  // セッションを跨がずに日付/週が変わっていた場合の保険リセット（表示の陳腐化防止）
+  useEffect(() => {
+    const { quests: resetQuests, dailyReset, weeklyReset } = resetQuestsIfNeeded(player.quests);
+    if (dailyReset || weeklyReset) {
+      updatePlayer({
+        quests: resetQuests,
+        ...(dailyReset ? { studyMinutesToday: 0 } : {}),
+        ...(weeklyReset ? { studyMinutesWeek: 0 } : {}),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const tabs = [
     { id:"home",      icon:"🏰", label:"街"      },
@@ -168,11 +183,8 @@ export default function TownPage({ onEnterDungeon }) {
         {tab === "home" && subTab === "quest" && (
           <div style={{ height:"100%", display:"flex", flexDirection:"column" }}>
             <button onClick={() => setSubTab("home")} style={{ padding:"6px 12px", background:"transparent", border:"none", color:DIM, cursor:"pointer", fontSize:10, textAlign:"left", fontFamily:"monospace" }}>← 戻る</button>
-            <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <div style={{ textAlign:"center", color:FAINT, fontSize:10 }}>
-                🎯 クエストシステム<br/>
-                <span style={{ fontSize:10 }}>近日実装予定</span>
-              </div>
+            <div style={{ flex:1, overflow:"hidden" }}>
+              <QuestTab />
             </div>
           </div>
         )}
