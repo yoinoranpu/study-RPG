@@ -173,8 +173,10 @@ export default function ForgeTab() {
 
   const baseItem = itemBox.find(it => it.uid === sel);
   const matItem  = itemBox.find(it => it.uid === matSel);
+  // 素材は「同じ種類・同じサブタイプ(剣は剣、弓は弓)・同じレアリティ」のみ許可
+  // アクセサリーはsubtype自体が無いのでtype一致だけで従来通り（undefined同士は一致する）
   const synthCandidates = baseItem
-    ? itemBox.filter(it => it.uid !== baseItem.uid && it.type === baseItem.type && it.rarity === baseItem.rarity)
+    ? itemBox.filter(it => it.uid !== baseItem.uid && it.type === baseItem.type && it.subtype === baseItem.subtype && it.rarity === baseItem.rarity)
     : [];
   const next = baseItem ? nextRarity(baseItem.rarity) : null;
   const synthCost = baseItem ? SYNTHESIS_COST[baseItem.rarity] : null;
@@ -225,8 +227,13 @@ export default function ForgeTab() {
   }
 
   const bookItem = (skillBooks||[]).find(b => b.uid === sel);
+  // 素材は「同じ系統(tree)・同じアクティブ/パッシブ区分・同じレアリティ」なら同一IDでなくてもOK
   const bookCandidates = bookItem
-    ? (skillBooks||[]).filter(b => b.uid !== bookItem.uid && b.id === bookItem.id && b.rarity === bookItem.rarity)
+    ? (skillBooks||[]).filter(b => {
+        if (b.uid === bookItem.uid || b.rarity !== bookItem.rarity) return false;
+        const bookDef = SKILL_BOOKS[b.id], baseDef = SKILL_BOOKS[bookItem.id];
+        return bookDef && baseDef && bookDef.tree === baseDef.tree && bookDef.type === baseDef.type;
+      })
     : [];
   const bookMatItem = (skillBooks||[]).find(b => b.uid === matSel);
   const nextBookR = bookItem ? nextBookRarity(bookItem.rarity) : null;
@@ -418,7 +425,7 @@ export default function ForgeTab() {
         {tab === "synth" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
-              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ種類・同じレアリティの装備2つで1段階上のレアリティに合成</div>
+              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ種類・同じ形状(剣は剣、弓は弓)・同じレアリティの装備2つで1段階上のレアリティに合成</div>
 
               <SynthPreview
                 base={baseItem} mat={matItem} next={next}
@@ -462,7 +469,7 @@ export default function ForgeTab() {
                   getRarityLabel={r=>RARITY_LABEL[r]||r}
                   getIcon={it=>it.icon}
                   getName={it=>it.name}
-                  emptyText="合成できる素材がない（同じ種類・同じレアリティが必要）"
+                  emptyText="合成できる素材がない（同じ種類・同じ形状・同じレアリティが必要）"
                 />
               </div>
             )}
@@ -473,7 +480,7 @@ export default function ForgeTab() {
         {tab === "book" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
-              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じスキル書・同じレアリティ2冊で1段階上のレアリティに合成</div>
+              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ系統(剣術/魔法など)・同じ区分(アクティブ/パッシブ)・同じレアリティの本2冊で1段階上のレアリティに合成</div>
 
               <SynthPreview
                 base={bookItem} mat={bookMatItem} next={nextBookR}

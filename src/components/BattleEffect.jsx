@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { BOOK_RARITY_MUL } from "../data/skills";
 
-const TURN_DURATION = 1500;
+const TURN_DURATION = 2200;
 // レアリティが上がるほどエフェクトを大きく・激しく（common=1.0 〜 origin=2.4）
 const rarityFx = (rarity) => {
   const mul = BOOK_RARITY_MUL[rarity] || 1.0;

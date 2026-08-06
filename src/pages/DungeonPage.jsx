@@ -19,8 +19,13 @@ import { DUNGEON_FLOOR_COUNT, getDungeon, globalDepth, makeInitialDungeons } fro
 import { resetQuestsIfNeeded, getTodayKey } from "../systems/quests";
 import { makeInitialStats } from "../systems/achievements";
 
-const EVENT_INTERVAL = 6 * 60 * 1000;
+// イベント回数は4回固定のまま（負け戦が続くと以降のイベントが軒並み無報酬になるため、
+// 回数を増やすとその連鎖リスクも増える。代わりに1回ずつの見せ方を長く・濃くする）
+const EVENT_CHECK_INTERVAL = 6 * 60 * 1000; // 6分おきに抽選（旧と同じ間隔）
+const FIRST_EVENT_DELAY    = 3 * 60 * 1000; // 最初の抽選だけ3分後に前倒し（開始6分間の無風を解消）
+const EVENT_FIRE_CHANCE    = 0.85;          // 4回の枠にできるだけ収まるよう当選率を上げる
 const BASE_MAX_EVENTS = 4;
+const EVENT_KIND_LABEL = { heal:"回復の泉", npc:"冒険者に遭遇", fairy:"妖精の加護", spirit:"精霊の祝福" };
 const DEBUG = import.meta.env.DEV;
 
 function ChestOpenSection({ chests, onAllOpened }) {
@@ -111,6 +116,7 @@ export default function DungeonPage({ onBack }) {
   const [eventCount, setEventCount] = useState(0);
   const [logs, setLogs]           = useState([{ id:0, text:"ダンジョンに到着した…", color:"#86efac" }]);
   const [battlePopup, setBattlePopup] = useState(null);
+  const [eventPopup, setEventPopup]   = useState(null);
   const [showResult, setShowResult]   = useState(false);
   const [chestsAllOpened, setChestsAllOpened] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -143,6 +149,10 @@ export default function DungeonPage({ onBack }) {
   const hpRef         = useRef(player.hp || 100);
   const eventCountRef = useRef(0);
   const pendingBattleRef = useRef(null);
+  const monsterVisibleRef = useRef(false);
+  const eventVisibleRef   = useRef(false);
+  const healTimerRef      = useRef(null);
+  const eventPopupTimerRef = useRef(null);
   const passiveBonusRef  = useRef({});
   const sessionBuffsConsumedRef = useRef(false);
   const atkBuffRef  = useRef(0);   // % ボーナス（消耗品atk_up_20）
@@ -161,6 +171,14 @@ export default function DungeonPage({ onBack }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => { monsterVisibleRef.current = monsterVisible; }, [monsterVisible]);
+  useEffect(() => { eventVisibleRef.current = eventVisible; }, [eventVisible]);
+
+  useEffect(() => () => {
+    if (healTimerRef.current) clearInterval(healTimerRef.current);
+    if (eventPopupTimerRef.current) clearTimeout(eventPopupTimerRef.current);
+  }, []);
+
   useEffect(() => {
     const bookBonus = calcBookPassiveBonus(player.passiveSkillSlots || [], player.skillBooks || []);
     const innateBonus = getEquippedInnateBonus({
@@ -177,6 +195,13 @@ export default function DungeonPage({ onBack }) {
 
   const addLog = useCallback((text, color="#666") => {
     setLogs(l => [...l, { id:logId.current++, text, color }]);
+  }, []);
+
+  // イベント発生を見落とさないよう、画面上部に大きめのポップアップで表示する
+  const showEventPopup = useCallback((popup, duration) => {
+    if (eventPopupTimerRef.current) clearTimeout(eventPopupTimerRef.current);
+    setEventPopup(popup);
+    eventPopupTimerRef.current = setTimeout(() => setEventPopup(null), duration);
   }, []);
 
   // セッション開始時に特殊スロットのatk_up_20/exp_up_50/luck_upを消費し、探索中ずっと効くバフにする
@@ -317,20 +342,27 @@ export default function DungeonPage({ onBack }) {
     } else if (evType === "chest") {
       const chestRarity = rollChest();
       const result = openChest(chestRarity.id || "common", globalDepth(dungeonId, floorRef.current), dungeonId);
+      let popupText;
       if (result.type === "gold") {
         const bonusGold = Math.floor(result.gold * (1 + (passiveBonusRef.current.goldBonus||0)/100));
         sessionGold.current += bonusGold;
         setSessionGoldDisplay(sessionGold.current);
         result.gold = bonusGold;
+        popupText = `+${bonusGold}G`;
         addLog(`${result.chestType?.icon||"📦"} ${result.chestType?.label}を開けた！+${bonusGold}G`, "#fbbf24");
+      } else if (result.type === "skillbook") {
+        popupText = `${SKILL_BOOKS[result.book?.id]?.name || "スキル書"}を発見！`;
+        addLog(`${result.chestType?.icon||"📦"} ${result.chestType?.label}を発見！`, result.chestType?.color||"#fbbf24");
       } else {
+        popupText = `${result.item?.name || "アイテム"}を発見！`;
         addLog(`${result.chestType?.icon||"📦"} ${result.chestType?.label}を発見！`, result.chestType?.color||"#fbbf24");
       }
       sessionChests.current.push(result);
       setSessionChestsDisplay([...sessionChests.current]);
       setMonsterVisible(false); setCurrentMonsters([]);
       setCurrentEvent("chest"); setEventVisible(true); setMonsterArrived(false);
-      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 6000);
+      showEventPopup({ icon: result.chestType?.icon||"📦", label: result.chestType?.label||"宝箱発見", text: popupText, color: result.chestType?.color||"#fbbf24" }, 7000);
+      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 7000);
 
     } else if (evType === "trap") {
       const dmg = Math.floor(Math.random()*15+5);
@@ -338,19 +370,36 @@ export default function DungeonPage({ onBack }) {
       addLog(`⚠ 罠発動！${dmg}ダメージ！`, "#fb923c");
       setMonsterVisible(false); setCurrentMonsters([]);
       setCurrentEvent("trap"); setEventVisible(true); setMonsterArrived(false);
-      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 4000);
+      showEventPopup({ icon:"⚠", label:"罠発動！", text:`-${dmg} ダメージ`, color:"#fb923c" }, 5500);
+      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 5500);
 
     } else {
       const ev = rollNpcEvent();
       addLog(`${ev.icon} ${ev.text}`, ev.color);
-      if (ev.effect==="heal") { hpRef.current=player.maxHp||100; setHp(hpRef.current); }
+      const kind = ev.effect==="heal"?"heal":ev.effect==="buff"?"fairy":ev.effect==="enhance"?"spirit":"npc";
+      const duration = ev.effect === "heal" ? 8000 : 7000;
+      if (ev.effect==="heal") {
+        // 瞬間全回復ではなく、HPバーがじわじわ満ちていく様子を見せる
+        if (healTimerRef.current) clearInterval(healTimerRef.current);
+        const startHp = hpRef.current;
+        const targetHp = player.maxHp || 100;
+        const steps = 20;
+        let i = 0;
+        healTimerRef.current = setInterval(() => {
+          i += 1;
+          const next = i >= steps ? targetHp : Math.round(startHp + (targetHp - startHp) * (i / steps));
+          hpRef.current = next; setHp(next);
+          if (i >= steps) { clearInterval(healTimerRef.current); healTimerRef.current = null; }
+        }, 120);
+      }
       if (ev.effect==="map") addMapping(5);
       setMonsterVisible(false); setCurrentMonsters([]);
-      setCurrentEvent(ev.effect==="heal"?"heal":ev.effect==="buff"?"fairy":ev.effect==="enhance"?"spirit":"npc");
+      setCurrentEvent(kind);
       setEventVisible(true); setMonsterArrived(false);
-      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 5000);
+      showEventPopup({ icon: ev.icon, label: EVENT_KIND_LABEL[kind] || "?", text: ev.text, color: ev.color }, duration);
+      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, duration);
     }
-  }, [addLog, addMapping, player, buildPlayerStats, dungeonId]);
+  }, [addLog, addMapping, player, buildPlayerStats, dungeonId, showEventPopup]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -391,12 +440,19 @@ export default function DungeonPage({ onBack }) {
 
   useEffect(() => {
     if (!isRunning || phase !== "work") return;
-    const id = setInterval(() => {
-      if (eventCountRef.current >= BASE_MAX_EVENTS) return;
-      if (Math.random() >= 0.70) return;
-      fireEvent();
-    }, EVENT_INTERVAL);
-    return () => clearInterval(id);
+    let cancelled = false;
+    let timeoutId;
+    const tick = (delay) => {
+      timeoutId = setTimeout(() => {
+        if (cancelled) return;
+        const canFire = eventCountRef.current < BASE_MAX_EVENTS
+          && !monsterVisibleRef.current && !eventVisibleRef.current;
+        if (canFire && Math.random() < EVENT_FIRE_CHANCE) fireEvent();
+        tick(EVENT_CHECK_INTERVAL);
+      }, delay);
+    };
+    tick(FIRST_EVENT_DELAY);
+    return () => { cancelled = true; clearTimeout(timeoutId); };
   }, [isRunning, phase, fireEvent]);
 
   const handleResultClose = () => {
@@ -795,6 +851,16 @@ export default function DungeonPage({ onBack }) {
           </div>
         </div>
       </div>
+
+      {eventPopup && (
+        <div style={{ position:"absolute", top:isMobile?66:96, left:16, right:16, maxWidth:360, margin:"0 auto", background:"rgba(0,0,0,0.92)", border:`1px solid ${eventPopup.color}88`, borderRadius:8, padding:"10px 14px", fontFamily:"monospace", zIndex:6, display:"flex", alignItems:"center", gap:10, boxShadow:`0 0 16px ${eventPopup.color}33` }}>
+          <span style={{ fontSize:24, flexShrink:0 }}>{eventPopup.icon}</span>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:9, color:eventPopup.color, letterSpacing:1, marginBottom:2 }}>{eventPopup.label}</div>
+            <div style={{ fontSize:11, color:"#e8e0d0", lineHeight:1.4 }}>{eventPopup.text}</div>
+          </div>
+        </div>
+      )}
 
       {battlePopup && (
         <div style={{ position:"absolute", bottom:20, left:16, right:16, background:"rgba(0,0,0,0.95)", border:"1px solid #2a2a3a", borderRadius:8, padding:"12px 14px", fontFamily:"monospace", zIndex:5 }}>

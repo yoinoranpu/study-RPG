@@ -1,4 +1,20 @@
 import { rollRarity, rollTitles, TRIBE_MAT } from "./events";
+import { DUNGEON_FLOOR_COUNT } from "./dungeons";
+
+// 出現する星ランク(強さ)の確率。ダンジョン入口(浅い階)ほど星1〜2中心、
+// 最深部(30F付近)に近づくほど星3〜4の強敵が増えるよう線形補間する。
+const EARLY_STAR_PROBS = { 1:0.75, 2:0.20, 3:0.04, 4:0.01 };
+const LATE_STAR_PROBS  = { 1:0.35, 2:0.30, 3:0.25, 4:0.10 };
+
+// 25分セッションで戦闘が長引くようにする難易度スケール（通常敵）
+// ATKはレアリティ倍率(精鋭×1.3〜伝説×3.0)と掛け算で重なるため、HPより控えめにして事故死を防ぐ
+const MONSTER_HP_SCALE  = 1.4;
+const MONSTER_ATK_SCALE = 1.15;
+// ボス戦をより長引かせるための追加スケール（hpMul/atkMulに乗算）
+const BOSS_HP_SCALE  = 1.4;
+const BOSS_ATK_SCALE = 1.15;
+// 敵を強くした分、倒した時のリターンも据え置きだとリスクに見合わなくなるため報酬側も底上げする
+const REWARD_SCALE = 1.25;
 
 // モンスターベースデータ
 // dungeonTier: このモンスターが通常戦闘に出現するダンジョン(1/2/3)。ボスはBOSS_DATAで別途参照するため無関係。
@@ -105,18 +121,18 @@ export const generateBoss = (bossData) => {
     ...base,
     name: bossData.name,
     displayName: bossData.name,
-    hp:   Math.floor(base.hp   * bossData.hpMul),
-    maxHp:Math.floor(base.hp   * bossData.hpMul),
-    atk:  Math.floor(base.atk  * bossData.atkMul),
+    hp:   Math.floor(base.hp   * bossData.hpMul  * BOSS_HP_SCALE),
+    maxHp:Math.floor(base.hp   * bossData.hpMul  * BOSS_HP_SCALE),
+    atk:  Math.floor(base.atk  * bossData.atkMul * BOSS_ATK_SCALE),
     def:  Math.floor(base.def  * bossData.defMul),
-    mag:  Math.floor(base.mag  * bossData.atkMul),
+    mag:  Math.floor(base.mag  * bossData.atkMul * BOSS_ATK_SCALE),
     mdef: Math.floor(base.mdef * bossData.defMul),
     isBoss: true,
     speed: 60,  // ← 追加
     rarity: { id:"legend", label:"BOSS", color:"#ef4444", mul:1 },
     dangerStar: 10,
-    expGain:  Math.floor(10 * base.expMul * bossData.hpMul),
-    goldGain: Math.floor(20 * base.gMul  * bossData.hpMul),
+    expGain:  Math.floor(10 * base.expMul * bossData.hpMul * REWARD_SCALE),
+    goldGain: Math.floor(20 * base.gMul  * bossData.hpMul * REWARD_SCALE),
   };
 };
 
@@ -129,8 +145,8 @@ export const generateMonster = (base, floor = 1, luckBoost = 0) => {
   const titles = rollTitles();
   const fm = 1 + (floor - 1) * 0.05;
 
-  let hp   = Math.floor(base.hp   * rarity.mul * fm);
-  let atk  = Math.floor(base.atk  * rarity.mul * fm);
+  let hp   = Math.floor(base.hp   * MONSTER_HP_SCALE  * rarity.mul * fm);
+  let atk  = Math.floor(base.atk  * MONSTER_ATK_SCALE * rarity.mul * fm);
   let def  = Math.floor(base.def  * rarity.mul * fm);
   let mag  = Math.floor(base.mag  * rarity.mul * fm);
   let mdef = Math.floor(base.mdef * rarity.mul * fm);
@@ -158,8 +174,8 @@ export const generateMonster = (base, floor = 1, luckBoost = 0) => {
     ...base, hp, maxHp: hp, atk, def, mag, mdef, eva, crit,
     speed: 50 + eva + base.star * 5,  // ← 追加
     rarity, titles, displayName, dangerStar,
-    expGain:  Math.floor(10 * base.expMul * rarity.mul * fm),
-    goldGain: Math.floor(20 * base.gMul  * rarity.mul * fm),
+    expGain:  Math.floor(10 * base.expMul * rarity.mul * fm * REWARD_SCALE),
+    goldGain: Math.floor(20 * base.gMul  * rarity.mul * fm * REWARD_SCALE),
     material: TRIBE_MAT[base.tribe] || "素材",
   };
 };
@@ -171,7 +187,14 @@ export const pickMonsters = (floor = 1, dungeonId = 1, luckBoost = 0) => {
   const basePool = dungeonPool.length > 0 ? dungeonPool : MONSTER_BASE;
 
   const tribe = TRIBES[Math.floor(Math.random() * TRIBES.length)];
-  const starProbs = [{ star:1, p:0.60 },{ star:2, p:0.25 },{ star:3, p:0.10 },{ star:4, p:0.05 }];
+
+  // floorはダンジョン通算のglobalDepthなので、そのダンジョン内での相対的な深さ(1〜30F)に戻して補間する
+  const localFloor = ((floor - 1) % DUNGEON_FLOOR_COUNT) + 1;
+  const t = Math.min(1, (localFloor - 1) / (DUNGEON_FLOOR_COUNT - 1));
+  const starProbs = [1, 2, 3, 4].map(star => ({
+    star,
+    p: EARLY_STAR_PROBS[star] + (LATE_STAR_PROBS[star] - EARLY_STAR_PROBS[star]) * t,
+  }));
   let r = Math.random(), acc = 0, star = 1;
   for (const s of starProbs) { acc += s.p; if (r < acc) { star = s.star; break; } }
 

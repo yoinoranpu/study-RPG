@@ -22,12 +22,23 @@ export const rollEventType = () => {
   return "npc";
 };
 
-// NPCイベント
+// NPCイベント（会話・ヒントのバリエーションを持たせて毎回違う表情にする）
 export const NPC_EVENTS = [
-  { icon:"💧", text:"回復の泉でHPが全回復した", color:"#38bdf8", effect:"heal" },
-  { icon:"🧝", text:"冒険者に会った。マップ+5%", color:"#34d399", effect:"map" },
-  { icon:"🧚", text:"妖精がランダムバフを授けた", color:"#f472b6", effect:"buff" },
-  { icon:"👻", text:"精霊が装備を強化してくれた", color:"#a78bfa", effect:"enhance" },
+  // 回復の泉
+  { icon:"💧", text:"回復の泉を見つけた。ゆっくり足を浸すとHPが全回復した", color:"#38bdf8", effect:"heal" },
+  { icon:"💧", text:"清らかな泉の水を飲むと、傷が癒えていくのを感じた", color:"#38bdf8", effect:"heal" },
+  // 冒険者との会話（マップ+5%）
+  { icon:"🧝", text:"冒険者「この先はまだ地図がないみたいだ」と教えてくれた。マップ+5%", color:"#34d399", effect:"map" },
+  { icon:"🧝", text:"冒険者と少し立ち話。「気をつけてな」マップ+5%", color:"#34d399", effect:"map" },
+  { icon:"🧝", text:"冒険者に道を教えてもらった。マップ+5%", color:"#34d399", effect:"map" },
+  // 妖精のヒント
+  { icon:"🧚", text:"妖精「鍛冶で装備を強化すると数値がしっかり伸びるわよ」", color:"#f472b6", effect:"buff" },
+  { icon:"🧚", text:"妖精「スキル書は合成するとレア度が上がるんだって」", color:"#f472b6", effect:"buff" },
+  { icon:"🧚", text:"妖精「ボス階層には鍵が必要みたい。ショップで買えるよ」", color:"#f472b6", effect:"buff" },
+  { icon:"🧚", text:"妖精がいたずらにキラキラを振りまいていった", color:"#f472b6", effect:"buff" },
+  // 精霊の祝福
+  { icon:"👻", text:"精霊が装備にそっと触れた。何かが変わった気がする", color:"#a78bfa", effect:"enhance" },
+  { icon:"👻", text:"精霊「頑張っているね」と静かに見守ってくれた", color:"#a78bfa", effect:"enhance" },
 ];
 
 export const rollNpcEvent = () =>
