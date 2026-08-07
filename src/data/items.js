@@ -130,35 +130,35 @@ export const getEquippedInnateBonus = (player) => {
 // baseAtk: 基礎ATK（個体差・強化で変動）
 export const WEAPON_DB = [
   // ────── Common ──────
-  { id:"W001", name:"旅人の剣",     icon:"⚔", rarity:"common",   type:"weapon", subtype:"sword",  baseAtk:8,  baseMag:0,  innate:"none",         shopWeight:10, dropWeight:10 },
-  { id:"W002", name:"錆びた大剣",   icon:"⚔", rarity:"common",   type:"weapon", subtype:"sword",  baseAtk:12, baseMag:0,  innate:"none",         shopWeight:8,  dropWeight:8  },
-  { id:"W003", name:"木の杖",       icon:"✨", rarity:"common",   type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:10, innate:"none",         shopWeight:10, dropWeight:10 },
-  { id:"W004", name:"狩人の弓",     icon:"🏹", rarity:"common",   type:"weapon", subtype:"bow",    baseAtk:9,  baseMag:0,  innate:"none",         shopWeight:10, dropWeight:10 },
-  { id:"W005", name:"旅人の短剣",   icon:"🗡", rarity:"common",   type:"weapon", subtype:"dagger", baseAtk:7,  baseMag:0,  innate:"none",         shopWeight:10, dropWeight:10 },
+  { id:"W001", name:"旅人の剣",     icon:"⚔", image:"/assets/images/W001旅人の剣.png",   rarity:"common",   type:"weapon", subtype:"sword",  baseAtk:8,  baseMag:0,  innate:"none",         shopWeight:10, dropWeight:10 },
+  { id:"W002", name:"錆びた大剣",   icon:"⚔", image:"/assets/images/W002錆びた大剣.png", rarity:"common",   type:"weapon", subtype:"sword",  baseAtk:12, baseMag:0,  innate:"none",         shopWeight:8,  dropWeight:8  },
+  { id:"W003", name:"木の杖",       icon:"✨", image:"/assets/images/W003木の杖.png",     rarity:"common",   type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:10, innate:"none",         shopWeight:10, dropWeight:10 },
+  { id:"W004", name:"狩人の弓",     icon:"🏹", image:"/assets/images/W004狩人の弓.png",   rarity:"common",   type:"weapon", subtype:"bow",    baseAtk:9,  baseMag:0,  innate:"none",         shopWeight:10, dropWeight:10 },
+  { id:"W005", name:"旅人の短剣",   icon:"🗡", image:"/assets/images/W005旅人の短剣.png", rarity:"common",   type:"weapon", subtype:"dagger", baseAtk:7,  baseMag:0,  innate:"none",         shopWeight:10, dropWeight:10 },
 
   // ────── Uncommon ──────
-  { id:"W101", name:"鉄の剣",       icon:"⚔", rarity:"uncommon", type:"weapon", subtype:"sword",  baseAtk:14, baseMag:0,  innate:"none",         shopWeight:8,  dropWeight:8  },
-  { id:"W102", name:"魔力欠けの杖", icon:"✨", rarity:"uncommon", type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:14, innate:"none",         shopWeight:8,  dropWeight:8  },
-  { id:"W103", name:"探索者の弓",   icon:"🏹", rarity:"uncommon", type:"weapon", subtype:"bow",    baseAtk:12, baseMag:0,  innate:"explorer",     shopWeight:6,  dropWeight:6  },
-  { id:"W104", name:"幸運の短剣",   icon:"🗡", rarity:"uncommon", type:"weapon", subtype:"dagger", baseAtk:10, baseMag:0,  innate:"lucky",        shopWeight:6,  dropWeight:6  },
-  { id:"W105", name:"鋼の大剣",     icon:"⚔", rarity:"uncommon", type:"weapon", subtype:"sword",  baseAtk:18, baseMag:0,  innate:"none",         shopWeight:5,  dropWeight:5  },
+  { id:"W101", name:"鉄の剣",       icon:"⚔", image:"/assets/images/W101鉄の剣.png",     rarity:"uncommon", type:"weapon", subtype:"sword",  baseAtk:14, baseMag:0,  innate:"none",         shopWeight:8,  dropWeight:8  },
+  { id:"W102", name:"魔力欠けの杖", icon:"✨", image:"/assets/images/W102魔力欠けの杖.png", rarity:"uncommon", type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:14, innate:"none",         shopWeight:8,  dropWeight:8  },
+  { id:"W103", name:"探索者の弓",   icon:"🏹", image:"/assets/images/W103探索者の弓.png", rarity:"uncommon", type:"weapon", subtype:"bow",    baseAtk:12, baseMag:0,  innate:"explorer",     shopWeight:6,  dropWeight:6  },
+  { id:"W104", name:"幸運の短剣",   icon:"🗡", image:"/assets/images/W104幸運の短剣.png", rarity:"uncommon", type:"weapon", subtype:"dagger", baseAtk:10, baseMag:0,  innate:"lucky",        shopWeight:6,  dropWeight:6  },
+  { id:"W105", name:"鋼の大剣",     icon:"⚔", image:"/assets/images/W105鋼の大剣.png", rarity:"uncommon", type:"weapon", subtype:"sword",  baseAtk:18, baseMag:0,  innate:"none",         shopWeight:5,  dropWeight:5  },
 
   // ────── Rare ──────
-  { id:"W201", name:"炎の剣",       icon:"🔥", rarity:"rare",     type:"weapon", subtype:"sword",  baseAtk:18, baseMag:0,  innate:"fire_dmg",     shopWeight:4,  dropWeight:4  },
-  { id:"W202", name:"雷の杖",       icon:"⚡", rarity:"rare",     type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:20, innate:"thunder_stun", shopWeight:4,  dropWeight:4  },
-  { id:"W203", name:"吸血剣",       icon:"🩸", rarity:"rare",     type:"weapon", subtype:"sword",  baseAtk:16, baseMag:0,  innate:"vampiric",     shopWeight:3,  dropWeight:3  },
-  { id:"W204", name:"騎士の剣",     icon:"⚔", rarity:"rare",     type:"weapon", subtype:"sword",  baseAtk:20, baseMag:0,  innate:"armor_pierce", shopWeight:3,  dropWeight:3  },
-  { id:"W205", name:"迅速の短剣",   icon:"🗡", rarity:"rare",     type:"weapon", subtype:"dagger", baseAtk:14, baseMag:0,  innate:"swift",        shopWeight:3,  dropWeight:3  },
+  { id:"W201", name:"炎の剣",       icon:"🔥", image:"/assets/images/W201炎の剣.png", rarity:"rare",     type:"weapon", subtype:"sword",  baseAtk:18, baseMag:0,  innate:"fire_dmg",     shopWeight:4,  dropWeight:4  },
+  { id:"W202", name:"雷の杖",       icon:"⚡", image:"/assets/images/W202雷の杖.png", rarity:"rare",     type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:20, innate:"thunder_stun", shopWeight:4,  dropWeight:4  },
+  { id:"W203", name:"吸血剣",       icon:"🩸", image:"/assets/images/W203吸血剣.png", rarity:"rare",     type:"weapon", subtype:"sword",  baseAtk:16, baseMag:0,  innate:"vampiric",     shopWeight:3,  dropWeight:3  },
+  { id:"W204", name:"騎士の剣",     icon:"⚔", image:"/assets/images/W204騎士の剣.png", rarity:"rare",     type:"weapon", subtype:"sword",  baseAtk:20, baseMag:0,  innate:"armor_pierce", shopWeight:3,  dropWeight:3  },
+  { id:"W205", name:"迅速の短剣",   icon:"🗡", image:"/assets/images/W205迅速の短剣.png", rarity:"rare",     type:"weapon", subtype:"dagger", baseAtk:14, baseMag:0,  innate:"swift",        shopWeight:3,  dropWeight:3  },
 
   // ────── Epic ──────
-  { id:"W301", name:"竜殺しの剣",   icon:"🐉", rarity:"epic",     type:"weapon", subtype:"sword",  baseAtk:28, baseMag:0,  innate:"armor_pierce", shopWeight:0,  dropWeight:2  },
-  { id:"W302", name:"冥界の杖",     icon:"💀", rarity:"epic",     type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:30, innate:"vampiric",     shopWeight:0,  dropWeight:2  },
-  { id:"W303", name:"狂戦士の斧",   icon:"🪓", rarity:"epic",     type:"weapon", subtype:"axe",    baseAtk:35, baseMag:0,  innate:"berserker",    shopWeight:0,  dropWeight:2  },
-  { id:"W304", name:"毒の短剣",     icon:"🗡", rarity:"epic",     type:"weapon", subtype:"dagger", baseAtk:20, baseMag:0,  innate:"poison_blade", shopWeight:0,  dropWeight:2  },
+  { id:"W301", name:"竜殺しの剣",   icon:"🐉", image:"/assets/images/W301竜殺しの剣.png", rarity:"epic",     type:"weapon", subtype:"sword",  baseAtk:28, baseMag:0,  innate:"armor_pierce", shopWeight:0,  dropWeight:2  },
+  { id:"W302", name:"冥界の杖",     icon:"💀", image:"/assets/images/W302冥界の杖.png", rarity:"epic",     type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:30, innate:"vampiric",     shopWeight:0,  dropWeight:2  },
+  { id:"W303", name:"狂戦士の斧",   icon:"🪓", image:"/assets/images/W303狂戦士の斧.png", rarity:"epic",     type:"weapon", subtype:"axe",    baseAtk:35, baseMag:0,  innate:"berserker",    shopWeight:0,  dropWeight:2  },
+  { id:"W304", name:"毒の短剣",     icon:"🗡", image:"/assets/images/W304毒の短剣.png", rarity:"epic",     type:"weapon", subtype:"dagger", baseAtk:20, baseMag:0,  innate:"poison_blade", shopWeight:0,  dropWeight:2  },
 
   // ────── Legendary ──────
-  { id:"W401", name:"神剣カラドボルグ",icon:"✨",rarity:"legendary",type:"weapon",subtype:"sword",  baseAtk:45, baseMag:0,  innate:"armor_pierce", shopWeight:0,  dropWeight:1  },
-  { id:"W402", name:"天雷の杖",     icon:"⚡", rarity:"legendary", type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:50, innate:"thunder_stun", shopWeight:0,  dropWeight:1  },
+  { id:"W401", name:"神剣カラドボルグ",icon:"✨",image:"/assets/images/W401神剣カラドボルグ.png", rarity:"legendary",type:"weapon",subtype:"sword",  baseAtk:45, baseMag:0,  innate:"armor_pierce", shopWeight:0,  dropWeight:1  },
+  { id:"W402", name:"天雷の杖",     icon:"⚡", image:"/assets/images/W402天雷の杖.png", rarity:"legendary", type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:50, innate:"thunder_stun", shopWeight:0,  dropWeight:1  },
 
   // ────── Mythic・Origin（合成限定・将来追加） ──────
   // { id:"W501", name:"???", ... },
@@ -166,44 +166,44 @@ export const WEAPON_DB = [
 
 // ─── 防具データ ───
 export const ARMOR_DB = [
-  { id:"A001", name:"布の服",       icon:"👘", rarity:"common",   type:"armor", subtype:"light",  baseDef:3,  baseMdef:3,  baseHp:0,  innate:"none",    shopWeight:12, dropWeight:10 },
-  { id:"A002", name:"革の鎧",       icon:"🛡", rarity:"common",   type:"armor", subtype:"light",  baseDef:5,  baseMdef:5,  baseHp:0,  innate:"none",    shopWeight:12, dropWeight:10 },
-  { id:"A003", name:"鉄の鎧",       icon:"🪖", rarity:"uncommon", type:"armor", subtype:"heavy",  baseDef:10, baseMdef:8,  baseHp:0,  innate:"none",    shopWeight:8,  dropWeight:6  },
-  { id:"A004", name:"魔導ローブ",   icon:"🔮", rarity:"uncommon", type:"armor", subtype:"robe",   baseDef:5,  baseMdef:15, baseHp:0,  innate:"none",    shopWeight:6,  dropWeight:6  },
-  { id:"A005", name:"鋼の鎧",       icon:"🪖", rarity:"rare",     type:"armor", subtype:"heavy",  baseDef:16, baseMdef:10, baseHp:10, innate:"guardian",shopWeight:0,  dropWeight:3  },
-  { id:"A006", name:"竜鱗鎧",       icon:"🐉", rarity:"epic",     type:"armor", subtype:"heavy",  baseDef:24, baseMdef:14, baseHp:20, innate:"guardian",shopWeight:0,  dropWeight:2  },
-  { id:"A007", name:"影の外套",     icon:"🌑", rarity:"rare",     type:"armor", subtype:"light",  baseDef:6,  baseMdef:6,  baseHp:0,  innate:"swift",   shopWeight:0,  dropWeight:3  },
+  { id:"A001", name:"布の服",       icon:"👘", image:"/assets/images/A001布の服.png", rarity:"common",   type:"armor", subtype:"light",  baseDef:3,  baseMdef:3,  baseHp:0,  innate:"none",    shopWeight:12, dropWeight:10 },
+  { id:"A002", name:"革の鎧",       icon:"🛡", image:"/assets/images/A002革の鎧.png", rarity:"common",   type:"armor", subtype:"light",  baseDef:5,  baseMdef:5,  baseHp:0,  innate:"none",    shopWeight:12, dropWeight:10 },
+  { id:"A003", name:"鉄の鎧",       icon:"🪖", image:"/assets/images/A003鉄の鎧.png", rarity:"uncommon", type:"armor", subtype:"heavy",  baseDef:10, baseMdef:8,  baseHp:0,  innate:"none",    shopWeight:8,  dropWeight:6  },
+  { id:"A004", name:"魔導ローブ",   icon:"🔮", image:"/assets/images/A004魔導ローブ.png", rarity:"uncommon", type:"armor", subtype:"robe",   baseDef:5,  baseMdef:15, baseHp:0,  innate:"none",    shopWeight:6,  dropWeight:6  },
+  { id:"A005", name:"鋼の鎧",       icon:"🪖", image:"/assets/images/A005鋼の鎧.png", rarity:"rare",     type:"armor", subtype:"heavy",  baseDef:16, baseMdef:10, baseHp:10, innate:"guardian",shopWeight:0,  dropWeight:3  },
+  { id:"A006", name:"竜鱗鎧",       icon:"🐉", image:"/assets/images/A006竜鱗鎧.png", rarity:"epic",     type:"armor", subtype:"heavy",  baseDef:24, baseMdef:14, baseHp:20, innate:"guardian",shopWeight:0,  dropWeight:2  },
+  { id:"A007", name:"影の外套",     icon:"🌑", image:"/assets/images/A007影の外套.png", rarity:"rare",     type:"armor", subtype:"light",  baseDef:6,  baseMdef:6,  baseHp:0,  innate:"swift",   shopWeight:0,  dropWeight:3  },
 ];
 
 // ─── アクセサリーデータ ───
 export const ACCESSORY_DB = [
-  { id:"AC001", name:"木の指輪",    icon:"💍", rarity:"common",   type:"accessory", innate:"none",    baseCrit:1, baseEva:0, shopWeight:12, dropWeight:10 },
-  { id:"AC002", name:"初心者の護符",icon:"📿", rarity:"common",   type:"accessory", innate:"exp_bonus",baseCrit:0,baseEva:0, shopWeight:12, dropWeight:10 },
-  { id:"AC003", name:"探索の指輪",  icon:"💍", rarity:"uncommon", type:"accessory", innate:"lucky",   baseCrit:0, baseEva:0, shopWeight:6,  dropWeight:6  },
-  { id:"AC004", name:"狩人の腕輪",  icon:"📿", rarity:"uncommon", type:"accessory", innate:"none",    baseCrit:3, baseEva:0, shopWeight:6,  dropWeight:6  },
-  { id:"AC005", name:"盗賊の指輪",  icon:"💍", rarity:"rare",     type:"accessory", innate:"swift",   baseCrit:0, baseEva:5, shopWeight:0,  dropWeight:3  },
-  { id:"AC006", name:"竜の護符",    icon:"🐉", rarity:"epic",     type:"accessory", innate:"lucky",   baseCrit:4, baseEva:0, shopWeight:0,  dropWeight:2  },
+  { id:"AC001", name:"木の指輪",    icon:"💍", image:"/assets/images/AC001木の指輪.png", rarity:"common",   type:"accessory", innate:"none",    baseCrit:1, baseEva:0, shopWeight:12, dropWeight:10 },
+  { id:"AC002", name:"初心者の護符",icon:"📿", image:"/assets/images/AC002初心者の護符.png", rarity:"common",   type:"accessory", innate:"exp_bonus",baseCrit:0,baseEva:0, shopWeight:12, dropWeight:10 },
+  { id:"AC003", name:"探索の指輪",  icon:"💍", image:"/assets/images/AC003探索の指輪.png", rarity:"uncommon", type:"accessory", innate:"lucky",   baseCrit:0, baseEva:0, shopWeight:6,  dropWeight:6  },
+  { id:"AC004", name:"狩人の腕輪",  icon:"📿", image:"/assets/images/AC004狩人の腕輪.png", rarity:"uncommon", type:"accessory", innate:"none",    baseCrit:3, baseEva:0, shopWeight:6,  dropWeight:6  },
+  { id:"AC005", name:"盗賊の指輪",  icon:"💍", image:"/assets/images/AC005盗賊の指輪.png", rarity:"rare",     type:"accessory", innate:"swift",   baseCrit:0, baseEva:5, shopWeight:0,  dropWeight:3  },
+  { id:"AC006", name:"竜の護符",    icon:"🐉", image:"/assets/images/AC006竜の護符.png", rarity:"epic",     type:"accessory", innate:"lucky",   baseCrit:4, baseEva:0, shopWeight:0,  dropWeight:2  },
 ];
 
 // ─── 消耗品データ ───
 export const CONSUMABLE_DB = [
-  { id:"C001", name:"小ポーション",   icon:"🧪", rarity:"common",   type:"consumable", effect:"heal_30",   desc:"HPを30%回復",           shopWeight:15 },
-  { id:"C002", name:"中ポーション",   icon:"🧪", rarity:"uncommon", type:"consumable", effect:"heal_50",   desc:"HPを50%回復",           shopWeight:10 },
-  { id:"C003", name:"大ポーション",   icon:"🧪", rarity:"rare",     type:"consumable", effect:"heal_100",  desc:"HPを全回復",            shopWeight:4  },
-  { id:"C004", name:"攻撃の秘薬",     icon:"⚗", rarity:"uncommon", type:"consumable", effect:"atk_up_20", desc:"特殊スロットにセットし探索開始すると消費され、その探索中ずっとATK+20%",      shopWeight:6  },
-  { id:"C005", name:"帰還の巻物",     icon:"📜", rarity:"uncommon", type:"consumable", effect:"escape",    desc:"特殊スロットにセットすると、探索中いつでもボタン一つでダンジョンから即帰還できる（それまでの成果は失わない）",  shopWeight:5  },
-  { id:"C006", name:"経験値の書",     icon:"📖", rarity:"rare",     type:"consumable", effect:"exp_up_50", desc:"特殊スロットにセットし探索開始すると消費され、その探索中ずっとEXP+50%",     shopWeight:3  },
-  { id:"C007", name:"幸運のお守り",   icon:"🍀", rarity:"rare",     type:"consumable", effect:"luck_up",   desc:"特殊スロットにセットし探索開始すると消費され、その探索中ずっとレア敵出現率+20%",  shopWeight:3  },
+  { id:"C001", name:"小ポーション",   icon:"🧪", image:"/assets/images/C001小ポーション.png", rarity:"common",   type:"consumable", effect:"heal_30",   desc:"HPを30%回復",           shopWeight:15 },
+  { id:"C002", name:"中ポーション",   icon:"🧪", image:"/assets/images/C002中ポーション.png", rarity:"uncommon", type:"consumable", effect:"heal_50",   desc:"HPを50%回復",           shopWeight:10 },
+  { id:"C003", name:"大ポーション",   icon:"🧪", image:"/assets/images/C003大ポーション.png", rarity:"rare",     type:"consumable", effect:"heal_100",  desc:"HPを全回復",            shopWeight:4  },
+  { id:"C004", name:"攻撃の秘薬",     icon:"⚗", image:"/assets/images/C004攻撃の秘薬.png", rarity:"uncommon", type:"consumable", effect:"atk_up_20", desc:"特殊スロットにセットし探索開始すると消費され、その探索中ずっとATK+20%",      shopWeight:6  },
+  { id:"C005", name:"帰還の巻物",     icon:"📜", image:"/assets/images/C005帰還の巻物.png", rarity:"uncommon", type:"consumable", effect:"escape",    desc:"特殊スロットにセットすると、探索中いつでもボタン一つでダンジョンから即帰還できる（それまでの成果は失わない）",  shopWeight:5  },
+  { id:"C006", name:"経験値の書",     icon:"📖", image:"/assets/images/C006経験値の書.png", rarity:"rare",     type:"consumable", effect:"exp_up_50", desc:"特殊スロットにセットし探索開始すると消費され、その探索中ずっとEXP+50%",     shopWeight:3  },
+  { id:"C007", name:"幸運のお守り",   icon:"🍀", image:"/assets/images/C007幸運のお守り.png", rarity:"rare",     type:"consumable", effect:"luck_up",   desc:"特殊スロットにセットし探索開始すると消費され、その探索中ずっとレア敵出現率+20%",  shopWeight:3  },
 ];
 
 // ─── 特殊アイテムデータ ───
 export const SPECIAL_DB = [
-  { id:"S001", name:"スキルリセット石",icon:"🔮", rarity:"rare",     type:"special", effect:"skill_reset", desc:"キャラ画面から使用可能。セット中のスキル書を全て外す",     shopWeight:2 },
-  { id:"S002", name:"レア素材パック",  icon:"📦", rarity:"rare",     type:"special", effect:"mat_pack",    desc:"キャラ画面から使用可能。ランダムな素材を5個入手する",         shopWeight:3 },
-  { id:"S003", name:"強化の秘石",      icon:"💠", rarity:"epic",     type:"special", effect:"forge_up_2",  desc:"鍛冶屋の強化タブから使用可能。選択した装備を無料で+2強化する",         shopWeight:1 },
-  { id:"KEY001", name:"古びた鍵",   icon:"🗝", rarity:"uncommon", type:"special", effect:"dungeon_key_1", desc:"ダンジョン1のボス部屋を開ける", shopWeight:0, dropWeight:2 },
-  { id:"KEY002", name:"封印の鍵",   icon:"🔑", rarity:"rare",     type:"special", effect:"dungeon_key_2", desc:"ダンジョン2のボス部屋を開ける", shopWeight:0, dropWeight:1 },
-  { id:"KEY003", name:"禁忌の鍵",   icon:"⚜", rarity:"epic",     type:"special", effect:"dungeon_key_3", desc:"ダンジョン3のボス部屋を開ける", shopWeight:0, dropWeight:1 },
+  { id:"S001", name:"スキルリセット石",icon:"🔮", image:"/assets/images/S001スキルリセット石.png", rarity:"rare",     type:"special", effect:"skill_reset", desc:"キャラ画面から使用可能。セット中のスキル書を全て外す",     shopWeight:2 },
+  { id:"S002", name:"レア素材パック",  icon:"📦", image:"/assets/images/S002レア素材パック.png", rarity:"rare",     type:"special", effect:"mat_pack",    desc:"キャラ画面から使用可能。ランダムな素材を5個入手する",         shopWeight:3 },
+  { id:"S003", name:"強化の秘石",      icon:"💠", image:"/assets/images/S003強化の秘石.png", rarity:"epic",     type:"special", effect:"forge_up_2",  desc:"鍛冶屋の強化タブから使用可能。選択した装備を無料で+2強化する",         shopWeight:1 },
+  { id:"KEY001", name:"古びた鍵",   icon:"🗝", image:"/assets/images/KEY001古びた鍵.png", rarity:"uncommon", type:"special", effect:"dungeon_key_1", desc:"ダンジョン1のボス部屋を開ける", shopWeight:0, dropWeight:2 },
+  { id:"KEY002", name:"封印の鍵",   icon:"🔑", image:"/assets/images/KEY002封印の鍵.png", rarity:"rare",     type:"special", effect:"dungeon_key_2", desc:"ダンジョン2のボス部屋を開ける", shopWeight:0, dropWeight:1 },
+  { id:"KEY003", name:"禁忌の鍵",   icon:"⚜", image:"/assets/images/KEY003禁忌の鍵.png", rarity:"epic",     type:"special", effect:"dungeon_key_3", desc:"ダンジョン3のボス部屋を開ける", shopWeight:0, dropWeight:1 },
 ];
 
 // ─── 全アイテムDB（統合） ───

@@ -67,8 +67,12 @@ export default function QuestTab() {
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
-      <div style={{ padding:"8px 12px", background:"#080810", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-        <div style={{ fontSize:10, color:"#fbbf24", letterSpacing:2 }}>🎯 QUEST</div>
+      <div style={{ position:"relative", flexShrink:0, height:90, overflow:"hidden", borderBottom:"1px solid #1a1a2a" }}>
+        <img src="/assets/images/quest-banner.png" alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 30%", display:"block" }} />
+        <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(180deg, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.55) 60%, #080810 100%)" }} />
+        <div style={{ position:"absolute", left:12, right:12, bottom:6 }}>
+          <div style={{ fontSize:10, color:"#fbbf24", letterSpacing:2 }}>🎯 QUEST</div>
+        </div>
       </div>
 
       <div style={{ flex:1, overflowY:"auto", padding:10 }}>

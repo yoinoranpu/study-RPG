@@ -119,7 +119,7 @@ export default function ShopTab() {
               {selectedItem ? (
                 <>
                   <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-                    <span style={{ fontSize:18 }}>{selectedItem.icon}</span>
+                    {selectedItem.image ? <img src={selectedItem.image} alt="" style={{ width:22, height:22, objectFit:"contain" }} /> : <span style={{ fontSize:18 }}>{selectedItem.icon}</span>}
                     <span style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>{selectedItem.name}</span>
                     <span style={{ fontSize:10, color:RARITY_COLOR[selectedItem.rarity]||"#888" }}>{RARITY_LABEL[selectedItem.rarity]}</span>
                     {selectedIsSold && <span style={{ fontSize:10, color:DIM }}>SOLD</span>}
@@ -191,7 +191,7 @@ export default function ShopTab() {
               <div style={{ background:"rgba(13,26,21,0.92)", borderLeft:"3px solid #4ade80", border:"1px solid #4ade8066", borderRadius:6, padding:"12px 14px", marginBottom:10 }}>
                 <div style={{ fontSize:10, color:"#4ade80", letterSpacing:1, marginBottom:6 }}>💡 初回限定サポート</div>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                  <span style={{ fontSize:20 }}>{rescueKeyTmpl.icon}</span>
+                  {rescueKeyTmpl.image ? <img src={rescueKeyTmpl.image} alt="" style={{ width:24, height:24, objectFit:"contain" }} /> : <span style={{ fontSize:20 }}>{rescueKeyTmpl.icon}</span>}
                   <div style={{ flex:1 }}>
                     <span style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>{rescueKeyTmpl.name}</span>
                     <div style={{ fontSize:10, color:DIM }}>{rescueKeyTmpl.desc}</div>
@@ -224,7 +224,11 @@ export default function ShopTab() {
                     boxShadow:isSelected?`0 0 10px ${rc}aa`:`0 0 4px ${rc}55`,
                   }}>
                   {isSold && <div style={{ position:"absolute", top:3, right:4, fontSize:7, color:DIM, fontWeight:700 }}>SOLD</div>}
-                  <div style={{ fontSize:26 }}>{tmpl.icon}</div>
+                  {tmpl.image ? (
+                    <img src={tmpl.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:isSold?"grayscale(0.6)":"none" }} />
+                  ) : (
+                    <div style={{ fontSize:26 }}>{tmpl.icon}</div>
+                  )}
                   <div style={{ fontSize:9, color:"#e8e0d0", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", marginTop:2 }}>{tmpl.name.slice(0,6)}</div>
                   <div style={{ fontSize:8, color:rc, letterSpacing:1, minHeight:10, marginTop:1 }}>{RARITY_LABEL[tmpl.rarity]}</div>
                   <div style={{ fontSize:9, color:isSold?FAINT:"#fbbf24", fontWeight:700 }}>{price.toLocaleString()}G</div>

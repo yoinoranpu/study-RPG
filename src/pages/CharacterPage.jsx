@@ -228,6 +228,14 @@ export default function CharacterPage() {
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace", overflow:"hidden", position:"relative" }}>
 
+      <div style={{ position:"relative", flexShrink:0, height:90, overflow:"hidden", borderBottom:"1px solid #1a1a2a" }}>
+        <img src="/assets/images/character-banner.png" alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 30%", display:"block" }} />
+        <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(180deg, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.55) 60%, #080810 100%)" }} />
+        <div style={{ position:"absolute", left:12, right:12, bottom:6 }}>
+          <div style={{ fontSize:10, color:"#a78bfa", letterSpacing:2 }}>⚔ CHARACTER</div>
+        </div>
+      </div>
+
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
         {[{id:"equip",label:"⚔ 装備"},{id:"skill",label:"✨ スキル"}].map(t=>(
           <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} style={{ flex:1, padding:"8px 0", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#a78bfa":"transparent"}`, cursor:"pointer", color:tab===t.id?"#a78bfa":DIM, fontSize:11, fontFamily:"monospace" }}>
@@ -255,7 +263,7 @@ export default function CharacterPage() {
                     <div key={key} data-drop={drop} onClick={() => eq && setSel(sel===`slot_${key}`?null:`slot_${key}`)} title={label}
                       style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
                       <div style={{ width:60, height:60, background:isHover?"#1a2a1a":eq?`${rc}22`:"#0a0a14", border:`2px solid ${isHover?"#4ade80":sel===`slot_${key}`?"#a78bfa":rc}`, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, cursor:eq?"pointer":"default", position:"relative", boxShadow:eq?`0 0 8px ${rc}66`:"none" }}>
-                        {eq ? eq.icon : <span style={{ fontSize:13, color:FAINT }}>{icon}</span>}
+                        {eq ? (eq.image ? <img src={eq.image} alt="" style={{ width:"75%", height:"75%", objectFit:"contain" }} /> : eq.icon) : <span style={{ fontSize:13, color:FAINT }}>{icon}</span>}
                         {eq?.upgradeLevel > 0 && <div style={{ position:"absolute", top:1, right:2, fontSize:10, color:"#fbbf24", fontWeight:700 }}>+{eq.upgradeLevel}</div>}
                       </div>
                       <div style={{ fontSize:9, color:eq?rc:FAINT, maxWidth:60, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"center" }}>
@@ -271,7 +279,7 @@ export default function CharacterPage() {
                   return (
                     <div key={i} data-drop="special" onClick={() => slot && setSel(sel===`cslot_${i}`?null:`cslot_${i}`)}
                       style={{ width:32, height:32, background:isHover?"#1a2a1a":slot?"#0d0d15":"#0a0a14", border:`1px solid ${isHover?"#4ade80":sel===`cslot_${i}`?"#4ade80":slot?"#4ade8066":"#333350"}`, borderRadius:5, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:slot?"pointer":"default" }}>
-                      {slot ? slot.icon : <span style={{ fontSize:10, color:DIM }}>S{i+1}</span>}
+                      {slot ? (slot.image ? <img src={slot.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain" }} /> : slot.icon) : <span style={{ fontSize:10, color:DIM }}>S{i+1}</span>}
                     </div>
                   );
                 })}
@@ -314,7 +322,11 @@ export default function CharacterPage() {
                     onPointerDown={(e) => beginDrag(e, { kind:"item", itemType:it.type, item:it, icon:it.icon, name:it.name })}
                     onClick={()=>setSel(isSel?null:it.uid)}
                     style={{ touchAction:"none", cursor:"grab", aspectRatio:"1", background:isSel?`${rc}55`:`${rc}30`, border:`2px solid ${isSel?rc:rc+"88"}`, borderRadius:6, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:2, position:"relative", opacity:isEq?0.5:1, boxShadow:isSel?`0 0 8px ${rc}88`:"none" }}>
-                    <div style={{ fontSize:20, lineHeight:1 }}>{it.icon}</div>
+                    {it.image ? (
+                      <img src={it.image} alt="" style={{ width:"75%", height:"75%", objectFit:"contain" }} />
+                    ) : (
+                      <div style={{ fontSize:20, lineHeight:1 }}>{it.icon}</div>
+                    )}
                     {it.upgradeLevel>0 && <div style={{ position:"absolute", top:1, right:3, fontSize:9, color:"#fbbf24", fontWeight:700 }}>+{it.upgradeLevel}</div>}
                     {isEq && <div style={{ position:"absolute", bottom:0, left:0, right:0, fontSize:8, color:"#4ade80", textAlign:"center", background:"rgba(0,0,0,0.75)", borderRadius:"0 0 4px 4px" }}>装備中</div>}
                     <div style={{ position:"absolute", bottom:isEq?9:2, left:3, right:3, height:3, background:rc, borderRadius:1 }} />
@@ -330,7 +342,7 @@ export default function CharacterPage() {
           {sel && !sel.startsWith("slot_") && !sel.startsWith("cslot_") && selItem && (
             <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"rgba(6,6,15,0.97)", border:"1px solid #3a3a55", borderTop:"1px solid #4a4a70", borderRadius:"8px 8px 0 0", padding:"10px 12px", zIndex:10 }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                <span style={{ fontSize:20 }}>{selItem.icon}</span>
+                {selItem.image ? <img src={selItem.image} alt="" style={{ width:24, height:24, objectFit:"contain" }} /> : <span style={{ fontSize:20 }}>{selItem.icon}</span>}
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:11, fontWeight:700, color:"#e8e0d0" }}>{selItem.name}{selItem.upgradeLevel>0&&<span style={{ color:"#fbbf24" }}> +{selItem.upgradeLevel}</span>}</div>
                   <div style={{ fontSize:10, color:RARITY_COLOR[selItem.rarity]||"#888" }}>{RARITY_LABEL[selItem.rarity]}</div>
@@ -379,7 +391,7 @@ export default function CharacterPage() {
             return (
               <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"rgba(6,6,15,0.97)", border:"1px solid #3a3a55", borderTop:"1px solid #4a4a70", borderRadius:"8px 8px 0 0", padding:"10px 12px", zIndex:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                  <span style={{ fontSize:20 }}>{eq.icon}</span>
+                  {eq.image ? <img src={eq.image} alt="" style={{ width:24, height:24, objectFit:"contain" }} /> : <span style={{ fontSize:20 }}>{eq.icon}</span>}
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:11, fontWeight:700, color:"#e8e0d0" }}>{eq.name}{eq.upgradeLevel>0&&<span style={{ color:"#fbbf24" }}> +{eq.upgradeLevel}</span>}</div>
                     <div style={{ fontSize:10, color:RARITY_COLOR[eq.rarity]||"#888" }}>{RARITY_LABEL[eq.rarity]}</div>
@@ -412,7 +424,7 @@ export default function CharacterPage() {
             return (
               <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"rgba(6,6,15,0.97)", border:"1px solid #3a3a55", borderTop:"1px solid #4a4a70", borderRadius:"8px 8px 0 0", padding:"10px 12px", zIndex:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                  <span style={{ fontSize:20 }}>{slot.icon}</span>
+                  {slot.image ? <img src={slot.image} alt="" style={{ width:24, height:24, objectFit:"contain" }} /> : <span style={{ fontSize:20 }}>{slot.icon}</span>}
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:11, fontWeight:700, color:"#e8e0d0" }}>{slot.name}</div>
                     <div style={{ fontSize:10, color:"#4ade80" }}>消耗品スロット {i+1}</div>
