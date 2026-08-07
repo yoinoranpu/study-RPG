@@ -37,6 +37,8 @@ function isValidDrop(payload, dz) {
 }
 
 export default function CharacterPage() {
+  const w = window.innerWidth;
+  const [isMobile, setIsMobile] = useState(w < 768);
   const [tab, setTab] = useState("equip");
   const [sel, setSel] = useState(null);
   const player = usePlayerStore();
@@ -52,6 +54,12 @@ export default function CharacterPage() {
   // スロットを常に4枠・6枠に補正
   const actSlots = [...(activeSkillSlots||[])];  while (actSlots.length < 4) actSlots.push(null);
   const pasSlots = [...(passiveSkillSlots||[])]; while (pasSlots.length < 6) pasSlots.push(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   function unequip(key) {
     const eq = player[key];
@@ -246,8 +254,8 @@ export default function CharacterPage() {
 
       {tab === "equip" && (
         <>
-          <div style={{ display:"flex", gap:0, background:"#080810", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-            <div style={{ padding:"10px 10px", display:"flex", flexDirection:"column", gap:8, minWidth:168 }}>
+          <div style={{ display:"flex", flexDirection:isMobile?"column":"row", gap:0, background:"#080810", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
+            <div style={{ padding:"10px 10px", display:"flex", flexDirection:"column", gap:8, minWidth:isMobile?"auto":168 }}>
               <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                 <span style={{ fontSize:10, color:"#86efac", fontWeight:700 }}>Lv{lv}</span>
                 <div style={{ flex:1, height:3, background:"#0a1a0a", borderRadius:2, overflow:"hidden" }}>
@@ -278,7 +286,7 @@ export default function CharacterPage() {
                   const isHover = dropTarget === "special";
                   return (
                     <div key={i} data-drop="special" onClick={() => slot && setSel(sel===`cslot_${i}`?null:`cslot_${i}`)}
-                      style={{ width:32, height:32, background:isHover?"#1a2a1a":slot?"#0d0d15":"#0a0a14", border:`1px solid ${isHover?"#4ade80":sel===`cslot_${i}`?"#4ade80":slot?"#4ade8066":"#333350"}`, borderRadius:5, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:slot?"pointer":"default" }}>
+                      style={{ width:44, height:44, background:isHover?"#1a2a1a":slot?"#0d0d15":"#0a0a14", border:`1px solid ${isHover?"#4ade80":sel===`cslot_${i}`?"#4ade80":slot?"#4ade8066":"#333350"}`, borderRadius:5, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:slot?"pointer":"default" }}>
                       {slot ? (slot.image ? <img src={slot.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain" }} /> : slot.icon) : <span style={{ fontSize:10, color:DIM }}>S{i+1}</span>}
                     </div>
                   );
@@ -312,7 +320,7 @@ export default function CharacterPage() {
 
           <div style={{ flex:1, overflowY:"auto", padding:"8px 10px" }}>
             <div style={{ fontSize:10, color:DIM, letterSpacing:2, marginBottom:6 }}>ITEM BOX {(itemBox||[]).length}/30 <span style={{ color:"#4a4a6a" }}>（ドラッグでも装備可）</span></div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:4 }}>
+            <div style={{ display:"grid", gridTemplateColumns:`repeat(${isMobile?4:6},1fr)`, gap:4 }}>
               {(itemBox||[]).map(it=>{
                 const rc = RARITY_COLOR[it.rarity]||"#888";
                 const isSel = sel===it.uid;
