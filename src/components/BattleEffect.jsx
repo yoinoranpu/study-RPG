@@ -11,6 +11,13 @@ const rarityFx = (rarity) => {
 export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUpdate, onMonsterHpUpdate, onTurnLog, onSummonUpdate, monsterX, monsterY, playerX, playerY }) {
   const canvasRef = useRef(null);
   const frameRef  = useRef(null);
+  // コールバックは親の再レンダー(タイマーの秒間隔更新など)のたびに新しい関数になるため、
+  // 依存配列に直接入れるとアニメーションループのuseEffectが毎秒再起動してしまう。
+  // refに常に最新版を格納し、ループ内から読むことでuseEffectの再起動を防ぐ。
+  const cbRef = useRef({});
+  useEffect(() => {
+    cbRef.current = { onComplete, onPlayerHpUpdate, onMonsterHpUpdate, onTurnLog, onSummonUpdate };
+  });
   const stateRef  = useRef({
     turnIndex:0, turnTime:0, effects:[],
     playerHitFlash:0, monsterHitFlash:0,
@@ -36,6 +43,7 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
     let lastTime = 0;
 
     const loop = (time) => {
+      const { onComplete, onPlayerHpUpdate, onMonsterHpUpdate, onTurnLog, onSummonUpdate } = cbRef.current;
       const dt = Math.min(time - lastTime, 50);
       lastTime = time;
       const W = canvas.offsetWidth;
@@ -252,7 +260,7 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
 
     frameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [isActive, turns, monsterX, monsterY, playerX, playerY, onComplete, onPlayerHpUpdate, onMonsterHpUpdate, onTurnLog, onSummonUpdate]);
+  }, [isActive, turns, monsterX, monsterY, playerX, playerY]);
 
   return (
     <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%", zIndex:4, pointerEvents:"none" }} />

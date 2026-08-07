@@ -130,6 +130,10 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
   const canvasRef = useRef(null);
   const frameRef  = useRef(null);
   const stateRef  = useRef({ x:null, targetX:null, animFrame:0, reached:false, phase:"enter", phaseTime:0, particles:[], nextBurst:0 });
+  // onReachは親の再レンダーのたびに新しい関数になるため、依存配列に直接入れず
+  // refに最新版を格納してループ内から読む(アニメーションループの不要な再起動を防ぐ)
+  const cbRef = useRef({});
+  useEffect(() => { cbRef.current = { onReach }; });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -138,6 +142,7 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
     let lastTime = 0;
 
     const loop = (time) => {
+      const { onReach } = cbRef.current;
       const dt = Math.min(time - lastTime, 50);
       lastTime = time;
       const W = canvas.offsetWidth;
@@ -204,7 +209,7 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
 
     frameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [eventType, isVisible, onReach]);
+  }, [eventType, isVisible]);
 
   useEffect(() => {
     stateRef.current = { x:null, targetX:null, animFrame:0, reached:false, phase:"enter", phaseTime:0, particles:[], nextBurst:0 };

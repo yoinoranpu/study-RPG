@@ -186,6 +186,10 @@ export default function MonsterSprite({ monsters, isVisible, onReach, floorY }) 
   const canvasRef = useRef(null);
   const frameRef  = useRef(null);
   const stateRef  = useRef({ positions:[], animFrame:0, arrived:false });
+  // onReachは親の再レンダーのたびに新しい関数になるため、依存配列に直接入れず
+  // refに最新版を格納してループ内から読む(アニメーションループの不要な再起動を防ぐ)
+  const cbRef = useRef({});
+  useEffect(() => { cbRef.current = { onReach }; });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -194,6 +198,7 @@ export default function MonsterSprite({ monsters, isVisible, onReach, floorY }) 
     let lastTime = 0;
 
     const loop = (time) => {
+      const { onReach } = cbRef.current;
       const dt = Math.min(time - lastTime, 50);
       lastTime = time;
       const W = canvas.offsetWidth;
@@ -298,7 +303,7 @@ export default function MonsterSprite({ monsters, isVisible, onReach, floorY }) 
 
     frameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [monsters, isVisible, onReach, floorY]);
+  }, [monsters, isVisible, floorY]);
 
   useEffect(() => {
     if (!isVisible) {
