@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
 import ShopTab from "../components/ShopTab";

@@ -68,8 +68,8 @@ function ChestOpenSection({ chests, onAllOpened }) {
                     <span style={{ fontSize:7, marginLeft:4 }}>{BOOK_RARITY_LABEL[chest.book?.rarity]}</span>
                   </span>
                 ) : (
-                  <span style={{ fontSize:10, color: RARITY_COLOR[chest.item?.rarity]||"#e8e0d0" }}>
-                    {chest.item?.icon} {chest.item?.name}
+                  <span style={{ fontSize:10, color: RARITY_COLOR[chest.item?.rarity]||"#e8e0d0", display:"inline-flex", alignItems:"center", gap:4 }}>
+                    {chest.item?.image ? <img src={chest.item.image} alt="" style={{ width:16, height:16, objectFit:"contain" }} /> : chest.item?.icon} {chest.item?.name}
                   </span>
                 )}
               </div>
@@ -100,7 +100,6 @@ export default function DungeonPage({ onBack }) {
 
   const w = window.innerWidth;
   const [isMobile, setIsMobile] = useState(w < 768);
-  const [isTablet, setIsTablet] = useState(w >= 768 && w < 1024);
 
   const [workMin, setWorkMin]     = useState(player.timerWork);
   const [breakMin, setBreakMin]   = useState(player.timerBreak);
@@ -165,7 +164,6 @@ export default function DungeonPage({ onBack }) {
     const handleResize = () => {
       const w = window.innerWidth;
       setIsMobile(w < 768);
-      setIsTablet(w >= 768 && w < 1024);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
