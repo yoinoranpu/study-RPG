@@ -1,8 +1,17 @@
 import { useEffect, useRef } from "react";
+import { CHEST_TYPES } from "../data/chest_table";
+
+// 宝箱は木箱/銀箱/金箱/虹箱それぞれの実イラストを使う（開閉2枚を別々にAI生成すると
+// 同一の箱に見えない事故が起きやすいため、閉じた1枚だけ用意しパーティクル演出で「開いた感」を出す）
+const CHEST_EVENT_DESIGNS = Object.fromEntries(
+  Object.values(CHEST_TYPES).map(ct => [
+    `chest_${ct.id}`,
+    { icon: ct.icon, color: ct.color, image: ct.image, label: `${ct.label}発見！`, kind: "chest" },
+  ])
+);
 
 const EVENT_DESIGNS = {
-  chest:     { icon:"📦", color:"#fbbf24", label:"宝箱発見！",   kind:"chest"   },
-  rare_chest:{ icon:"💜", color:"#a78bfa", label:"レア宝箱！",   kind:"chest"   },
+  ...CHEST_EVENT_DESIGNS,
   trap:      { icon:"⚠",  color:"#fb923c", label:"罠！",         kind:"trap"    },
   heal:      { icon:"💧", color:"#38bdf8", label:"回復の泉",     kind:"ripple"  },
   npc:       { icon:"🧝", color:"#34d399", label:"冒険者に遭遇", kind:"npc"     },
@@ -11,6 +20,18 @@ const EVENT_DESIGNS = {
 };
 
 const ACTION_DURATION = { chest:900, trap:500, ripple:99999, npc:700, sparkle:99999 };
+
+// キャンバス描画用の画像プリロードキャッシュ（モジュールスコープでセッション中1回だけ読み込む）
+const imageCache = {};
+function getCachedImage(src) {
+  if (!src) return null;
+  if (!imageCache[src]) {
+    const img = new Image();
+    img.src = src;
+    imageCache[src] = img;
+  }
+  return imageCache[src];
+}
 
 function spawnBurst(particles, x, y, color, count, type) {
   for (let i = 0; i < count; i++) {
@@ -113,11 +134,18 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
     }
   }
 
-  ctx.font = "48px serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
   if (phase === "trap-shake") ctx.translate((Math.random() - 0.5) * 6, 0);
-  ctx.fillText(design.icon, 0, 0);
+  const img = design.image ? getCachedImage(design.image) : null;
+  if (img && img.complete && img.naturalWidth > 0) {
+    const drawW = 66;
+    const drawH = drawW * (img.naturalHeight / img.naturalWidth);
+    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+  } else {
+    ctx.font = "48px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(design.icon, 0, 0);
+  }
   ctx.restore();
 
   ctx.font = "bold 13px monospace";
@@ -157,7 +185,7 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
         return;
       }
       const s = stateRef.current;
-      const design = EVENT_DESIGNS[eventType] || EVENT_DESIGNS.chest;
+      const design = EVENT_DESIGNS[eventType] || EVENT_DESIGNS.chest_common;
 
       if (s.x === null) {
         s.x = -80;

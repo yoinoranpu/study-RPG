@@ -48,17 +48,31 @@ function ChestOpenSection({ chests, onAllOpened }) {
     <div style={{ width:"100%", maxWidth:320 }}>
       <div style={{ fontSize:8, color:"#fbbf24", letterSpacing:2, marginBottom:8 }}>宝箱 {current}/{chests.length}</div>
       <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:10, justifyContent:"center" }}>
-        {chests.map((chest, i) => (
-          <div key={i} style={{ fontSize: i < current ? 24 : 36, opacity: i < current ? 0.3 : 1, transition:"all 0.3s" }}>
-            {i < current ? "📭" : chest.chestType?.icon || "📦"}
-          </div>
-        ))}
+        {chests.map((chest, i) => {
+          const isOpened = i < current;
+          return (
+            <div key={i} style={{ position:"relative", width:36, height:36, opacity:isOpened?0.35:1, filter:isOpened?"grayscale(1)":"none", transition:"all 0.3s" }}>
+              {chest.chestType?.image ? (
+                <img src={chest.chestType.image} alt="" style={{ width:"100%", height:"100%", objectFit:"contain" }} />
+              ) : (
+                <div style={{ fontSize:32, textAlign:"center", lineHeight:1 }}>{chest.chestType?.icon || "📦"}</div>
+              )}
+              {isOpened && (
+                <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, color:"#4ade80", fontWeight:700, textShadow:"0 0 3px #000" }}>✓</div>
+              )}
+            </div>
+          );
+        })}
       </div>
       {opened.length > 0 && (
         <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:8 }}>
           {opened.map((chest, i) => (
             <div key={i} style={{ background:"#0d0d15", border:`1px solid ${chest.chestType?.color||"#2a2a3a"}44`, borderRadius:4, padding:"6px 10px", display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:18 }}>{chest.chestType?.icon || "📦"}</span>
+              {chest.chestType?.image ? (
+                <img src={chest.chestType.image} alt="" style={{ width:22, height:22, objectFit:"contain", flexShrink:0 }} />
+              ) : (
+                <span style={{ fontSize:18 }}>{chest.chestType?.icon || "📦"}</span>
+              )}
               <div style={{ flex:1 }}>
                 {chest.type === "gold" ? (
                   <span style={{ fontSize:10, color:"#fbbf24" }}>+{chest.gold}G</span>
@@ -358,8 +372,8 @@ export default function DungeonPage({ onBack }) {
       sessionChests.current.push(result);
       setSessionChestsDisplay([...sessionChests.current]);
       setMonsterVisible(false); setCurrentMonsters([]);
-      setCurrentEvent("chest"); setEventVisible(true); setMonsterArrived(false);
-      showEventPopup({ icon: result.chestType?.icon||"📦", label: result.chestType?.label||"宝箱発見", text: popupText, color: result.chestType?.color||"#fbbf24" }, 7000);
+      setCurrentEvent(`chest_${result.chestType?.id || "common"}`); setEventVisible(true); setMonsterArrived(false);
+      showEventPopup({ icon: result.chestType?.icon||"📦", image: result.chestType?.image, label: result.chestType?.label||"宝箱発見", text: popupText, color: result.chestType?.color||"#fbbf24" }, 7000);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 7000);
 
     } else if (evType === "trap") {
@@ -852,7 +866,11 @@ export default function DungeonPage({ onBack }) {
 
       {eventPopup && (
         <div style={{ position:"absolute", top:isMobile?66:96, left:16, right:16, maxWidth:360, margin:"0 auto", background:"rgba(0,0,0,0.92)", border:`1px solid ${eventPopup.color}88`, borderRadius:8, padding:"10px 14px", fontFamily:"monospace", zIndex:6, display:"flex", alignItems:"center", gap:10, boxShadow:`0 0 16px ${eventPopup.color}33` }}>
-          <span style={{ fontSize:24, flexShrink:0 }}>{eventPopup.icon}</span>
+          {eventPopup.image ? (
+            <img src={eventPopup.image} alt="" style={{ width:28, height:28, objectFit:"contain", flexShrink:0 }} />
+          ) : (
+            <span style={{ fontSize:24, flexShrink:0 }}>{eventPopup.icon}</span>
+          )}
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ fontSize:9, color:eventPopup.color, letterSpacing:1, marginBottom:2 }}>{eventPopup.label}</div>
             <div style={{ fontSize:11, color:"#e8e0d0", lineHeight:1.4 }}>{eventPopup.text}</div>

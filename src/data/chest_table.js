@@ -8,10 +8,10 @@ import { makeBook, rollBookRarity, rollBookId } from "./skills";
 
 // ─── 宝箱レアリティ定義 ───
 export const CHEST_TYPES = {
-  common:   { id:"common",   label:"木箱",   color:"#a0a0a0", icon:"📦" },
-  uncommon: { id:"uncommon", label:"銀箱",   color:"#4ade80", icon:"🟩" },
-  rare:     { id:"rare",     label:"金箱",   color:"#fbbf24", icon:"🟨" },
-  epic:     { id:"epic",     label:"虹箱",   color:"#a78bfa", icon:"🌟" },
+  common:   { id:"common",   label:"木箱",   color:"#a0a0a0", icon:"📦", image:"/assets/images/木箱.png" },
+  uncommon: { id:"uncommon", label:"銀箱",   color:"#4ade80", icon:"🟩", image:"/assets/images/銀箱.png" },
+  rare:     { id:"rare",     label:"金箱",   color:"#fbbf24", icon:"🟨", image:"/assets/images/金箱.png" },
+  epic:     { id:"epic",     label:"虹箱",   color:"#a78bfa", icon:"🌟", image:"/assets/images/虹箱.png" },
 };
 
 // ─── 宝箱レアリティ抽選確率 ───
