@@ -14,63 +14,90 @@ function getCachedImage(src) {
 
 // パーツ分けイラストを持つモンスター（まずはフェンリルで検証）。
 // 体・前脚・後脚・尻尾を別々に描画し、脚の付け根を軸に回転させて歩行アニメーションを作る。
-// 左右の脚は同じ画像をctx.scale(-1,1)で反転して使い回す（別々に用意する必要はない）。
+// 前脚・後脚それぞれ1枚しかないので、同じ画像を「奥側(やや小さく・位置ズラし)」「手前側」の
+// 2回描画することで4本脚に見せる。左右の複製画像を新たに用意する必要はない。
 // anchor座標は体画像のサイズに対する比率（0〜1）。見た目がズレていたら数値を微調整する。
+// faceRight: 元イラストの顔の向き。falseなら描画時に左右反転してプレイヤー側(右)を向かせる。
 const MULTIPART_MONSTERS = {
   fenrir: {
     body:     "/assets/images/フェンリル_胴体.png",
     frontLeg: "/assets/images/フェンリル_前脚.png",
     backLeg:  "/assets/images/フェンリル_後脚.png",
     tail:     "/assets/images/フェンリル_尻尾.png",
-    frontLegAnchor: { x:0.28, y:0.60 },
-    backLegAnchor:  { x:0.76, y:0.66 },
-    tailAnchor:     { x:0.90, y:0.40 },
+    faceRight: false,
+    // 体画像内でのアタッチ位置（お腹のライン＝脚の付け根の高さに合わせる）
+    frontLegAnchor: { x:0.33, y:0.80 },
+    backLegAnchor:  { x:0.73, y:0.84 },
+    tailAnchor:     { x:0.86, y:0.36 },
+    // 各パーツ画像自身の中での回転軸（付け根の位置。画像を見て調整する）
+    frontLegPivot: { x:0.50, y:0.02 },
+    backLegPivot:  { x:0.34, y:0.05 },
+    tailPivot:     { x:0.80, y:0.10 },
   },
 };
 
-function drawPart(ctx, img, anchorX, anchorY, scale, angle, pivotFracX, pivotFracY, flipX) {
+function drawPart(ctx, img, anchorX, anchorY, scale, angle, pivotFracX, pivotFracY) {
   if (!img || !img.complete || !img.naturalWidth) return;
   const w = img.naturalWidth * scale;
   const h = img.naturalHeight * scale;
   ctx.save();
   ctx.translate(anchorX, anchorY);
-  if (flipX) ctx.scale(-1, 1);
   ctx.rotate(angle);
   ctx.drawImage(img, -w * pivotFracX, -h * pivotFracY, w, h);
   ctx.restore();
 }
 
 // 戻り値: 描画できたらtrue、画像がまだ読み込み中ならfalse（呼び出し側で通常描画にフォールバック）
-function drawMultipartCreature(ctx, x, groundY, size, frame, config) {
+function drawMultipartCreature(ctx, x, groundY, size, frame, walking, config) {
   const body = getCachedImage(config.body);
   if (!body || !body.complete || !body.naturalWidth) return false;
 
-  const bodyScale = (size * 2.4) / body.naturalWidth;
+  ctx.save();
+  if (!config.faceRight) {
+    // 体を軸に左右反転（プレイヤーは画面右側にいるため、頭を右に向ける）
+    ctx.translate(x, 0);
+    ctx.scale(-1, 1);
+    ctx.translate(-x, 0);
+  }
+
+  const bodyScale = (size * 1.5) / body.naturalWidth;
   const bodyW = body.naturalWidth * bodyScale;
   const bodyH = body.naturalHeight * bodyScale;
   const bodyX = x - bodyW * 0.45;
-  const bodyY = groundY - bodyH * 0.92;
+  const bodyY = groundY - bodyH * 0.95;
 
+  // 歩行中はしっかり脚を振る、到着後(戦闘待機中)はごくわずかな揺れだけにする
+  const swingAmp = walking ? 1 : 0.12;
   const walkPhase = frame * 0.08;
-  const frontSwing = Math.sin(walkPhase) * 0.3;
-  const backSwing  = Math.sin(walkPhase + Math.PI) * 0.26;
+  const frontSwing = Math.sin(walkPhase) * 0.3 * swingAmp;
+  const backSwing  = Math.sin(walkPhase + Math.PI) * 0.26 * swingAmp;
   const tailSway   = Math.sin(frame * 0.03) * 0.15;
 
   const frontLeg = getCachedImage(config.frontLeg);
   const backLeg  = getCachedImage(config.backLeg);
   const tail     = getCachedImage(config.tail);
 
-  const anchorPx = (a) => ({ x: bodyX + bodyW * a.x, y: bodyY + bodyH * a.y });
-  const fAnchor = anchorPx(config.frontLegAnchor);
-  const bAnchor = anchorPx(config.backLegAnchor);
+  const anchorPx = (a, dx = 0, dy = 0) => ({ x: bodyX + bodyW * a.x + dx, y: bodyY + bodyH * a.y + dy });
+  // 奥側の脚は少し体の中心寄り・少し小さく描いて奥行きを出す（反対位相で振ることで4本脚に見せる）
+  const fFar  = anchorPx(config.frontLegAnchor, -bodyW * 0.05, -bodyH * 0.02);
+  const fNear = anchorPx(config.frontLegAnchor);
+  const bFar  = anchorPx(config.backLegAnchor, -bodyW * 0.05, -bodyH * 0.02);
+  const bNear = anchorPx(config.backLegAnchor);
   const tAnchor = anchorPx(config.tailAnchor);
 
-  // 奥側の後脚・尻尾 → 体 → 手前側の前脚、の順で重ねて奥行き感を出す
-  drawPart(ctx, backLeg, bAnchor.x, bAnchor.y, bodyScale, backSwing, 0.5, 0.05);
-  drawPart(ctx, tail, tAnchor.x, tAnchor.y, bodyScale, tailSway, 0.15, 0.3);
-  ctx.drawImage(body, bodyX, bodyY, bodyW, bodyH);
-  drawPart(ctx, frontLeg, fAnchor.x, fAnchor.y, bodyScale, frontSwing, 0.5, 0.05);
+  const fPivot = config.frontLegPivot || { x:0.5, y:0.02 };
+  const bPivot = config.backLegPivot  || { x:0.5, y:0.02 };
+  const tPivot = config.tailPivot     || { x:0.5, y:0.1 };
 
+  // 奥側の脚・尻尾 → 体 → 手前側の脚、の順で重ねて奥行き感を出す
+  drawPart(ctx, backLeg, bFar.x, bFar.y, bodyScale * 0.92, -backSwing, bPivot.x, bPivot.y);
+  drawPart(ctx, frontLeg, fFar.x, fFar.y, bodyScale * 0.92, -frontSwing, fPivot.x, fPivot.y);
+  drawPart(ctx, tail, tAnchor.x, tAnchor.y, bodyScale, tailSway, tPivot.x, tPivot.y);
+  ctx.drawImage(body, bodyX, bodyY, bodyW, bodyH);
+  drawPart(ctx, backLeg, bNear.x, bNear.y, bodyScale, backSwing, bPivot.x, bPivot.y);
+  drawPart(ctx, frontLeg, fNear.x, fNear.y, bodyScale, frontSwing, fPivot.x, fPivot.y);
+
+  ctx.restore();
   return true;
 }
 
@@ -328,7 +355,7 @@ export default function MonsterSprite({ monsters, isVisible, onReach, floorY }) 
         ctx.save();
         ctx.globalAlpha = 1;
         const multipart = MULTIPART_MONSTERS[monster.id];
-        const drewMultipart = multipart && drawMultipartCreature(ctx, p.x, py, size, s.animFrame + i * 20, multipart);
+        const drewMultipart = multipart && drawMultipartCreature(ctx, p.x, py, size, s.animFrame + i * 20, p.x < p.targetX, multipart);
         if (!drewMultipart && drawFn) drawFn(ctx, p.x, py, size, design.color, s.animFrame + i * 20);
         ctx.restore();
         ctx.globalAlpha = 1;
