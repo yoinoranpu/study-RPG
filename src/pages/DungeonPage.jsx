@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { rollEventType, rollNpcEvent, rollChest } from "../systems/events";
-import { pickMonsters, getBossData, generateBoss } from "../systems/monsters";
+import { pickMonsters, getBossData, generateBoss, generateMonster, MONSTER_BASE } from "../systems/monsters";
 import { simulateBattle } from "../systems/battle";
 import TimerSettings from "../components/TimerSettings";
 import { calcPlayerStats } from "../systems/playerStats";
@@ -337,6 +337,24 @@ export default function DungeonPage({ onBack }) {
     setMapping(mappingRef.current);
   }, [addLog, updatePlayer, dungeonId]);
 
+  // 通常の戦闘イベントとDEBUG強制召喚の両方から使う共通処理
+  const spawnBattle = useCallback((monsters) => {
+    addLog(`⚔ ${monsters.map(m=>m.displayName).join("と")}が現れた！`, "#f87171");
+    setCurrentEvent(null); setEventVisible(false);
+    setCurrentMonsters(monsters); setMonsterVisible(true); setMonsterArrived(false);
+    const result = simulateBattle(buildPlayerStats(), monsters, { sessionScale: sessionScaleRef.current });
+    pendingBattleRef.current = { result, monsters, startHp: Math.max(1, hpRef.current) };
+  }, [addLog, buildPlayerStats]);
+
+  // DEBUG専用：指定したモンスターを即座に戦闘に召喚する（パーツ分けイラスト等の目視確認用）
+  const debugSpawnMonster = useCallback((monsterId) => {
+    if (!monsterId) return;
+    const base = MONSTER_BASE.find(m => m.id === monsterId);
+    if (!base) return;
+    const monster = generateMonster(base, globalDepth(dungeonId, floorRef.current), luckBuffRef.current);
+    spawnBattle([monster]);
+  }, [dungeonId, spawnBattle]);
+
   const fireEvent = useCallback(() => {
     if (eventCountRef.current >= BASE_MAX_EVENTS) return;
     const evType = rollEventType();
@@ -345,11 +363,7 @@ export default function DungeonPage({ onBack }) {
 
     if (evType === "battle") {
       const monsters = pickMonsters(globalDepth(dungeonId, floorRef.current), dungeonId, luckBuffRef.current);
-      addLog(`⚔ ${monsters.map(m=>m.displayName).join("と")}が現れた！`, "#f87171");
-      setCurrentEvent(null); setEventVisible(false);
-      setCurrentMonsters(monsters); setMonsterVisible(true); setMonsterArrived(false);
-      const result = simulateBattle(buildPlayerStats(), monsters, { sessionScale: sessionScaleRef.current });
-      pendingBattleRef.current = { result, monsters, startHp: Math.max(1, hpRef.current) };
+      spawnBattle(monsters);
 
     } else if (evType === "chest") {
       const chestRarity = rollChest();
@@ -411,7 +425,7 @@ export default function DungeonPage({ onBack }) {
       showEventPopup({ icon: ev.icon, label: EVENT_KIND_LABEL[kind] || "?", text: ev.text, color: ev.color }, duration);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, duration);
     }
-  }, [addLog, addMapping, player, buildPlayerStats, dungeonId, showEventPopup]);
+  }, [addLog, addMapping, player, dungeonId, showEventPopup, spawnBattle]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -849,6 +863,11 @@ export default function DungeonPage({ onBack }) {
           <div style={{ display:"flex", gap:6 }}>
             <button onClick={fireEvent} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #a78bfa44", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:9, fontFamily:"monospace" }}>DEBUG: イベント</button>
             <button onClick={() => addMapping(25)} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #60a5fa44", borderRadius:4, cursor:"pointer", color:"#60a5fa", fontSize:9, fontFamily:"monospace" }}>DEBUG: マップ+25%</button>
+            <select onChange={(e) => { debugSpawnMonster(e.target.value); e.target.value=""; }} defaultValue=""
+              style={{ padding:"6px 8px", background:"#1a0a1a", border:"1px solid #4ade8044", borderRadius:4, cursor:"pointer", color:"#4ade80", fontSize:9, fontFamily:"monospace" }}>
+              <option value="" disabled>DEBUG: モンスター召喚</option>
+              {MONSTER_BASE.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
           </div>
         )}
 

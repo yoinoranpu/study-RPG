@@ -1,5 +1,79 @@
 import { useEffect, useRef } from "react";
 
+// キャンバス描画用の画像プリロードキャッシュ（モジュールスコープでセッション中1回だけ読み込む）
+const imageCache = {};
+function getCachedImage(src) {
+  if (!src) return null;
+  if (!imageCache[src]) {
+    const img = new Image();
+    img.src = src;
+    imageCache[src] = img;
+  }
+  return imageCache[src];
+}
+
+// パーツ分けイラストを持つモンスター（まずはフェンリルで検証）。
+// 体・前脚・後脚・尻尾を別々に描画し、脚の付け根を軸に回転させて歩行アニメーションを作る。
+// 左右の脚は同じ画像をctx.scale(-1,1)で反転して使い回す（別々に用意する必要はない）。
+// anchor座標は体画像のサイズに対する比率（0〜1）。見た目がズレていたら数値を微調整する。
+const MULTIPART_MONSTERS = {
+  fenrir: {
+    body:     "/assets/images/フェンリル_胴体.png",
+    frontLeg: "/assets/images/フェンリル_前脚.png",
+    backLeg:  "/assets/images/フェンリル_後脚.png",
+    tail:     "/assets/images/フェンリル_尻尾.png",
+    frontLegAnchor: { x:0.28, y:0.60 },
+    backLegAnchor:  { x:0.76, y:0.66 },
+    tailAnchor:     { x:0.90, y:0.40 },
+  },
+};
+
+function drawPart(ctx, img, anchorX, anchorY, scale, angle, pivotFracX, pivotFracY, flipX) {
+  if (!img || !img.complete || !img.naturalWidth) return;
+  const w = img.naturalWidth * scale;
+  const h = img.naturalHeight * scale;
+  ctx.save();
+  ctx.translate(anchorX, anchorY);
+  if (flipX) ctx.scale(-1, 1);
+  ctx.rotate(angle);
+  ctx.drawImage(img, -w * pivotFracX, -h * pivotFracY, w, h);
+  ctx.restore();
+}
+
+// 戻り値: 描画できたらtrue、画像がまだ読み込み中ならfalse（呼び出し側で通常描画にフォールバック）
+function drawMultipartCreature(ctx, x, groundY, size, frame, config) {
+  const body = getCachedImage(config.body);
+  if (!body || !body.complete || !body.naturalWidth) return false;
+
+  const bodyScale = (size * 2.4) / body.naturalWidth;
+  const bodyW = body.naturalWidth * bodyScale;
+  const bodyH = body.naturalHeight * bodyScale;
+  const bodyX = x - bodyW * 0.45;
+  const bodyY = groundY - bodyH * 0.92;
+
+  const walkPhase = frame * 0.08;
+  const frontSwing = Math.sin(walkPhase) * 0.3;
+  const backSwing  = Math.sin(walkPhase + Math.PI) * 0.26;
+  const tailSway   = Math.sin(frame * 0.03) * 0.15;
+
+  const frontLeg = getCachedImage(config.frontLeg);
+  const backLeg  = getCachedImage(config.backLeg);
+  const tail     = getCachedImage(config.tail);
+
+  const anchorPx = (a) => ({ x: bodyX + bodyW * a.x, y: bodyY + bodyH * a.y });
+  const fAnchor = anchorPx(config.frontLegAnchor);
+  const bAnchor = anchorPx(config.backLegAnchor);
+  const tAnchor = anchorPx(config.tailAnchor);
+
+  // 奥側の後脚・尻尾 → 体 → 手前側の前脚、の順で重ねて奥行き感を出す
+  drawPart(ctx, backLeg, bAnchor.x, bAnchor.y, bodyScale, backSwing, 0.5, 0.05);
+  drawPart(ctx, tail, tAnchor.x, tAnchor.y, bodyScale, tailSway, 0.15, 0.3);
+  ctx.drawImage(body, bodyX, bodyY, bodyW, bodyH);
+  drawPart(ctx, frontLeg, fAnchor.x, fAnchor.y, bodyScale, frontSwing, 0.5, 0.05);
+
+  return true;
+}
+
 const TRIBE_DESIGNS = {
   粘体:   { color:"#4ade80", body:"slime"  },
   獣:     { color:"#fb923c", body:"beast"  },
@@ -253,7 +327,9 @@ export default function MonsterSprite({ monsters, isVisible, onReach, floorY }) 
 
         ctx.save();
         ctx.globalAlpha = 1;
-        if (drawFn) drawFn(ctx, p.x, py, size, design.color, s.animFrame + i * 20);
+        const multipart = MULTIPART_MONSTERS[monster.id];
+        const drewMultipart = multipart && drawMultipartCreature(ctx, p.x, py, size, s.animFrame + i * 20, multipart);
+        if (!drewMultipart && drawFn) drawFn(ctx, p.x, py, size, design.color, s.animFrame + i * 20);
         ctx.restore();
         ctx.globalAlpha = 1;
 
