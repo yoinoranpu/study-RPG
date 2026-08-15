@@ -54,7 +54,7 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
                   style={{ aspectRatio:"1", position:"relative", background:isSel?`${rc}55`:maxed?"#12121a":`${rc}30`, border:`2px solid ${isSel?rc:maxed?"#3a3a55":rc+"88"}`, borderRadius:8, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:maxed?"default":"pointer", padding:3, opacity:maxed?0.5:1, boxShadow:isSel?`0 0 10px ${rc}aa`:maxed?"none":`0 0 5px ${rc}44` }}>
                   {maxed && <div style={{ position:"absolute", top:2, right:3, fontSize:7, color:"#fbbf24", fontWeight:700 }}>MAX</div>}
                   {it.image ? (
-                    <img src={it.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:maxed?"grayscale(0.6)":"none" }} />
+                    <img src={it.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:`${it.tint||""} ${maxed?"grayscale(0.6)":""}`.trim()||"none" }} />
                   ) : (
                     <div style={{ fontSize:22, filter:maxed?"grayscale(0.6)":"none" }}>{getIcon(it)}</div>
                   )}
@@ -322,7 +322,7 @@ export default function ForgeTab() {
               <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
               <div style={{ background:"#0d0d15", border:"1px solid #3a3a55", borderRadius:8, padding:12 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                  {upgradeItem.image ? <img src={upgradeItem.image} alt="" style={{ width:26, height:26, objectFit:"contain" }} /> : <span style={{ fontSize:22 }}>{upgradeItem.icon}</span>}
+                  {upgradeItem.image ? <img src={upgradeItem.image} alt="" style={{ width:26, height:26, objectFit:"contain", filter:upgradeItem.tint||"none" }} /> : <span style={{ fontSize:22 }}>{upgradeItem.icon}</span>}
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>
                       {upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span>

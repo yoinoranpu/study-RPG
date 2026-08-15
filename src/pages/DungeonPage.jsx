@@ -9,6 +9,9 @@ import DungeonCanvas from "../components/DungeonCanvas";
 import PlayerSprite from "../components/PlayerSprite";
 import SummonSprite from "../components/SummonSprite";
 import MonsterSprite from "../components/MonsterSprite";
+import RigEditor from "../components/RigEditor";
+import FloatRigEditor from "../components/FloatRigEditor";
+import { MULTIPART_MONSTERS, FLOAT_RIG_MONSTERS, GROUND_RIG_MONSTERS } from "../data/multipartMonsters";
 import EventSprite from "../components/EventSprite";
 import BattleEffect from "../components/BattleEffect";
 import { calcExp, calcGold, calcFloorProgress, MAPPING_PER_SET, expToLevel, LEVEL_UNLOCKS } from "../systems/timer";
@@ -83,7 +86,7 @@ function ChestOpenSection({ chests, onAllOpened }) {
                   </span>
                 ) : (
                   <span style={{ fontSize:10, color: RARITY_COLOR[chest.item?.rarity]||"#e8e0d0", display:"inline-flex", alignItems:"center", gap:4 }}>
-                    {chest.item?.image ? <img src={chest.item.image} alt="" style={{ width:16, height:16, objectFit:"contain" }} /> : chest.item?.icon} {chest.item?.name}
+                    {chest.item?.image ? <img src={chest.item.image} alt="" style={{ width:16, height:16, objectFit:"contain", filter:chest.item?.tint||"none" }} /> : chest.item?.icon} {chest.item?.name}
                   </span>
                 )}
               </div>
@@ -114,6 +117,8 @@ export default function DungeonPage({ onBack }) {
 
   const w = window.innerWidth;
   const [isMobile, setIsMobile] = useState(w < 768);
+  const [rigEditorId, setRigEditorId] = useState(null);
+  const [floatRigEditorId, setFloatRigEditorId] = useState(null);
 
   const [workMin, setWorkMin]     = useState(player.timerWork);
   const [breakMin, setBreakMin]   = useState(player.timerBreak);
@@ -868,7 +873,29 @@ export default function DungeonPage({ onBack }) {
               <option value="" disabled>DEBUG: モンスター召喚</option>
               {MONSTER_BASE.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
+            <select onChange={(e) => { const id = e.target.value; if (id) { setRigEditorId(id); debugSpawnMonster(id); } e.target.value=""; }} defaultValue=""
+              style={{ padding:"6px 8px", background:"#1a0a1a", border:"1px solid #4ade8044", borderRadius:4, cursor:"pointer", color:"#4ade80", fontSize:9, fontFamily:"monospace" }}>
+              <option value="" disabled>DEBUG: リグエディタ</option>
+              {Object.keys(MULTIPART_MONSTERS).map(id => <option key={id} value={id}>{id}</option>)}
+            </select>
+            <select onChange={(e) => { const id = e.target.value; if (id) { setFloatRigEditorId(id); debugSpawnMonster(id); } e.target.value=""; }} defaultValue=""
+              style={{ padding:"6px 8px", background:"#1a0a1a", border:"1px solid #4ade8044", borderRadius:4, cursor:"pointer", color:"#4ade80", fontSize:9, fontFamily:"monospace" }}>
+              <option value="" disabled>DEBUG: 汎用リグエディタ</option>
+              {Object.keys(FLOAT_RIG_MONSTERS).map(id => <option key={id} value={id}>{id}(浮遊)</option>)}
+              {Object.keys(GROUND_RIG_MONSTERS).map(id => <option key={id} value={id}>{id}(地上)</option>)}
+            </select>
           </div>
+        )}
+
+        {DEBUG && rigEditorId && (
+          <RigEditor config={MULTIPART_MONSTERS[rigEditorId]} onClose={() => setRigEditorId(null)} />
+        )}
+
+        {DEBUG && floatRigEditorId && (
+          <FloatRigEditor
+            config={FLOAT_RIG_MONSTERS[floatRigEditorId] || GROUND_RIG_MONSTERS[floatRigEditorId]}
+            onClose={() => setFloatRigEditorId(null)}
+          />
         )}
 
         <div style={{ position:"absolute", top:60, right:8, width:180, maxHeight:"40vh", display:"flex", flexDirection:"column", gap:2, zIndex:2, pointerEvents:"none" }}>

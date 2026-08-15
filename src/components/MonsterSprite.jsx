@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { MULTIPART_MONSTERS, SIMPLE_IMAGE_MONSTERS, GROUP_IMAGE_MONSTERS, SWAY_IMAGE_MONSTERS, FLOAT_IMAGE_MONSTERS, FLOAT_RIG_MONSTERS, GROUND_RIG_MONSTERS } from "../data/multipartMonsters";
 
 // キャンバス描画用の画像プリロードキャッシュ（モジュールスコープでセッション中1回だけ読み込む）
 const imageCache = {};
@@ -12,45 +13,30 @@ function getCachedImage(src) {
   return imageCache[src];
 }
 
-// パーツ分けイラストを持つモンスター（まずはフェンリルで検証）。
-// 体・前脚・後脚・尻尾を別々に描画し、脚の付け根を軸に回転させて歩行アニメーションを作る。
-// 前脚・後脚それぞれ1枚しかないので、同じ画像を「奥側(やや小さく・位置ズラし)」「手前側」の
-// 2回描画することで4本脚に見せる。左右の複製画像を新たに用意する必要はない。
-// anchor座標は体画像のサイズに対する比率（0〜1）。見た目がズレていたら数値を微調整する。
-// faceRight: 元イラストの顔の向き。falseなら描画時に左右反転してプレイヤー側(右)を向かせる。
-const MULTIPART_MONSTERS = {
-  fenrir: {
-    body:     "/assets/images/フェンリル_胴体.png",
-    frontLeg: "/assets/images/フェンリル_前脚.png",
-    backLeg:  "/assets/images/フェンリル_後脚.png",
-    tail:     "/assets/images/フェンリル_尻尾.png",
-    faceRight: false,
-    // 体画像内でのアタッチ位置（お腹のライン＝脚の付け根の高さに合わせる）
-    frontLegAnchor: { x:0.33, y:0.80 },
-    backLegAnchor:  { x:0.73, y:0.84 },
-    tailAnchor:     { x:0.86, y:0.36 },
-    // 各パーツ画像自身の中での回転軸（付け根の位置。画像を見て調整する）
-    frontLegPivot: { x:0.50, y:0.02 },
-    backLegPivot:  { x:0.34, y:0.05 },
-    tailPivot:     { x:0.80, y:0.10 },
-  },
-};
+// 画像の「幅」ではなく「長い方の辺」がsize*kに収まるようスケールを計算する。
+// 縦長の立ち絵（人型キャラなど）を幅基準でスケールすると身長が異常に伸びて画面からはみ出すため、
+// 常に見た目の一番大きい辺を基準にする（CSSのobject-fit:containに近い考え方）。
+function fitScale(size, img, k) {
+  return (size * k) / Math.max(img.naturalWidth, img.naturalHeight);
+}
 
-function drawPart(ctx, img, anchorX, anchorY, scale, angle, pivotFracX, pivotFracY) {
+function drawPart(ctx, img, anchorX, anchorY, scale, angle, pivotFracX, pivotFracY, mirror = false) {
   if (!img || !img.complete || !img.naturalWidth) return;
   const w = img.naturalWidth * scale;
   const h = img.naturalHeight * scale;
   ctx.save();
   ctx.translate(anchorX, anchorY);
   ctx.rotate(angle);
+  if (mirror) ctx.scale(-1, 1);
   ctx.drawImage(img, -w * pivotFracX, -h * pivotFracY, w, h);
   ctx.restore();
 }
 
-// 戻り値: 描画できたらtrue、画像がまだ読み込み中ならfalse（呼び出し側で通常描画にフォールバック）
+// 戻り値: 描画できたらスプライト最上部のY座標（HPバー配置に使う）、
+// 画像がまだ読み込み中ならnull（呼び出し側で通常描画にフォールバック）
 function drawMultipartCreature(ctx, x, groundY, size, frame, walking, config) {
   const body = getCachedImage(config.body);
-  if (!body || !body.complete || !body.naturalWidth) return false;
+  if (!body || !body.complete || !body.naturalWidth) return null;
 
   ctx.save();
   if (!config.faceRight) {
@@ -60,7 +46,7 @@ function drawMultipartCreature(ctx, x, groundY, size, frame, walking, config) {
     ctx.translate(-x, 0);
   }
 
-  const bodyScale = (size * 1.5) / body.naturalWidth;
+  const bodyScale = fitScale(size, body, 1.5);
   const bodyW = body.naturalWidth * bodyScale;
   const bodyH = body.naturalHeight * bodyScale;
   const bodyX = x - bodyW * 0.45;
@@ -98,7 +84,158 @@ function drawMultipartCreature(ctx, x, groundY, size, frame, walking, config) {
   drawPart(ctx, frontLeg, fNear.x, fNear.y, bodyScale, frontSwing, fPivot.x, fPivot.y);
 
   ctx.restore();
-  return true;
+  return bodyY;
+}
+
+// パーツ分け不要の1枚絵モンスター（粘体系）。潰れ・伸び・バウンドはcanvas変形だけで表現する。
+// 戻り値: 描画できたらスプライト最上部のY座標、画像がまだ読み込み中ならnull
+function drawImageCreature(ctx, src, x, groundY, size, frame, phaseOffset = 0) {
+  const img = getCachedImage(src);
+  if (!img || !img.complete || !img.naturalWidth) return null;
+  const amp = size * 0.08;
+  const phase = Math.sin(frame * 0.05 + phaseOffset);
+  const bounce = phase * amp;
+  const squish = 1 + phase * 0.1;
+  const baseScale = fitScale(size, img, 1.7);
+  const w = img.naturalWidth * baseScale * squish;
+  const h = (img.naturalHeight * baseScale) / squish;
+  const bottom = groundY + size * 0.22 - (amp - bounce);
+  const top = bottom - h;
+  ctx.drawImage(img, x - w / 2, top, w, h);
+  return top;
+}
+
+// パーツ分け不要の1枚絵モンスター（植物系）。脚を持たず歩かないので、根元付近のpivotを軸に
+// 画像全体をわずかに回転させるだけ（旧drawPlantの sway = sin(frame*0.03)*0.08 をそのまま流用）。
+function drawSwayCreature(ctx, src, pivot, x, groundY, size, frame) {
+  const img = getCachedImage(src);
+  if (!img || !img.complete || !img.naturalWidth) return null;
+  const sway = Math.sin(frame * 0.03) * 0.08;
+  const baseScale = fitScale(size, img, 1.7);
+  const w = img.naturalWidth * baseScale;
+  const h = img.naturalHeight * baseScale;
+  ctx.save();
+  ctx.translate(x, groundY);
+  ctx.rotate(sway);
+  ctx.drawImage(img, -w * pivot.x, -h * pivot.y, w, h);
+  ctx.restore();
+  // 回転はわずかなので、HPバー配置には無回転時の最上部Yで近似する
+  return groundY - h * pivot.y;
+}
+
+// 複数の1枚絵を同時に描画するモンスター（スライム軍団など）。全パーツの画像が揃うまではnullを返す。
+function drawImageGroup(ctx, parts, x, groundY, size, frame) {
+  const allReady = parts.every(p => {
+    const img = getCachedImage(p.src);
+    return img && img.complete && img.naturalWidth;
+  });
+  if (!allReady) return null;
+  let topY = groundY;
+  parts.forEach(p => {
+    const t = drawImageCreature(ctx, p.src, x + size * (p.dx || 0), groundY, size * (p.scale ?? 1), frame, p.phase || 0);
+    if (t != null) topY = Math.min(topY, t);
+  });
+  return topY;
+}
+
+// パーツ分け不要の1枚絵モンスター（不死系など）。潰れ・伸び・回転なし、上下にフワフワ浮遊するだけ。
+function drawFloatCreature(ctx, src, x, groundY, size, frame) {
+  const img = getCachedImage(src);
+  if (!img || !img.complete || !img.naturalWidth) return null;
+  const float = Math.sin(frame * 0.04) * size * 0.06;
+  const baseScale = fitScale(size, img, 1.7);
+  const w = img.naturalWidth * baseScale;
+  const h = img.naturalHeight * baseScale;
+  const top = groundY - h * 0.85 + float;
+  ctx.drawImage(img, x - w / 2, top, w, h);
+  return top;
+}
+
+// 体は浮遊するだけ・腕や剣などの付属パーツをアンカー+ピボットで取り付けて個別に揺らすモンスター
+// （不死系の骸骨の腕・脚、幽霊の剣など）。歩行はしないため常に浮遊系の揺れになる。
+function drawFloatRig(ctx, x, groundY, size, frame, config) {
+  const body = getCachedImage(config.body);
+  if (!body || !body.complete || !body.naturalWidth) return null;
+
+  const float = Math.sin(frame * 0.04) * size * 0.06;
+  const bodyScale = fitScale(size, body, 1.6);
+  const bodyW = body.naturalWidth * bodyScale;
+  const bodyH = body.naturalHeight * bodyScale;
+  const bodyX = x - bodyW * 0.5;
+  const bodyY = groundY - bodyH * 0.85 + float;
+
+  ctx.save();
+  if (!config.faceRight) {
+    ctx.translate(x, 0); ctx.scale(-1, 1); ctx.translate(-x, 0);
+  }
+
+  const parts = config.parts || [];
+  const drawOne = (p) => {
+    const img = getCachedImage(p.img);
+    if (!img || !img.complete || !img.naturalWidth) return;
+    const anchorX = bodyX + bodyW * p.anchor.x;
+    const anchorY = bodyY + bodyH * p.anchor.y;
+    // mirror:trueのパーツは描画時にscale(-1,1)で反転しているため、同じ回転角では
+    // 視覚上は逆回転になってしまう（鏡像は回転の向きを反転させる）。左右対称に同期して
+    // 揺らすには角度の符号を反転させる必要がある。
+    const rawSway = Math.sin(frame * 0.03 + (p.phase || 0)) * (p.swingAmp ?? 0.12);
+    const sway = p.mirror ? -rawSway : rawSway;
+    drawPart(ctx, img, anchorX, anchorY, bodyScale * (p.scale ?? 1), sway, p.pivot.x, p.pivot.y, p.mirror);
+  };
+
+  parts.filter(p => p.behind).forEach(drawOne);
+  ctx.drawImage(body, bodyX, bodyY, bodyW, bodyH);
+  parts.filter(p => !p.behind).forEach(drawOne);
+
+  ctx.restore();
+  return bodyY;
+}
+
+// 地面に立つが獣系の4足構成ではないモンスター（ゴブリン系など、二足+得物を持つ腕）。
+// walkSwing:trueのパーツ(脚)は歩行中(walking)だけ大きく振れる。それ以外は常に一定振幅で揺れる。
+function drawGroundRig(ctx, x, groundY, size, frame, walking, config) {
+  const body = getCachedImage(config.body);
+  if (!body || !body.complete || !body.naturalWidth) return null;
+
+  // 通常はbody画像が全身(頭〜脚まで)を表す前提でk=1.5固定だが、体画像が胴体だけの
+  // モンスター（頭・脚が完全に別パーツ）だとそれでは全体が巨大化しすぎるため、
+  // config.bodyScaleKで倍率を上書きできるようにしている。
+  const bodyScale = fitScale(size, body, config.bodyScaleK ?? 1.5);
+  const bodyW = body.naturalWidth * bodyScale;
+  const bodyH = body.naturalHeight * bodyScale;
+  const bodyX = x - bodyW * 0.45;
+  const bodyY = groundY - bodyH * 0.95;
+
+  ctx.save();
+  if (config.tint) ctx.filter = config.tint;
+  if (!config.faceRight) {
+    ctx.translate(x, 0); ctx.scale(-1, 1); ctx.translate(-x, 0);
+  }
+
+  const parts = config.parts || [];
+  const walkSpeedMul = config.walkSpeedMul ?? 1;
+  const drawOne = (p) => {
+    const img = getCachedImage(p.img);
+    if (!img || !img.complete || !img.naturalWidth) return;
+    const anchorX = bodyX + bodyW * p.anchor.x;
+    const anchorY = bodyY + bodyH * p.anchor.y;
+    // 体が大きい4足モンスターほど歩行速度(脚の振り)がキビキビしすぎて違和感が出るため、
+    // config.walkSpeedMulで歩行時のみ周期を遅くできるようにしている（待機中の揺れには影響しない）。
+    const speed = p.walkSwing ? 0.08 * walkSpeedMul : 0.03;
+    const ampMul = p.walkSwing ? (walking ? 1 : 0.12) : 1;
+    // mirror:trueのパーツは反転して描画するため、同じ回転角では視覚上は逆回転になる。
+    // 左右対称に同期して動かすには角度の符号を反転させる必要がある。
+    const rawSway = Math.sin(frame * speed + (p.phase || 0)) * (p.swingAmp ?? 0.12) * ampMul;
+    const sway = p.mirror ? -rawSway : rawSway;
+    drawPart(ctx, img, anchorX, anchorY, bodyScale * (p.scale ?? 1), sway, p.pivot.x, p.pivot.y, p.mirror);
+  };
+
+  parts.filter(p => p.behind).forEach(drawOne);
+  ctx.drawImage(body, bodyX, bodyY, bodyW, bodyH);
+  parts.filter(p => !p.behind).forEach(drawOne);
+
+  ctx.restore();
+  return bodyY;
 }
 
 const TRIBE_DESIGNS = {
@@ -355,16 +492,32 @@ export default function MonsterSprite({ monsters, isVisible, onReach, floorY }) 
         ctx.save();
         ctx.globalAlpha = 1;
         const multipart = MULTIPART_MONSTERS[monster.id];
+        const group = GROUP_IMAGE_MONSTERS[monster.id];
+        const sway = SWAY_IMAGE_MONSTERS[monster.id];
+        const floatRig = FLOAT_RIG_MONSTERS[monster.id];
+        const groundRig = GROUND_RIG_MONSTERS[monster.id];
+        const floatImage = FLOAT_IMAGE_MONSTERS[monster.id];
+        const simpleImage = SIMPLE_IMAGE_MONSTERS[monster.id];
         const drewMultipart = multipart && drawMultipartCreature(ctx, p.x, py, size, s.animFrame + i * 20, p.x < p.targetX, multipart);
-        if (!drewMultipart && drawFn) drawFn(ctx, p.x, py, size, design.color, s.animFrame + i * 20);
+        const drewGroup = !drewMultipart && group && drawImageGroup(ctx, group, p.x, py, size, s.animFrame + i * 20);
+        const drewSway = !drewMultipart && !drewGroup && sway && drawSwayCreature(ctx, sway.src, sway.pivot, p.x, py, size, s.animFrame + i * 20);
+        const drewFloatRig = !drewMultipart && !drewGroup && !drewSway && floatRig && drawFloatRig(ctx, p.x, py, size, s.animFrame + i * 20, floatRig);
+        const drewGroundRig = !drewMultipart && !drewGroup && !drewSway && !drewFloatRig && groundRig && drawGroundRig(ctx, p.x, py, size, s.animFrame + i * 20, p.x < p.targetX, groundRig);
+        const drewFloat = !drewMultipart && !drewGroup && !drewSway && !drewFloatRig && !drewGroundRig && floatImage && drawFloatCreature(ctx, floatImage, p.x, py, size, s.animFrame + i * 20);
+        const drewSimple = !drewMultipart && !drewGroup && !drewSway && !drewFloatRig && !drewGroundRig && !drewFloat && simpleImage && drawImageCreature(ctx, simpleImage, p.x, py, size, s.animFrame + i * 20);
+        if (!drewMultipart && !drewGroup && !drewSway && !drewFloatRig && !drewGroundRig && !drewFloat && !drewSimple && drawFn) drawFn(ctx, p.x, py, size, design.color, s.animFrame + i * 20);
         ctx.restore();
         ctx.globalAlpha = 1;
+
+        const topY = [drewMultipart, drewGroup, drewSway, drewFloatRig, drewGroundRig, drewFloat, drewSimple]
+          .find((v) => typeof v === "number");
+        const headroomY = topY != null ? topY : py - size * 1.2;
 
         // HPバー
         if (monster.maxHp) {
           const barW = size * 2.2;
           const barH = i === 0 ? 18 : 12;
-          const barY = py - size * 1.2 - 16;
+          const barY = headroomY - 16;
           const barX = p.x - barW/2;
 
           ctx.fillStyle = "#1a0a0a";
@@ -397,7 +550,7 @@ export default function MonsterSprite({ monsters, isVisible, onReach, floorY }) 
         ctx.fillStyle = monster.rarity?.color || "#888";
         ctx.shadowColor = monster.rarity?.color || "#888";
         ctx.shadowBlur = 4;
-        ctx.fillText(monster.displayName, p.x, py - size * 1.2 - 22);
+        ctx.fillText(monster.displayName, p.x, headroomY - 22);
         ctx.shadowBlur = 0;
       });
 

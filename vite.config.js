@@ -13,9 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'Study Dungeon',
-        short_name: 'StudyDungeon',
-        description: '勉強している間に、もう一つの人生が進む。',
+        name: 'スタディダンジョン',
+        short_name: 'スタディダンジョン',
+        description: '勉強している間に、もう一つの人生が進む。ポモドーロタイマー×ダンジョン探索RPG',
         theme_color: '#06060f',
         background_color: '#06060f',
         display: 'standalone',

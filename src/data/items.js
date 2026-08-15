@@ -149,12 +149,18 @@ export const WEAPON_DB = [
   { id:"W203", name:"吸血剣",       icon:"🩸", image:"/assets/images/W203吸血剣.png", rarity:"rare",     type:"weapon", subtype:"sword",  baseAtk:16, baseMag:0,  innate:"vampiric",     shopWeight:3,  dropWeight:3  },
   { id:"W204", name:"騎士の剣",     icon:"⚔", image:"/assets/images/W204騎士の剣.png", rarity:"rare",     type:"weapon", subtype:"sword",  baseAtk:20, baseMag:0,  innate:"armor_pierce", shopWeight:3,  dropWeight:3  },
   { id:"W205", name:"迅速の短剣",   icon:"🗡", image:"/assets/images/W205迅速の短剣.png", rarity:"rare",     type:"weapon", subtype:"dagger", baseAtk:14, baseMag:0,  innate:"swift",        shopWeight:3,  dropWeight:3  },
+  // 新規イラストなし。鋼の大剣(W105)の画像をtint(CSS filter)で色替えして流用した色違い武器の第1弾。
+  { id:"W206", name:"黒曜の大剣",   icon:"🌑", image:"/assets/images/W105鋼の大剣.png", tint:"sepia(1) hue-rotate(250deg) saturate(1.3) brightness(0.5)", rarity:"rare", type:"weapon", subtype:"sword",  baseAtk:20, baseMag:0,  innate:"berserker",    shopWeight:3,  dropWeight:3  },
+  // 魔力欠けの杖(W102)の画像をtintで色替え。魔法系武器(杖)がrare帯に1本しかなかったので選択肢を増やす。
+  { id:"W207", name:"紅蓮の杖",     icon:"🔥", image:"/assets/images/W102魔力欠けの杖.png", tint:"sepia(0.8) hue-rotate(350deg) saturate(3.5) brightness(1.05)", rarity:"rare", type:"weapon", subtype:"staff", baseAtk:0, baseMag:20, innate:"fire_dmg",     shopWeight:3,  dropWeight:3  },
+  { id:"W208", name:"猛毒の杖",     icon:"☠",  image:"/assets/images/W102魔力欠けの杖.png", tint:"sepia(0.8) hue-rotate(110deg) saturate(1.4) brightness(0.95)", rarity:"rare", type:"weapon", subtype:"staff", baseAtk:0, baseMag:20, innate:"poison_blade", shopWeight:3,  dropWeight:3  },
 
   // ────── Epic ──────
   { id:"W301", name:"竜殺しの剣",   icon:"🐉", image:"/assets/images/W301竜殺しの剣.png", rarity:"epic",     type:"weapon", subtype:"sword",  baseAtk:28, baseMag:0,  innate:"armor_pierce", shopWeight:0,  dropWeight:2  },
   { id:"W302", name:"冥界の杖",     icon:"💀", image:"/assets/images/W302冥界の杖.png", rarity:"epic",     type:"weapon", subtype:"staff",  baseAtk:0,  baseMag:30, innate:"vampiric",     shopWeight:0,  dropWeight:2  },
   { id:"W303", name:"狂戦士の斧",   icon:"🪓", image:"/assets/images/W303狂戦士の斧.png", rarity:"epic",     type:"weapon", subtype:"axe",    baseAtk:35, baseMag:0,  innate:"berserker",    shopWeight:0,  dropWeight:2  },
   { id:"W304", name:"毒の短剣",     icon:"🗡", image:"/assets/images/W304毒の短剣.png", rarity:"epic",     type:"weapon", subtype:"dagger", baseAtk:20, baseMag:0,  innate:"poison_blade", shopWeight:0,  dropWeight:2  },
+  { id:"W305", name:"聖光の杖",     icon:"✨", image:"/assets/images/W102魔力欠けの杖.png", tint:"sepia(0.6) hue-rotate(20deg) saturate(2.4) brightness(1.3)", rarity:"epic", type:"weapon", subtype:"staff", baseAtk:0, baseMag:30, innate:"exp_bonus",   shopWeight:0,  dropWeight:2  },
 
   // ────── Legendary ──────
   { id:"W401", name:"神剣カラドボルグ",icon:"✨",image:"/assets/images/W401神剣カラドボルグ.png", rarity:"legendary",type:"weapon",subtype:"sword",  baseAtk:45, baseMag:0,  innate:"armor_pierce", shopWeight:0,  dropWeight:1  },
@@ -173,6 +179,9 @@ export const ARMOR_DB = [
   { id:"A005", name:"鋼の鎧",       icon:"🪖", image:"/assets/images/A005鋼の鎧.png", rarity:"rare",     type:"armor", subtype:"heavy",  baseDef:16, baseMdef:10, baseHp:10, innate:"guardian",shopWeight:0,  dropWeight:3  },
   { id:"A006", name:"竜鱗鎧",       icon:"🐉", image:"/assets/images/A006竜鱗鎧.png", rarity:"epic",     type:"armor", subtype:"heavy",  baseDef:24, baseMdef:14, baseHp:20, innate:"guardian",shopWeight:0,  dropWeight:2  },
   { id:"A007", name:"影の外套",     icon:"🌑", image:"/assets/images/A007影の外套.png", rarity:"rare",     type:"armor", subtype:"light",  baseDef:6,  baseMdef:6,  baseHp:0,  innate:"swift",   shopWeight:0,  dropWeight:3  },
+  // 魔導ローブ(A004)の画像をtintで色替え。ローブ(魔法職向け防具)がuncommon止まりで選択肢がなかったので追加。
+  { id:"A008", name:"聖なるローブ", icon:"✨", image:"/assets/images/A004魔導ローブ.png", tint:"hue-rotate(180deg) saturate(1.6) brightness(1.5)", rarity:"rare", type:"armor", subtype:"robe", baseDef:8,  baseMdef:20, baseHp:0,  innate:"guardian", shopWeight:0,  dropWeight:3  },
+  { id:"A009", name:"業火のローブ", icon:"🔥", image:"/assets/images/A004魔導ローブ.png", tint:"hue-rotate(145deg) saturate(1.8) brightness(1.05)", rarity:"epic", type:"armor", subtype:"robe", baseDef:12, baseMdef:28, baseHp:10, innate:"vampiric", shopWeight:0,  dropWeight:2  },
 ];
 
 // ─── アクセサリーデータ ───
@@ -183,6 +192,9 @@ export const ACCESSORY_DB = [
   { id:"AC004", name:"狩人の腕輪",  icon:"📿", image:"/assets/images/AC004狩人の腕輪.png", rarity:"uncommon", type:"accessory", innate:"none",    baseCrit:3, baseEva:0, shopWeight:6,  dropWeight:6  },
   { id:"AC005", name:"盗賊の指輪",  icon:"💍", image:"/assets/images/AC005盗賊の指輪.png", rarity:"rare",     type:"accessory", innate:"swift",   baseCrit:0, baseEva:5, shopWeight:0,  dropWeight:3  },
   { id:"AC006", name:"竜の護符",    icon:"🐉", image:"/assets/images/AC006竜の護符.png", rarity:"epic",     type:"accessory", innate:"lucky",   baseCrit:4, baseEva:0, shopWeight:0,  dropWeight:2  },
+  // 盗賊の指輪(AC005)・初心者の護符(AC002)の画像をtintで色替え。指輪はepic帯、護符はrare帯が空いていたので補完。
+  { id:"AC007", name:"紅玉の指輪",  icon:"💍", image:"/assets/images/AC005盗賊の指輪.png", tint:"hue-rotate(70deg) saturate(1.3) brightness(1.1)", rarity:"epic", type:"accessory", innate:"armor_pierce", baseCrit:5, baseEva:0, shopWeight:0, dropWeight:2 },
+  { id:"AC008", name:"月光の護符",  icon:"🌙", image:"/assets/images/AC002初心者の護符.png", tint:"sepia(0.7) hue-rotate(200deg) saturate(2.8) brightness(1.15)", rarity:"rare", type:"accessory", innate:"guardian", baseCrit:0, baseEva:3, shopWeight:0, dropWeight:3 },
 ];
 
 // ─── 消耗品データ ───

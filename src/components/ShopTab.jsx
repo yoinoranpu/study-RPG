@@ -119,7 +119,7 @@ export default function ShopTab() {
               {selectedItem ? (
                 <>
                   <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-                    {selectedItem.image ? <img src={selectedItem.image} alt="" style={{ width:22, height:22, objectFit:"contain" }} /> : <span style={{ fontSize:18 }}>{selectedItem.icon}</span>}
+                    {selectedItem.image ? <img src={selectedItem.image} alt="" style={{ width:22, height:22, objectFit:"contain", filter:selectedItem.tint||"none" }} /> : <span style={{ fontSize:18 }}>{selectedItem.icon}</span>}
                     <span style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>{selectedItem.name}</span>
                     <span style={{ fontSize:10, color:RARITY_COLOR[selectedItem.rarity]||"#888" }}>{RARITY_LABEL[selectedItem.rarity]}</span>
                     {selectedIsSold && <span style={{ fontSize:10, color:DIM }}>SOLD</span>}
@@ -225,7 +225,7 @@ export default function ShopTab() {
                   }}>
                   {isSold && <div style={{ position:"absolute", top:3, right:4, fontSize:7, color:DIM, fontWeight:700 }}>SOLD</div>}
                   {tmpl.image ? (
-                    <img src={tmpl.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:isSold?"grayscale(0.6)":"none" }} />
+                    <img src={tmpl.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:`${tmpl.tint||""} ${isSold?"grayscale(0.6)":""}`.trim()||"none" }} />
                   ) : (
                     <div style={{ fontSize:26 }}>{tmpl.icon}</div>
                   )}

@@ -1,5 +1,89 @@
 import { useEffect, useRef } from "react";
 
+// キャンバス描画用の画像プリロードキャッシュ（モジュールスコープでセッション中1回だけ読み込む）
+const imageCache = {};
+function getCachedImage(src) {
+  if (!src) return null;
+  if (!imageCache[src]) {
+    const img = new Image();
+    img.src = src;
+    imageCache[src] = img;
+  }
+  return imageCache[src];
+}
+
+// AI生成の歩行スプライト（8フレーム、PixelLab「Animation with Text」で生成）
+const PLAYER_WALK_FRAMES = [
+  "/assets/images/player_walk_1.png",
+  "/assets/images/player_walk_2.png",
+  "/assets/images/player_walk_3.png",
+  "/assets/images/player_walk_4.png",
+  "/assets/images/player_walk_5.png",
+  "/assets/images/player_walk_6.png",
+  "/assets/images/player_walk_7.png",
+  "/assets/images/player_walk_8.png",
+];
+
+// 戻り値: 描画できたらtrue、画像がまだ読み込み中ならfalse（呼び出し側で通常描画にフォールバック）
+function drawPlayerSprite(ctx, x, y, frame, hp, maxHp, hitFlash) {
+  const images = PLAYER_WALK_FRAMES.map(getCachedImage);
+  if (images.some(img => !img || !img.complete || !img.naturalWidth)) return false;
+
+  const frameIndex = Math.floor(frame / 6) % images.length;
+  const img = images[frameIndex];
+
+  const H = 130;
+  const W = (img.naturalWidth / img.naturalHeight) * H;
+  const bx = x - W / 2;
+  const by = y - H;
+
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.beginPath();
+  ctx.ellipse(x, y + 2, W * 0.32, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(img, bx, by, W, H);
+  ctx.imageSmoothingEnabled = true;
+
+  if (hitFlash > 0) {
+    ctx.save();
+    ctx.globalAlpha = (hitFlash / 200) * 0.4;
+    ctx.fillStyle = "#ff3333";
+    ctx.fillRect(bx, by, W, H);
+    ctx.restore();
+  }
+
+  drawPlayerHpBar(ctx, x, by, W, hp, maxHp);
+  return true;
+}
+
+function drawPlayerHpBar(ctx, x, by, W, hp, maxHp) {
+  const barW = W * 1.5;
+  const barH = 18;
+  const barX = x - barW / 2;
+  const barY = by - 28;
+  const hpPct = Math.max(0, Math.min(1, hp / maxHp));
+  ctx.fillStyle = "#1a0a0a";
+  ctx.beginPath();
+  ctx.roundRect(barX, barY, barW, barH, 4);
+  ctx.fill();
+  ctx.fillStyle = hpPct > 0.5 ? "#4ade80" : hpPct > 0.25 ? "#fbbf24" : "#f87171";
+  ctx.beginPath();
+  ctx.roundRect(barX, barY, barW * hpPct, barH, 4);
+  ctx.fill();
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(barX, barY, barW, barH, 4);
+  ctx.stroke();
+  ctx.font = `bold 11px monospace`;
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fff";
+  ctx.shadowBlur = 0;
+  ctx.fillText(`${hp}/${maxHp}`, x, barY + barH * 0.75);
+}
+
 function drawPlayer(ctx, x, y, frame, hp, maxHp, hitFlash) {
   const scale = 2;
   const W = 24 * scale;
@@ -131,11 +215,17 @@ export default function PlayerSprite({ hp, maxHp, isRunning, isBreak, hitTrigger
         const escapeX = px + defeatFrame.current * W * 0.3;
         const alpha = Math.max(0, 1 - defeatFrame.current * 2);
         ctx.globalAlpha = alpha;
-        drawPlayer(ctx, escapeX, py + defeatFrame.current * 30, animFrame.current + defeatFrame.current * 5, hp, maxHp, 0);
+        const escapeFrame = animFrame.current + defeatFrame.current * 5;
+        const escapeY = py + defeatFrame.current * 30;
+        if (!drawPlayerSprite(ctx, escapeX, escapeY, escapeFrame, hp, maxHp, 0)) {
+          drawPlayer(ctx, escapeX, escapeY, escapeFrame, hp, maxHp, 0);
+        }
         ctx.globalAlpha = 1;
       } else {
         defeatFrame.current = 0;
-        drawPlayer(ctx, px, py, animFrame.current, hp, maxHp, hitFlashRef.current);
+        if (!drawPlayerSprite(ctx, px, py, animFrame.current, hp, maxHp, hitFlashRef.current)) {
+          drawPlayer(ctx, px, py, animFrame.current, hp, maxHp, hitFlashRef.current);
+        }
       }
 
       frameRef.current = requestAnimationFrame(loop);
