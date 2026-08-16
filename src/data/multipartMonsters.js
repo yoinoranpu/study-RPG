@@ -221,7 +221,7 @@ export const GROUND_RIG_MONSTERS = {
   // RigEditorでユーザーが実際に調整した最終値（翼は左右同位相=同じ挙動にして飛んでる感を出した）
   imp: {
     body: "/assets/images/インプ胴体.png",
-    faceRight: true,
+    faceRight: false,
     parts: [
       { key:"wingLeft",  img:"/assets/images/インプ翼.png", anchor:{x:0.57,y:0.40}, pivot:{x:0.11,y:0.72}, phase:0, swingAmp:0.25, behind:true },
       { key:"wingRight", img:"/assets/images/インプ翼.png", anchor:{x:0.38,y:0.42}, pivot:{x:0.07,y:0.70}, phase:0, swingAmp:0.25, behind:true, mirror:true },
