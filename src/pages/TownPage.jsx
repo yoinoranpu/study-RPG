@@ -14,13 +14,13 @@ import { DUNGEONS, isDungeonUnlocked, getGlobalUnlockDepth } from "../systems/du
 import { resetQuestsIfNeeded } from "../systems/quests";
 
 const DIM = "#7a7a9a";
-const FAINT = "#5c5c82";
 
 export default function TownPage({ onEnterDungeon }) {
   const [tab, setTab] = useState("home");
   const [subTab, setSubTab] = useState("home");
   const [bookTab, setBookTab] = useState("monster");
   const [showSettings, setShowSettings] = useState(false);
+  const [stampingDungeonId, setStampingDungeonId] = useState(null);
   const w = window.innerWidth;
   const [isMobile, setIsMobile] = useState(w < 768);
   const [isTablet, setIsTablet] = useState(w >= 768 && w < 1024);
@@ -151,24 +151,39 @@ export default function TownPage({ onEnterDungeon }) {
               </div>
             )}
 
-            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {DUNGEONS.map(d => {
+            {/* ギルドの掲示板：貼り紙3枚がダンジョン1/2/3。押すと「受注」印が押されてからダンジョンへ */}
+            <div style={{ position:"relative", width:"100%", aspectRatio:"1074/597" }}>
+              <img src="/assets/images/guild_board.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
+              {DUNGEONS.map((d, idx) => {
                 const ds = player.dungeons?.[d.id] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
                 const unlocked = isDungeonUnlocked(player.dungeons, d.id);
+                const stamping = stampingDungeonId === d.id;
+                const pos = [
+                  { left:"10.9%", top:"26.0%", width:"22.3%", height:"52.7%" },
+                  { left:"38.5%", top:"25.5%", width:"22.1%", height:"52.1%" },
+                  { left:"65.7%", top:"26.0%", width:"22.4%", height:"52.7%" },
+                ][idx];
                 return (
-                  <button key={d.id} disabled={!unlocked}
-                    onClick={() => { if (!unlocked) return; updatePlayer({ currentDungeonId: d.id }); onEnterDungeon(); }}
-                    className={unlocked ? "rpg-panel" : ""}
-                    style={{ width:"100%", padding:"12px 16px", background: unlocked ? undefined : "#0a0a0a", border: unlocked ? undefined : "2px solid #3a3a55", borderRadius: unlocked ? undefined : 8, cursor: unlocked?"pointer":"default", fontFamily:"monospace", display:"flex", alignItems:"center", gap:12, textAlign:"left" }}>
-                    <span style={{ fontSize:22 }}>{!unlocked ? "🔒" : ds.cleared ? "🏆" : "🚪"}</span>
-                    <div style={{ flex:1 }}>
-                      <div className="rpg-heading" style={{ fontSize:12, color: unlocked?"#fff":FAINT, letterSpacing:1 }}>
-                        {d.name}{ds.cleared && unlocked ? "（クリア済）" : ""}
-                      </div>
-                      <div style={{ fontSize:10, color: unlocked?"#86efac":FAINT, letterSpacing:1, marginTop:2 }}>
-                        {unlocked ? `B${ds.floor}F・マップ${Math.floor(ds.floorMapping||0)}%` : "前のダンジョンをクリアで解放"}
-                      </div>
+                  <button key={d.id} disabled={!unlocked || !!stampingDungeonId}
+                    onClick={() => {
+                      if (!unlocked || stampingDungeonId) return;
+                      setStampingDungeonId(d.id);
+                      setTimeout(() => {
+                        updatePlayer({ currentDungeonId: d.id });
+                        onEnterDungeon();
+                      }, 700);
+                    }}
+                    style={{ position:"absolute", ...pos, background:"transparent", border:"none", padding:"4% 4% 8%", cursor: unlocked?"pointer":"default", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", overflow:"hidden" }}>
+                    <span style={{ fontSize:"clamp(13px,3.6vw,20px)" }}>{!unlocked ? "🔒" : ds.cleared ? "🏆" : "🚪"}</span>
+                    <div className="rpg-heading" style={{ fontSize:"clamp(8px,2vw,12px)", color: unlocked?"#4a3520":"#a09888", marginTop:3, whiteSpace:"nowrap" }}>
+                      {d.name}
                     </div>
+                    <div style={{ fontSize:"clamp(6px,1.5vw,9px)", color: unlocked?"#6a5030":"#a09888", marginTop:3, lineHeight:1.3, whiteSpace:"nowrap" }}>
+                      {unlocked ? `B${ds.floor}F・マップ${Math.floor(ds.floorMapping||0)}%` : "未解放"}
+                    </div>
+                    {stamping && (
+                      <img src="/assets/images/stamp_juchu.png" alt="受注" className="stamp-pop" style={{ position:"absolute", width:"75%", top:"50%", left:"50%", marginTop:"-37.5%", marginLeft:"-37.5%", pointerEvents:"none" }} />
+                    )}
                   </button>
                 );
               })}
@@ -181,18 +196,16 @@ export default function TownPage({ onEnterDungeon }) {
               </div>
             )}
 
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-              <button onClick={() => setSubTab("book")} style={{ padding:"12px 0", background:"#080810", border:"1px solid #60a5fa44", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                <span style={{ fontSize:18 }}>📖</span>
-                <span style={{ fontSize:10, color:"#60a5fa" }}>図鑑</span>
+            {/* 本(図鑑)・クエスト板・トロフィー(実績) */}
+            <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"center", gap:"4%" }}>
+              <button onClick={() => setSubTab("book")} style={{ flex:"1 1 0", maxWidth:120, background:"transparent", border:"none", cursor:"pointer", padding:0 }}>
+                <img src="/assets/images/guild_book.png" alt="図鑑" style={{ width:"100%", height:"auto", display:"block" }} />
               </button>
-              <button onClick={() => setSubTab("quest")} style={{ padding:"12px 0", background:"#080810", border:"1px solid #fbbf2444", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                <span style={{ fontSize:18 }}>🎯</span>
-                <span style={{ fontSize:10, color:"#fbbf24" }}>クエスト</span>
+              <button onClick={() => setSubTab("quest")} style={{ flex:"1 1 0", maxWidth:100, background:"transparent", border:"none", cursor:"pointer", padding:0 }}>
+                <img src="/assets/images/guild_quest_board.png" alt="クエスト" style={{ width:"100%", height:"auto", display:"block" }} />
               </button>
-              <button onClick={() => setSubTab("achievement")} style={{ padding:"12px 0", background:"#080810", border:"1px solid #f8717144", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2, gridColumn:"1 / -1" }}>
-                <span style={{ fontSize:18 }}>🏆</span>
-                <span style={{ fontSize:10, color:"#f87171" }}>実績</span>
+              <button onClick={() => setSubTab("achievement")} style={{ flex:"1 1 0", maxWidth:120, background:"transparent", border:"none", cursor:"pointer", padding:0 }}>
+                <img src="/assets/images/guild_trophy.png" alt="実績" style={{ width:"100%", height:"auto", display:"block" }} />
               </button>
             </div>
             </div>
