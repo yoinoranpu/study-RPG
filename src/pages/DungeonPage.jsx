@@ -147,7 +147,9 @@ export default function DungeonPage({ onBack }) {
   const [playerDefeated, setPlayerDefeated] = useState(false);
   const [showBossWarning, setShowBossWarning] = useState(false);
   const [showBossWipe, setShowBossWipe] = useState(false);
+  const [showBossExitWipe, setShowBossExitWipe] = useState(false);
   const [bossFloor, setBossFloor] = useState(false);
+  const prevBossFloorRef = useRef(false);
   const [activeSummons, setActiveSummons] = useState([]);
   // 以下はレンダー中にrefを直接読まないための表示用ミラー（floor/mappingと同じパターン）
   const [sessionExpDisplay, setSessionExpDisplay] = useState(0);
@@ -259,6 +261,18 @@ export default function DungeonPage({ onBack }) {
     };
   }, [player]);
 
+  // ボス部屋から離れる瞬間(退却・戦闘開始のどちらでも)も、同じワイプで一瞬だけ画面を覆って
+  // 唐突な切り替わりに見えないようにする(入室時より短い0.9秒版、抜け際の演出だけなので保持は不要)
+  useEffect(() => {
+    const was = prevBossFloorRef.current;
+    prevBossFloorRef.current = bossFloor;
+    if (was && !bossFloor) {
+      setShowBossExitWipe(true);
+      const t = setTimeout(() => setShowBossExitWipe(false), 900);
+      return () => clearTimeout(t);
+    }
+  }, [bossFloor]);
+
   // 鍵なしボス階層：自動退却
   useEffect(() => {
     if (!bossFloor) return;
@@ -322,10 +336,15 @@ export default function DungeonPage({ onBack }) {
         if (floorRef.current % 5 === 0) {
           setTimeout(() => {
             // 通路→ワーニング→ボス部屋を、左から入って右へ抜ける斜めワイプで繋ぐ(ポケモン風の場面転換)
+            // bossFloorはワイプが「抜け始める」瞬間に立てる(=実際にボス部屋が見える瞬間と一致させる)。
+            // ここを早めると、鍵なし自動退却の3秒カウントがワイプでまだ隠れている間に始まってしまい、
+            // ワーニング終了と退却がほぼ同時に重なって場面転換が2回連続で起きたように見える不具合があった。
             setShowBossWipe(true);
             setTimeout(() => setShowBossWarning(true), 400);   // ワイプが画面を覆い切ってから警告文を出す
-            setTimeout(() => setBossFloor(true), 400);          // 覆われている間に背景をボス部屋へ切り替え
-            setTimeout(() => setShowBossWarning(false), 3400);  // 警告表示3秒分はそのまま維持
+            setTimeout(() => {
+              setShowBossWarning(false);
+              setBossFloor(true);                               // ワイプが抜け始めると同時にボス部屋を見せる
+            }, 3400);
             setTimeout(() => setShowBossWipe(false), 3800);     // ワイプが抜けきったら消す
           }, 500);
           addLog(`⚠ B${floorRef.current}F ボス階層！`, "#ef4444");
@@ -787,8 +806,14 @@ export default function DungeonPage({ onBack }) {
       />
 
       {showBossWipe && (
-        <div key={floor} style={{ position:"absolute", inset:0, zIndex:8, overflow:"hidden", pointerEvents:"none" }}>
+        <div key={`enter-${floor}`} style={{ position:"absolute", inset:0, zIndex:8, overflow:"hidden", pointerEvents:"none" }}>
           <div className="boss-wipe-panel" />
+        </div>
+      )}
+
+      {showBossExitWipe && (
+        <div key={`exit-${floor}`} style={{ position:"absolute", inset:0, zIndex:8, overflow:"hidden", pointerEvents:"none" }}>
+          <div className="boss-wipe-panel" style={{ animationDuration:"0.9s" }} />
         </div>
       )}
 
