@@ -34,6 +34,7 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused, dungeonId 
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false; // ドット絵をぼかさず、タイル境界のにじみ・ちらつきも抑える
     let lastTime = 0;
 
     const loop = (time) => {
@@ -82,8 +83,8 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused, dungeonId 
 // 1枚のイラストを反転コピーと交互に並べるだけで境界が必ず自然に繋がる。
 function drawIllustratedCorridor(ctx, W, H, offset, img) {
   const scale = H / img.naturalHeight;
-  const tileW = img.naturalWidth * scale;
-  const scrollX = offset % tileW;
+  const tileW = Math.round(img.naturalWidth * scale);
+  const scrollX = Math.round(offset % tileW);
 
   let i = Math.floor(-scrollX / tileW) - 1;
   for (; i * tileW - scrollX < W + tileW; i++) {
