@@ -130,7 +130,10 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused, dungeonId 
             backgroundRepeat: "repeat-x",
             backgroundSize: "auto 100%",
             "--corridor-shift": `${shiftPx}px`,
-            animation: `dungeonCorridorScroll ${durationSec}s linear infinite`,
+            animationName: "dungeonCorridorScroll",
+            animationDuration: `${durationSec}s`,
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
             animationPlayState: scrolling ? "running" : "paused",
           }} />
           <FogVignette />

@@ -151,42 +151,60 @@ export default function TownPage({ onEnterDungeon }) {
               </div>
             )}
 
-            {/* ギルドの掲示板：貼り紙3枚がダンジョン1/2/3。押すと「受注」印が押されてからダンジョンへ */}
-            <div style={{ position:"relative", width:"100%", aspectRatio:"1074/597" }}>
-              <img src="/assets/images/guild_board.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
-              {DUNGEONS.map((d, idx) => {
-                const ds = player.dungeons?.[d.id] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
-                const unlocked = isDungeonUnlocked(player.dungeons, d.id);
-                const stamping = stampingDungeonId === d.id;
-                const pos = [
-                  { left:"10.9%", top:"26.0%", width:"22.3%", height:"52.7%" },
-                  { left:"38.5%", top:"25.5%", width:"22.1%", height:"52.1%" },
-                  { left:"65.7%", top:"26.0%", width:"22.4%", height:"52.7%" },
-                ][idx];
-                return (
-                  <button key={d.id} disabled={!unlocked || !!stampingDungeonId}
-                    onClick={() => {
-                      if (!unlocked || stampingDungeonId) return;
-                      setStampingDungeonId(d.id);
-                      setTimeout(() => {
-                        updatePlayer({ currentDungeonId: d.id });
-                        onEnterDungeon();
-                      }, 700);
-                    }}
-                    style={{ position:"absolute", ...pos, background:"transparent", border:"none", padding:"4% 4% 8%", cursor: unlocked?"pointer":"default", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", overflow:"hidden" }}>
-                    <span style={{ fontSize:"clamp(13px,3.6vw,20px)" }}>{!unlocked ? "🔒" : ds.cleared ? "🏆" : "🚪"}</span>
-                    <div className="rpg-heading" style={{ fontSize:"clamp(8px,2vw,12px)", color: unlocked?"#4a3520":"#a09888", marginTop:3, whiteSpace:"nowrap" }}>
-                      {d.name}
-                    </div>
-                    <div style={{ fontSize:"clamp(6px,1.5vw,9px)", color: unlocked?"#6a5030":"#a09888", marginTop:3, lineHeight:1.3, whiteSpace:"nowrap" }}>
-                      {unlocked ? `B${ds.floor}F・マップ${Math.floor(ds.floorMapping||0)}%` : "未解放"}
-                    </div>
-                    {stamping && (
-                      <img src="/assets/images/stamp_juchu.png" alt="受注" className="stamp-pop" style={{ position:"absolute", width:"75%", top:"50%", left:"50%", marginTop:"-37.5%", marginLeft:"-37.5%", pointerEvents:"none" }} />
-                    )}
-                  </button>
-                );
-              })}
+            {/* ギルドの詰め所：壁に掲示板+クエスト掲示板、床に本+トロフィー */}
+            <div style={{ position:"relative", width:"100%", aspectRatio:"779/768" }}>
+              <img src="/assets/images/guild_wall.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
+
+              {/* 掲示板：貼り紙3枚がダンジョン1/2/3。押すと「受注」印が押されてからダンジョンへ */}
+              <div style={{ position:"absolute", left:"5%", top:"5%", width:"66%", aspectRatio:"1074/597" }}>
+                <img src="/assets/images/guild_board.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
+                {DUNGEONS.map((d, idx) => {
+                  const ds = player.dungeons?.[d.id] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
+                  const unlocked = isDungeonUnlocked(player.dungeons, d.id);
+                  const stamping = stampingDungeonId === d.id;
+                  const pos = [
+                    { left:"10.9%", top:"26.0%", width:"22.3%", height:"52.7%" },
+                    { left:"38.5%", top:"25.5%", width:"22.1%", height:"52.1%" },
+                    { left:"65.7%", top:"26.0%", width:"22.4%", height:"52.7%" },
+                  ][idx];
+                  return (
+                    <button key={d.id} disabled={!unlocked || !!stampingDungeonId}
+                      onClick={() => {
+                        if (!unlocked || stampingDungeonId) return;
+                        setStampingDungeonId(d.id);
+                        setTimeout(() => {
+                          updatePlayer({ currentDungeonId: d.id });
+                          onEnterDungeon();
+                        }, 700);
+                      }}
+                      style={{ position:"absolute", ...pos, background:"transparent", border:"none", padding:"4% 4% 8%", cursor: unlocked?"pointer":"default", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", overflow:"hidden" }}>
+                      <span style={{ fontSize:"clamp(13px,3.6vw,20px)" }}>{!unlocked ? "🔒" : ds.cleared ? "🏆" : "🚪"}</span>
+                      <div className="rpg-heading" style={{ fontSize:"clamp(8px,2vw,12px)", color: unlocked?"#4a3520":"#a09888", marginTop:3, whiteSpace:"nowrap" }}>
+                        {d.name}
+                      </div>
+                      <div style={{ fontSize:"clamp(6px,1.5vw,9px)", color: unlocked?"#6a5030":"#a09888", marginTop:3, lineHeight:1.3, whiteSpace:"nowrap" }}>
+                        {unlocked ? `B${ds.floor}F・マップ${Math.floor(ds.floorMapping||0)}%` : "未解放"}
+                      </div>
+                      {stamping && (
+                        <img src="/assets/images/stamp_juchu.png" alt="受注" className="stamp-pop" style={{ position:"absolute", width:"75%", top:"50%", left:"50%", marginTop:"-37.5%", marginLeft:"-37.5%", pointerEvents:"none" }} />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* クエスト掲示板：掲示板の横 */}
+              <button onClick={() => setSubTab("quest")} style={{ position:"absolute", right:"4%", top:"6%", width:"25%", aspectRatio:"468/754", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+                <img src="/assets/images/guild_quest_board.png" alt="クエスト" style={{ width:"100%", height:"100%", display:"block" }} />
+              </button>
+
+              {/* 床：本(図鑑)とトロフィー(実績) */}
+              <button onClick={() => setSubTab("book")} style={{ position:"absolute", left:"6%", bottom:"1%", width:"20%", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+                <img src="/assets/images/guild_book.png" alt="図鑑" style={{ width:"100%", height:"auto", display:"block" }} />
+              </button>
+              <button onClick={() => setSubTab("achievement")} style={{ position:"absolute", right:"8%", bottom:"1%", width:"17%", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+                <img src="/assets/images/guild_trophy.png" alt="実績" style={{ width:"100%", height:"auto", display:"block" }} />
+              </button>
             </div>
 
             {player.keyRescueDungeonId != null && !player.keyRescueClaimed && (
@@ -195,19 +213,6 @@ export default function TownPage({ onEnterDungeon }) {
                 <span style={{ fontSize:10, color:"#60a5fa" }}>5階ごとのボス部屋には鍵が必要です。宝箱で入手できます（ショップにも並ぶことがあります）</span>
               </div>
             )}
-
-            {/* 本(図鑑)・クエスト板・トロフィー(実績) */}
-            <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"center", gap:"4%" }}>
-              <button onClick={() => setSubTab("book")} style={{ flex:"1 1 0", maxWidth:120, background:"transparent", border:"none", cursor:"pointer", padding:0 }}>
-                <img src="/assets/images/guild_book.png" alt="図鑑" style={{ width:"100%", height:"auto", display:"block" }} />
-              </button>
-              <button onClick={() => setSubTab("quest")} style={{ flex:"1 1 0", maxWidth:100, background:"transparent", border:"none", cursor:"pointer", padding:0 }}>
-                <img src="/assets/images/guild_quest_board.png" alt="クエスト" style={{ width:"100%", height:"auto", display:"block" }} />
-              </button>
-              <button onClick={() => setSubTab("achievement")} style={{ flex:"1 1 0", maxWidth:120, background:"transparent", border:"none", cursor:"pointer", padding:0 }}>
-                <img src="/assets/images/guild_trophy.png" alt="実績" style={{ width:"100%", height:"auto", display:"block" }} />
-              </button>
-            </div>
             </div>
           </div>
         )}
