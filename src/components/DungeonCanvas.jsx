@@ -52,8 +52,8 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused, dungeonId 
       s.offset = ((s.offset - speed) % 1000000 + 1000000) % 1000000;
       s.torchPhase = (s.torchPhase + dt * 0.006) % (Math.PI * 2);
 
-      const bossImg     = getCachedImage(`/assets/images/bg_dungeon${dungeonId}_boss.png`);
-      const corridorImg = getCachedImage(`/assets/images/bg_dungeon${dungeonId}_corridor.png`);
+      const bossImg     = getCachedImage(`/assets/images/bg_dungeon${dungeonId}_boss.jpg`);
+      const corridorImg = getCachedImage(`/assets/images/bg_dungeon${dungeonId}_corridor.jpg`);
 
       ctx.clearRect(0, 0, W, H);
       if (bossFloor && isReady(bossImg)) {
