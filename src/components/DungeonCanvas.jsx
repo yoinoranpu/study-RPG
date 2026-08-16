@@ -11,7 +11,21 @@ const THEMES = {
   },
 };
 
-export default function DungeonCanvas({ isRunning, isBreak, isPaused }) {
+// キャンバス描画用の画像プリロードキャッシュ（ファイルが無い間はnaturalWidth=0のままなので、
+// 用意でき次第コード変更なしで自動的に差し替わる）
+const imageCache = {};
+function getCachedImage(src) {
+  if (!src) return null;
+  if (!imageCache[src]) {
+    const img = new Image();
+    img.src = src;
+    imageCache[src] = img;
+  }
+  return imageCache[src];
+}
+const isReady = (img) => !!img && img.complete && img.naturalWidth > 0;
+
+export default function DungeonCanvas({ isRunning, isBreak, isPaused, dungeonId = 1, bossFloor = false }) {
   const canvasRef = useRef(null);
   const frameRef  = useRef(null);
   const stateRef  = useRef({ offset:0, torchPhase:0 });
@@ -33,27 +47,110 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused }) {
       }
       const s = stateRef.current;
       const speed = isRunning && !isBreak && !isPaused ? dt * 0.15 : 0;
-      s.offset = ((s.offset - speed) % W + W) % W;
+      // ループ幅は個々のパターン(レンガ幅・イラストのタイル幅等)ごとに別途modを取るため、
+      // ここでの境界は数値を暴走させないための大きめの区切りであればよい
+      s.offset = ((s.offset - speed) % 1000000 + 1000000) % 1000000;
       s.torchPhase = (s.torchPhase + dt * 0.006) % (Math.PI * 2);
-      draw(ctx, W, H, s, THEMES.stone);
+
+      const bossImg     = getCachedImage(`/assets/images/bg_dungeon${dungeonId}_boss.png`);
+      const corridorImg = getCachedImage(`/assets/images/bg_dungeon${dungeonId}_corridor.png`);
+
+      ctx.clearRect(0, 0, W, H);
+      if (bossFloor && isReady(bossImg)) {
+        drawBossRoom(ctx, W, H, bossImg);
+        drawFogVignette(ctx, W, H);
+      } else if (!bossFloor && isReady(corridorImg)) {
+        drawIllustratedCorridor(ctx, W, H, s.offset, corridorImg);
+        drawTorches(ctx, W, H, s.offset, s.torchPhase, THEMES.stone);
+        drawFogVignette(ctx, W, H);
+      } else {
+        draw(ctx, W, H, s, THEMES.stone);
+      }
       frameRef.current = requestAnimationFrame(loop);
     };
 
     frameRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [isRunning, isBreak, isPaused]);
+  }, [isRunning, isBreak, isPaused, dungeonId, bossFloor]);
 
   return (
     <canvas ref={canvasRef} style={{ position:"absolute", inset:0, width:"100%", height:"100%", zIndex:0 }} />
   );
 }
 
+// イラスト背景（通路）を合わせ鏡方式でループ描画。継ぎ目の見えない絵を用意する必要がなく、
+// 1枚のイラストを反転コピーと交互に並べるだけで境界が必ず自然に繋がる。
+function drawIllustratedCorridor(ctx, W, H, offset, img) {
+  const scale = H / img.naturalHeight;
+  const tileW = img.naturalWidth * scale;
+  const scrollX = offset % tileW;
+
+  let i = Math.floor(-scrollX / tileW) - 1;
+  for (; i * tileW - scrollX < W + tileW; i++) {
+    const x = i * tileW - scrollX;
+    const flipped = (((i % 2) + 2) % 2) === 1;
+    ctx.save();
+    if (flipped) {
+      ctx.translate(x + tileW, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0, tileW, H);
+    } else {
+      ctx.drawImage(img, x, 0, tileW, H);
+    }
+    ctx.restore();
+  }
+}
+
+// ボス部屋は一発勝負の見せ場なのでスクロールさせず静止画のまま画面いっぱいに表示（object-fit: cover相当）
+function drawBossRoom(ctx, W, H, img) {
+  const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+  const dw = img.naturalWidth * scale;
+  const dh = img.naturalHeight * scale;
+  ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+}
+
+function drawTorches(ctx, W, H, offset, torchPhase, C) {
+  const FLOOR_Y = H * 0.72;
+  const torchInterval = 280;
+  const torchOff = offset % torchInterval;
+  for (let x = -torchOff + torchInterval * 0.3; x < W + torchInterval; x += torchInterval) {
+    const flicker = 0.85 + Math.sin(torchPhase + x * 0.01) * 0.1 + Math.random() * 0.04;
+    drawTorch(ctx, x, FLOOR_Y - 180, flicker, C);
+  }
+}
+
+function drawFogVignette(ctx, W, H) {
+  const CEIL_Y = H * 0.18;
+
+  const leftFog = ctx.createLinearGradient(0, 0, W * 0.12, 0);
+  leftFog.addColorStop(0, "rgba(0,0,0,0.9)");
+  leftFog.addColorStop(1, "transparent");
+  ctx.fillStyle = leftFog;
+  ctx.fillRect(0, 0, W * 0.12, H);
+
+  const rightFog = ctx.createLinearGradient(W * 0.88, 0, W, 0);
+  rightFog.addColorStop(0, "transparent");
+  rightFog.addColorStop(1, "rgba(0,0,0,0.9)");
+  ctx.fillStyle = rightFog;
+  ctx.fillRect(W * 0.88, 0, W * 0.12, H);
+
+  const topFog = ctx.createLinearGradient(0, 0, 0, CEIL_Y + 10);
+  topFog.addColorStop(0, "rgba(0,0,0,0.95)");
+  topFog.addColorStop(1, "transparent");
+  ctx.fillStyle = topFog;
+  ctx.fillRect(0, 0, W, CEIL_Y + 10);
+
+  const botFog = ctx.createLinearGradient(0, H - 20, 0, H);
+  botFog.addColorStop(0, "transparent");
+  botFog.addColorStop(1, "rgba(0,0,0,0.6)");
+  ctx.fillStyle = botFog;
+  ctx.fillRect(0, H - 20, W, 20);
+}
+
 function draw(ctx, W, H, state, C) {
   const { offset, torchPhase } = state;
   const FLOOR_Y = H * 0.72;
   const CEIL_Y  = H * 0.18;
-
-  ctx.clearRect(0, 0, W, H);
 
   // 背景色
   ctx.fillStyle = C.skyColor;
@@ -96,12 +193,7 @@ function draw(ctx, W, H, state, C) {
   }
 
   // 松明
-  const torchInterval = 280;
-  const torchOff = offset % torchInterval;
-  for (let x = -torchOff + torchInterval * 0.3; x < W + torchInterval; x += torchInterval) {
-    const flicker = 0.85 + Math.sin(torchPhase + x * 0.01) * 0.1 + Math.random() * 0.04;
-    drawTorch(ctx, x, FLOOR_Y - 180, flicker, C);
-  }
+  drawTorches(ctx, W, H, offset, torchPhase, C);
 
   // 床
   const floorGrad = ctx.createLinearGradient(0, FLOOR_Y, 0, H);
@@ -133,31 +225,7 @@ function draw(ctx, W, H, state, C) {
   ctx.fillRect(0, FLOOR_Y - 4, W, 4);
   ctx.fillRect(0, CEIL_Y, W, 4);
 
-  // 左右の暗闇
-  const leftFog = ctx.createLinearGradient(0, 0, W * 0.12, 0);
-  leftFog.addColorStop(0, "rgba(0,0,0,0.9)");
-  leftFog.addColorStop(1, "transparent");
-  ctx.fillStyle = leftFog;
-  ctx.fillRect(0, 0, W * 0.12, H);
-
-  const rightFog = ctx.createLinearGradient(W * 0.88, 0, W, 0);
-  rightFog.addColorStop(0, "transparent");
-  rightFog.addColorStop(1, "rgba(0,0,0,0.9)");
-  ctx.fillStyle = rightFog;
-  ctx.fillRect(W * 0.88, 0, W * 0.12, H);
-
-  // 上下の暗闇
-  const topFog = ctx.createLinearGradient(0, 0, 0, CEIL_Y + 10);
-  topFog.addColorStop(0, "rgba(0,0,0,0.95)");
-  topFog.addColorStop(1, "transparent");
-  ctx.fillStyle = topFog;
-  ctx.fillRect(0, 0, W, CEIL_Y + 10);
-
-  const botFog = ctx.createLinearGradient(0, H - 20, 0, H);
-  botFog.addColorStop(0, "transparent");
-  botFog.addColorStop(1, "rgba(0,0,0,0.6)");
-  ctx.fillStyle = botFog;
-  ctx.fillRect(0, H - 20, W, 20);
+  drawFogVignette(ctx, W, H);
 }
 
 function drawTorch(ctx, x, y, flicker, C) {

@@ -640,7 +640,7 @@ export default function DungeonPage({ onBack }) {
 
   return (
     <div style={{ height:"100vh", background:"#000", fontFamily:"monospace", display:"flex", flexDirection:"column", position:"relative" }}>
-      <DungeonCanvas isRunning={isRunning} isBreak={phase==="break"} isPaused={monsterArrived} />
+      <DungeonCanvas isRunning={isRunning} isBreak={phase==="break"} isPaused={monsterArrived} dungeonId={dungeonId} bossFloor={bossFloor} />
       <PlayerSprite hp={hp} maxHp={maxHp} isRunning={isRunning} isBreak={phase==="break"} isDefeated={playerDefeated} />
       <SummonSprite summons={activeSummons} />
       <MonsterSprite
