@@ -152,11 +152,11 @@ export default function TownPage({ onEnterDungeon }) {
             )}
 
             {/* ギルドの詰め所：壁に掲示板+クエスト掲示板、床に本+トロフィー */}
-            <div style={{ position:"relative", width:"100%", aspectRatio:"779/768" }}>
-              <img src="/assets/images/guild_wall.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
+            <div style={{ position:"relative", width:"100%", aspectRatio:"1408/768" }}>
+              <img src="/assets/images/guild_wall.jpg" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
 
               {/* 掲示板：貼り紙3枚がダンジョン1/2/3。押すと「受注」印が押されてからダンジョンへ */}
-              <div style={{ position:"absolute", left:"5%", top:"5%", width:"66%", aspectRatio:"1074/597" }}>
+              <div style={{ position:"absolute", left:"23.5%", top:"5%", width:"37%", aspectRatio:"1074/597" }}>
                 <img src="/assets/images/guild_board.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
                 {DUNGEONS.map((d, idx) => {
                   const ds = player.dungeons?.[d.id] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
@@ -194,15 +194,15 @@ export default function TownPage({ onEnterDungeon }) {
               </div>
 
               {/* クエスト掲示板：掲示板の横 */}
-              <button onClick={() => setSubTab("quest")} style={{ position:"absolute", right:"4%", top:"6%", width:"25%", aspectRatio:"468/754", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+              <button onClick={() => setSubTab("quest")} style={{ position:"absolute", left:"62.5%", top:"6%", width:"14%", aspectRatio:"468/754", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
                 <img src="/assets/images/guild_quest_board.png" alt="クエスト" style={{ width:"100%", height:"100%", display:"block" }} />
               </button>
 
               {/* 床：本(図鑑)とトロフィー(実績) */}
-              <button onClick={() => setSubTab("book")} style={{ position:"absolute", left:"6%", bottom:"1%", width:"20%", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+              <button onClick={() => setSubTab("book")} style={{ position:"absolute", left:"27%", bottom:"1%", width:"11%", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
                 <img src="/assets/images/guild_book.png" alt="図鑑" style={{ width:"100%", height:"auto", display:"block" }} />
               </button>
-              <button onClick={() => setSubTab("achievement")} style={{ position:"absolute", right:"8%", bottom:"1%", width:"17%", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+              <button onClick={() => setSubTab("achievement")} style={{ position:"absolute", right:"27%", bottom:"1%", width:"9%", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
                 <img src="/assets/images/guild_trophy.png" alt="実績" style={{ width:"100%", height:"auto", display:"block" }} />
               </button>
             </div>
