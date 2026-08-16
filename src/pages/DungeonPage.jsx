@@ -25,9 +25,10 @@ import { makeInitialStats } from "../systems/achievements";
 // イベント回数は4回固定のまま（負け戦が続くと以降のイベントが軒並み無報酬になるため、
 // 回数を増やすとその連鎖リスクも増える。代わりに1回ずつの見せ方を長く・濃くする）
 const EVENT_CHECK_INTERVAL = 6 * 60 * 1000; // 6分おきに抽選（旧と同じ間隔）
-const FIRST_EVENT_DELAY    = 3 * 60 * 1000; // 最初の抽選だけ3分後に前倒し（開始6分間の無風を解消）
-const EVENT_FIRE_CHANCE    = 0.85;          // 4回の枠にできるだけ収まるよう当選率を上げる
+const FIRST_EVENT_DELAY    = 4 * 60 * 1000; // 最初のイベントは4分後に必ず発生（抽選なし、開始直後の無風を解消）
+const EVENT_FIRE_CHANCE    = 0.85;          // 4回の枠にできるだけ収まるよう当選率を上げる（2回目以降のみ適用）
 const BASE_MAX_EVENTS = 4;
+const EVENT_POPUP_DURATION_LONG = 45000; // 妖精/罠/NPC会話など、じっくり読ませたいイベント
 const EVENT_KIND_LABEL = { heal:"回復の泉", npc:"冒険者に遭遇", fairy:"妖精の加護", spirit:"精霊の祝福" };
 const DEBUG = import.meta.env.DEV;
 
@@ -401,14 +402,14 @@ export default function DungeonPage({ onBack }) {
       addLog(`⚠ 罠発動！${dmg}ダメージ！`, "#fb923c");
       setMonsterVisible(false); setCurrentMonsters([]);
       setCurrentEvent("trap"); setEventVisible(true); setMonsterArrived(false);
-      showEventPopup({ icon:"⚠", label:"罠発動！", text:`-${dmg} ダメージ`, color:"#fb923c" }, 5500);
-      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, 5500);
+      showEventPopup({ icon:"⚠", label:"罠発動！", text:`-${dmg} ダメージ`, color:"#fb923c" }, EVENT_POPUP_DURATION_LONG);
+      setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, EVENT_POPUP_DURATION_LONG);
 
     } else {
       const ev = rollNpcEvent();
       addLog(`${ev.icon} ${ev.text}`, ev.color);
       const kind = ev.effect==="heal"?"heal":ev.effect==="buff"?"fairy":ev.effect==="enhance"?"spirit":"npc";
-      const duration = ev.effect === "heal" ? 8000 : 7000;
+      const duration = ev.effect === "heal" ? 8000 : EVENT_POPUP_DURATION_LONG;
       if (ev.effect==="heal") {
         // 瞬間全回復ではなく、HPバーがじわじわ満ちていく様子を見せる
         if (healTimerRef.current) clearInterval(healTimerRef.current);
@@ -473,16 +474,16 @@ export default function DungeonPage({ onBack }) {
     if (!isRunning || phase !== "work") return;
     let cancelled = false;
     let timeoutId;
-    const tick = (delay) => {
+    const tick = (delay, guaranteed) => {
       timeoutId = setTimeout(() => {
         if (cancelled) return;
         const canFire = eventCountRef.current < BASE_MAX_EVENTS
           && !monsterVisibleRef.current && !eventVisibleRef.current;
-        if (canFire && Math.random() < EVENT_FIRE_CHANCE) fireEvent();
-        tick(EVENT_CHECK_INTERVAL);
+        if (canFire && (guaranteed || Math.random() < EVENT_FIRE_CHANCE)) fireEvent();
+        tick(EVENT_CHECK_INTERVAL, false);
       }, delay);
     };
-    tick(FIRST_EVENT_DELAY);
+    tick(FIRST_EVENT_DELAY, true);
     return () => { cancelled = true; clearTimeout(timeoutId); };
   }, [isRunning, phase, fireEvent]);
 

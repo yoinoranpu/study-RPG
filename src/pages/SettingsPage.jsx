@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { linkGuestToGoogle, logout } from "../firebase/saveLoad";
+import { submitFeedback } from "../firebase/feedback";
 import usePlayerStore from "../store/usePlayerStore";
 
 export default function SettingsPage({ onClose }) {
   const { isGuest, uid, resetPlayer } = usePlayerStore();
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackMsg, setFeedbackMsg] = useState("");
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   async function handleGoogleLink() {
     setLoading(true);
@@ -28,6 +32,21 @@ export default function SettingsPage({ onClose }) {
     if (!window.confirm("データを全てリセットしますか？")) return;
     resetPlayer();
     setMsg("✅ データをリセットしました");
+  }
+
+  async function handleFeedbackSubmit() {
+    const text = feedbackText.trim();
+    if (!text) return;
+    setFeedbackLoading(true);
+    setFeedbackMsg("");
+    try {
+      await submitFeedback(uid, text);
+      setFeedbackText("");
+      setFeedbackMsg("✅ 送信しました、ありがとうございます！");
+    } catch (e) {
+      setFeedbackMsg(`❌ 送信に失敗しました: ${e.message}`);
+    }
+    setFeedbackLoading(false);
   }
 
   return (
@@ -66,9 +85,33 @@ export default function SettingsPage({ onClose }) {
         </button>
 
         {/* データリセット */}
-        <button onClick={handleReset} style={{ width:"100%", padding:"10px 0", background:"transparent", border:"1px solid #f8717133", borderRadius:6, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace", opacity:0.6 }}>
+        <button onClick={handleReset} style={{ width:"100%", padding:"10px 0", background:"transparent", border:"1px solid #f8717133", borderRadius:6, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace", opacity:0.6, marginBottom:14 }}>
           データリセット
         </button>
+
+        {/* 意見箱 */}
+        <div style={{ background:"#080810", border:"1px solid #1a1a2a", borderRadius:6, padding:12 }}>
+          <div style={{ fontSize:9, color:"#7a7a9a", letterSpacing:2, marginBottom:8 }}>ご意見・ご要望</div>
+          <textarea
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+            placeholder="バグ報告、要望、感想など何でもどうぞ"
+            rows={3}
+            style={{ width:"100%", boxSizing:"border-box", background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:4, color:"#ddd", fontSize:11, fontFamily:"monospace", padding:8, resize:"vertical", marginBottom:8 }}
+          />
+          {feedbackMsg && (
+            <div style={{ fontSize:9, color: feedbackMsg.startsWith("✅") ? "#4ade80" : "#f87171", marginBottom:8 }}>
+              {feedbackMsg}
+            </div>
+          )}
+          <button
+            onClick={handleFeedbackSubmit}
+            disabled={feedbackLoading || !feedbackText.trim()}
+            style={{ width:"100%", padding:"10px 0", background:"#0a0a1a", border:"1px solid #a78bfa", borderRadius:6, cursor: feedbackLoading || !feedbackText.trim() ? "default" : "pointer", color:"#a78bfa", fontSize:10, fontFamily:"monospace", letterSpacing:1, opacity: feedbackLoading || !feedbackText.trim() ? 0.5 : 1 }}
+          >
+            {feedbackLoading ? "送信中…" : "送信する"}
+          </button>
+        </div>
       </div>
     </div>
   );
