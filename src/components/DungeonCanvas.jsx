@@ -45,6 +45,7 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused, dungeonId 
       if (canvas.width !== W || canvas.height !== H) {
         canvas.width = W;
         canvas.height = H;
+        ctx.imageSmoothingEnabled = false; // canvasのwidth/height変更でコンテキスト設定がリセットされるため再設定
       }
       const s = stateRef.current;
       const speed = isRunning && !isBreak && !isPaused ? dt * 0.15 : 0;

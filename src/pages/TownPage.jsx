@@ -65,9 +65,9 @@ export default function TownPage({ onEnterDungeon }) {
 
       {/* ヘッダー */}
       <div style={{ background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", padding:"14px 16px 10px", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
-        <div style={{ fontSize:10, letterSpacing:5, color:"#a78bfa", marginBottom:2, opacity:0.7 }}>STUDY DUNGEON</div>
+        <div className="rpg-heading" style={{ fontSize:10, letterSpacing:5, color:"#c9963d", marginBottom:2, opacity:0.8 }}>STUDY DUNGEON</div>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ fontSize:18, fontWeight:900, color:"#fff" }}>街</div>
+          <div className="rpg-heading" style={{ fontSize:18, color:"#fff" }}>街</div>
           <div style={{ flex:1 }} />
           <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 8px", cursor:"pointer", fontSize:12 }}>⚙</button>
           <div style={{ textAlign:"right" }}>
@@ -109,11 +109,11 @@ export default function TownPage({ onEnterDungeon }) {
             </div>
 
             <div style={{ position:"relative", zIndex:1, padding:isMobile?"100px 10px 10px":"150px 14px 14px", display:"flex", flexDirection:"column", gap:isMobile?6:10 }}>
-            <div style={{ background:"rgba(13,13,26,0.88)", border:"1px solid #3a3a55", borderRadius:8, padding:14 }}>
+            <div className="rpg-panel" style={{ padding:14 }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
                 <span style={{ fontSize:28 }}>🧙</span>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:14, fontWeight:900, color:"#e8e0d0" }}>Lv {lv}</div>
+                  <div className="rpg-heading" style={{ fontSize:14, color:"#e8e0d0" }}>Lv {lv}</div>
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3 }}>
                     <div style={{ flex:1, height:5, background:"#0a1a0a", borderRadius:3, overflow:"hidden" }}>
                       <div style={{ height:"100%", width:`${lvPct*100}%`, background:"#4ade80", borderRadius:3 }} />
@@ -158,10 +158,11 @@ export default function TownPage({ onEnterDungeon }) {
                 return (
                   <button key={d.id} disabled={!unlocked}
                     onClick={() => { if (!unlocked) return; updatePlayer({ currentDungeonId: d.id }); onEnterDungeon(); }}
-                    style={{ width:"100%", padding:"12px 16px", background: unlocked ? "linear-gradient(135deg,#0a1a0a,#122212)" : "#0a0a0a", border:`2px solid ${unlocked ? "#4ade80" : "#3a3a55"}`, borderRadius:8, cursor: unlocked?"pointer":"default", fontFamily:"monospace", display:"flex", alignItems:"center", gap:12, textAlign:"left", boxShadow: unlocked ? "0 0 16px #4ade8022" : "none" }}>
+                    className={unlocked ? "rpg-panel" : ""}
+                    style={{ width:"100%", padding:"12px 16px", background: unlocked ? undefined : "#0a0a0a", border: unlocked ? undefined : "2px solid #3a3a55", borderRadius: unlocked ? undefined : 8, cursor: unlocked?"pointer":"default", fontFamily:"monospace", display:"flex", alignItems:"center", gap:12, textAlign:"left" }}>
                     <span style={{ fontSize:22 }}>{!unlocked ? "🔒" : ds.cleared ? "🏆" : "🚪"}</span>
                     <div style={{ flex:1 }}>
-                      <div style={{ fontSize:12, fontWeight:900, color: unlocked?"#fff":FAINT, letterSpacing:1 }}>
+                      <div className="rpg-heading" style={{ fontSize:12, color: unlocked?"#fff":FAINT, letterSpacing:1 }}>
                         {d.name}{ds.cleared && unlocked ? "（クリア済）" : ""}
                       </div>
                       <div style={{ fontSize:10, color: unlocked?"#86efac":FAINT, letterSpacing:1, marginTop:2 }}>
