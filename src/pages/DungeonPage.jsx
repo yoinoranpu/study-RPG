@@ -146,6 +146,7 @@ export default function DungeonPage({ onBack }) {
   const [battleTurns, setBattleTurns] = useState([]);
   const [playerDefeated, setPlayerDefeated] = useState(false);
   const [showBossWarning, setShowBossWarning] = useState(false);
+  const [showBossWipe, setShowBossWipe] = useState(false);
   const [bossFloor, setBossFloor] = useState(false);
   const [activeSummons, setActiveSummons] = useState([]);
   // 以下はレンダー中にrefを直接読まないための表示用ミラー（floor/mappingと同じパターン）
@@ -320,8 +321,12 @@ export default function DungeonPage({ onBack }) {
         addLog(`🗺 B${floorRef.current}Fに到達！`, "#60a5fa");
         if (floorRef.current % 5 === 0) {
           setTimeout(() => {
-            setShowBossWarning(true);
-            setTimeout(() => { setShowBossWarning(false); setBossFloor(true); }, 3000);
+            // 通路→ワーニング→ボス部屋を、左から入って右へ抜ける斜めワイプで繋ぐ(ポケモン風の場面転換)
+            setShowBossWipe(true);
+            setTimeout(() => setShowBossWarning(true), 400);   // ワイプが画面を覆い切ってから警告文を出す
+            setTimeout(() => setBossFloor(true), 400);          // 覆われている間に背景をボス部屋へ切り替え
+            setTimeout(() => setShowBossWarning(false), 3400);  // 警告表示3秒分はそのまま維持
+            setTimeout(() => setShowBossWipe(false), 3800);     // ワイプが抜けきったら消す
           }, 500);
           addLog(`⚠ B${floorRef.current}F ボス階層！`, "#ef4444");
         }
@@ -780,6 +785,12 @@ export default function DungeonPage({ onBack }) {
         monsterX={0.35} monsterY={0.72}
         playerX={0.72}  playerY={0.72}
       />
+
+      {showBossWipe && (
+        <div key={floor} style={{ position:"absolute", inset:0, zIndex:8, overflow:"hidden", pointerEvents:"none" }}>
+          <div className="boss-wipe-panel" />
+        </div>
+      )}
 
       {showBossWarning && (
         <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.85)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", zIndex:10 }}>

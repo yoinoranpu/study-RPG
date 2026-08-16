@@ -60,8 +60,8 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused, dungeonId 
         drawBossRoom(ctx, W, H, bossImg);
         drawFogVignette(ctx, W, H);
       } else if (!bossFloor && isReady(corridorImg)) {
+        // イラストに松明が描き込み済みのため、プロシージャル松明は重ねない
         drawIllustratedCorridor(ctx, W, H, s.offset, corridorImg);
-        drawTorches(ctx, W, H, s.offset, s.torchPhase, THEMES.stone);
         drawFogVignette(ctx, W, H);
       } else {
         draw(ctx, W, H, s, THEMES.stone);
