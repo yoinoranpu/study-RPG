@@ -24,9 +24,7 @@ import { makeInitialStats } from "../systems/achievements";
 
 // イベント回数は4回固定のまま（負け戦が続くと以降のイベントが軒並み無報酬になるため、
 // 回数を増やすとその連鎖リスクも増える。代わりに1回ずつの見せ方を長く・濃くする）
-const EVENT_CHECK_INTERVAL = 6 * 60 * 1000; // 6分おきに抽選（旧と同じ間隔）
-const FIRST_EVENT_DELAY    = 4 * 60 * 1000; // 最初のイベントは4分後に必ず発生（抽選なし、開始直後の無風を解消）
-const EVENT_FIRE_CHANCE    = 0.85;          // 4回の枠にできるだけ収まるよう当選率を上げる（2回目以降のみ適用）
+// 作業時間をBASE_MAX_EVENTS等分し、各区間で確定発生させる（抽選落ちで回数が減らないように）
 const BASE_MAX_EVENTS = 4;
 const EVENT_POPUP_DURATION_LONG = 45000; // 妖精/罠/NPC会話など、じっくり読ませたいイベント
 const EVENT_KIND_LABEL = { heal:"回復の泉", npc:"冒険者に遭遇", fairy:"妖精の加護", spirit:"精霊の祝福" };
@@ -473,19 +471,36 @@ export default function DungeonPage({ onBack }) {
   useEffect(() => {
     if (!isRunning || phase !== "work") return;
     let cancelled = false;
-    let timeoutId;
-    const tick = (delay, guaranteed) => {
-      timeoutId = setTimeout(() => {
-        if (cancelled) return;
-        const canFire = eventCountRef.current < BASE_MAX_EVENTS
-          && !monsterVisibleRef.current && !eventVisibleRef.current;
-        if (canFire && (guaranteed || Math.random() < EVENT_FIRE_CHANCE)) fireEvent();
-        tick(EVENT_CHECK_INTERVAL, false);
-      }, delay);
+    const timeoutIds = [];
+
+    // 作業時間をBASE_MAX_EVENTS等分し、各区間内のランダムな時点で確定発生させる
+    // （抽選で外れて回数が減ることがないよう、当落判定は行わない）
+    const totalMs = workMin * 60 * 1000;
+    const segmentMs = totalMs / BASE_MAX_EVENTS;
+    const scheduleTimes = Array.from({ length: BASE_MAX_EVENTS }, (_, i) => {
+      const segStart = i * segmentMs;
+      const jitter = segmentMs * (0.2 + Math.random() * 0.6); // 区間の20%〜80%の位置
+      return segStart + jitter;
+    });
+
+    const attemptFire = () => {
+      if (cancelled) return;
+      const canFire = eventCountRef.current < BASE_MAX_EVENTS
+        && !monsterVisibleRef.current && !eventVisibleRef.current;
+      if (canFire) {
+        fireEvent();
+      } else {
+        // 戦闘中・イベント表示中なら、空くまで1秒おきに再試行（取りこぼさない）
+        timeoutIds.push(setTimeout(attemptFire, 1000));
+      }
     };
-    tick(FIRST_EVENT_DELAY, true);
-    return () => { cancelled = true; clearTimeout(timeoutId); };
-  }, [isRunning, phase, fireEvent]);
+
+    scheduleTimes.forEach((delay) => {
+      timeoutIds.push(setTimeout(attemptFire, delay));
+    });
+
+    return () => { cancelled = true; timeoutIds.forEach(clearTimeout); };
+  }, [isRunning, phase, fireEvent, workMin]);
 
   const handleResultClose = () => {
     const newMats = { ...(player.materials||{}) };
