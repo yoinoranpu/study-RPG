@@ -10,8 +10,10 @@ import SkillBookTab from "../components/SkillBookTab";
 import QuestTab from "../components/QuestTab";
 import AchievementTab from "../components/AchievementTab";
 import DebugItemTab from "../components/DebugItemTab";
+import GuildLayoutEditor from "../components/GuildLayoutEditor";
 import { DUNGEONS, isDungeonUnlocked, getGlobalUnlockDepth } from "../systems/dungeons";
 import { resetQuestsIfNeeded } from "../systems/quests";
+import { GUILD_LAYOUT_DEFAULT } from "../data/guildLayout";
 
 const DIM = "#7a7a9a";
 
@@ -21,6 +23,8 @@ export default function TownPage({ onEnterDungeon }) {
   const [bookTab, setBookTab] = useState("monster");
   const [showSettings, setShowSettings] = useState(false);
   const [stampingDungeonId, setStampingDungeonId] = useState(null);
+  const [guildLayout, setGuildLayout] = useState(GUILD_LAYOUT_DEFAULT);
+  const [showLayoutEditor, setShowLayoutEditor] = useState(false);
   const w = window.innerWidth;
   const [isMobile, setIsMobile] = useState(w < 768);
   const [isTablet, setIsTablet] = useState(w >= 768 && w < 1024);
@@ -156,7 +160,7 @@ export default function TownPage({ onEnterDungeon }) {
               <img src="/assets/images/guild_wall.jpg" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
 
               {/* 掲示板：貼り紙3枚がダンジョン1/2/3。押すと「受注」印が押されてからダンジョンへ */}
-              <div style={{ position:"absolute", left:"23.5%", top:"5%", width:"37%", aspectRatio:"1074/597" }}>
+              <div style={{ position:"absolute", left:`${guildLayout.board.left}%`, top:`${guildLayout.board.top}%`, width:`${guildLayout.board.width}%`, aspectRatio:"1074/597" }}>
                 <img src="/assets/images/guild_board.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
                 {DUNGEONS.map((d, idx) => {
                   const ds = player.dungeons?.[d.id] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
@@ -194,15 +198,15 @@ export default function TownPage({ onEnterDungeon }) {
               </div>
 
               {/* クエスト掲示板：掲示板の横 */}
-              <button onClick={() => setSubTab("quest")} style={{ position:"absolute", left:"62.5%", top:"6%", width:"14%", aspectRatio:"468/754", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+              <button onClick={() => setSubTab("quest")} style={{ position:"absolute", left:`${guildLayout.questBoard.left}%`, top:`${guildLayout.questBoard.top}%`, width:`${guildLayout.questBoard.width}%`, aspectRatio:"468/754", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
                 <img src="/assets/images/guild_quest_board.png" alt="クエスト" style={{ width:"100%", height:"100%", display:"block" }} />
               </button>
 
               {/* 床：本(図鑑)とトロフィー(実績) */}
-              <button onClick={() => setSubTab("book")} style={{ position:"absolute", left:"27%", bottom:"1%", width:"11%", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+              <button onClick={() => setSubTab("book")} style={{ position:"absolute", left:`${guildLayout.book.left}%`, bottom:`${guildLayout.book.bottom}%`, width:`${guildLayout.book.width}%`, background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
                 <img src="/assets/images/guild_book.png" alt="図鑑" style={{ width:"100%", height:"auto", display:"block" }} />
               </button>
-              <button onClick={() => setSubTab("achievement")} style={{ position:"absolute", right:"27%", bottom:"1%", width:"9%", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+              <button onClick={() => setSubTab("achievement")} style={{ position:"absolute", right:`${guildLayout.trophy.right}%`, bottom:`${guildLayout.trophy.bottom}%`, width:`${guildLayout.trophy.width}%`, background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
                 <img src="/assets/images/guild_trophy.png" alt="実績" style={{ width:"100%", height:"auto", display:"block" }} />
               </button>
             </div>
@@ -269,6 +273,11 @@ export default function TownPage({ onEnterDungeon }) {
                   <span style={{ fontSize:10, color:"#a78bfa" }}>DEBUG</span>
                 </button>
               )}
+        {DEBUG && tab === "home" && subTab === "home" && (
+          <button onClick={() => setShowLayoutEditor(true)} style={{ position:"fixed", bottom:16, right:16, zIndex:50, padding:"8px 12px", background:"#1a0a1a", border:"1px solid #a78bfa44", borderRadius:6, cursor:"pointer", color:"#a78bfa", fontSize:10, fontFamily:"monospace" }}>
+            DEBUG: 配置エディタ
+          </button>
+        )}
 
         {tab === "character" && <CharacterPage />}
         {tab === "shop"      && <ShopTab />}
@@ -276,6 +285,14 @@ export default function TownPage({ onEnterDungeon }) {
       </div>
 
       {showSettings && <SettingsPage onClose={() => setShowSettings(false)} />}
+      {showLayoutEditor && (
+        <GuildLayoutEditor
+          layout={guildLayout}
+          onChange={(key, field, value) => setGuildLayout(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }))}
+          onReset={() => setGuildLayout(GUILD_LAYOUT_DEFAULT)}
+          onClose={() => setShowLayoutEditor(false)}
+        />
+      )}
     </div>
   );
 }
