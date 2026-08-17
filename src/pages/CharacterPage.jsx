@@ -236,14 +236,6 @@ export default function CharacterPage() {
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace", overflow:"hidden", position:"relative" }}>
 
-      <div style={{ position:"relative", flexShrink:0, height:90, overflow:"hidden", borderBottom:"1px solid #1a1a2a" }}>
-        <img src="/assets/images/character-banner.png" alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 30%", display:"block" }} />
-        <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(180deg, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.55) 60%, #080810 100%)" }} />
-        <div style={{ position:"absolute", left:12, right:12, bottom:6 }}>
-          <div className="rpg-heading" style={{ fontSize:10, color:"#e0b555", letterSpacing:2 }}>⚔ CHARACTER</div>
-        </div>
-      </div>
-
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
         {[{id:"equip",label:"⚔ 装備"},{id:"skill",label:"✨ スキル"}].map(t=>(
           <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} className="rpg-heading" style={{ flex:1, padding:"8px 0", background:tab===t.id?"#241a0e":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#e0b555":"transparent"}`, cursor:"pointer", color:tab===t.id?"#e0b555":DIM, fontSize:11 }}>
@@ -254,67 +246,73 @@ export default function CharacterPage() {
 
       {tab === "equip" && (
         <>
-          <div style={{ display:"flex", flexDirection:isMobile?"column":"row", gap:0, background:"linear-gradient(180deg, #241a10 0%, #1a120a 100%)", borderBottom:"1px solid #3a2a18", flexShrink:0 }}>
-            <div style={{ padding:"10px 10px", display:"flex", flexDirection:"column", gap:8, minWidth:isMobile?"auto":168 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                <span style={{ fontSize:10, color:"#86efac", fontWeight:700 }}>Lv{lv}</span>
-                <div style={{ flex:1, height:3, background:"#0a1a0a", borderRadius:2, overflow:"hidden" }}>
-                  <div style={{ height:"100%", width:`${lvPct*100}%`, background:"#4ade80", borderRadius:2 }} />
-                </div>
-              </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
-                {EQUIP_SLOTS.map(({key,label,icon,drop})=>{
-                  const eq = player[key];
-                  const rc = eq ? RARITY_COLOR[eq.rarity]||"#888" : "#333350";
-                  const isHover = dropTarget === drop;
-                  return (
-                    <div key={key} data-drop={drop} onClick={() => eq && setSel(sel===`slot_${key}`?null:`slot_${key}`)} title={label}
-                      style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                      <div style={{ width:60, height:60, background:isHover?"#1a2a1a":eq?`${rc}22`:"#0a0a14", border:`2px solid ${isHover?"#4ade80":sel===`slot_${key}`?"#a78bfa":rc}`, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, cursor:eq?"pointer":"default", position:"relative", boxShadow:eq?`0 0 8px ${rc}66`:"none" }}>
-                        {eq ? (eq.image ? <img src={eq.image} alt="" style={{ width:"75%", height:"75%", objectFit:"contain", filter:eq.tint||"none" }} /> : eq.icon) : <span style={{ fontSize:13, color:FAINT }}>{icon}</span>}
-                        {eq?.upgradeLevel > 0 && <div style={{ position:"absolute", top:1, right:2, fontSize:10, color:"#fbbf24", fontWeight:700 }}>+{eq.upgradeLevel}</div>}
-                      </div>
-                      <div style={{ fontSize:9, color:eq?rc:FAINT, maxWidth:60, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"center" }}>
-                        {eq ? eq.name : label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ display:"flex", gap:4 }}>
-                {(player.specialSlots||[null,null,null]).map((slot,i)=>{
-                  const isHover = dropTarget === "special";
-                  return (
-                    <div key={i} data-drop="special" onClick={() => slot && setSel(sel===`cslot_${i}`?null:`cslot_${i}`)}
-                      style={{ width:44, height:44, background:isHover?"#1a2a1a":slot?"#0d0d15":"#0a0a14", border:`1px solid ${isHover?"#4ade80":sel===`cslot_${i}`?"#4ade80":slot?"#4ade8066":"#333350"}`, borderRadius:5, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:slot?"pointer":"default" }}>
-                      {slot ? (slot.image ? <img src={slot.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:slot.tint||"none" }} /> : slot.icon) : <span style={{ fontSize:10, color:DIM }}>S{i+1}</span>}
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                <span style={{ fontSize:10, color:"#f87171", fontWeight:700 }}>HP</span>
-                <div style={{ flex:1, height:4, background:"#1a0a0a", borderRadius:2, overflow:"hidden" }}>
-                  <div style={{ height:"100%", width:`${(player.hp/stats.maxHp)*100}%`, background: player.hp/stats.maxHp>0.5?"#4ade80":player.hp/stats.maxHp>0.25?"#fbbf24":"#f87171", borderRadius:2 }} />
-                </div>
-                <span style={{ fontSize:10, color:DIM }}>{player.hp}/{stats.maxHp}</span>
-              </div>
-            </div>
+          <div style={{ position:"relative", flexShrink:0, height:isMobile?210:260, overflow:"hidden" }}>
+            <img src="/assets/images/character_room.jpg" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%", display:"block" }} />
+            <div style={{ position:"absolute", inset:0, background:"rgba(10,6,3,0.4)" }} />
+            <div className="rpg-heading" style={{ position:"absolute", top:8, left:12, fontSize:10, color:"#f0d9a0", letterSpacing:2, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>⚔ CHARACTER</div>
 
-            <div style={{ flex:1, padding:"10px 8px 10px 14px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:5, alignContent:"start", justifyItems:"end" }}>
-              {[
-                {label:"ATK",  val:stats.atk,        color:"#f87171"},
-                {label:"MAG",  val:stats.mag,        color:"#a78bfa"},
-                {label:"DEF",  val:stats.def,        color:"#60a5fa"},
-                {label:"MDEF", val:stats.mdef,       color:"#38bdf8"},
-                {label:"EVA",  val:`${stats.eva}%`,  color:"#34d399"},
-                {label:"CRIT", val:`${stats.crit}%`, color:"#fbbf24"},
-              ].map(({label,val,color})=>(
-                <div key={label} style={{ width:"100%", background:"#1c130b", border:"1px solid #3a2a18", borderRadius:3, padding:"5px 8px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
-                  <span style={{ fontSize:10, color:LABEL, fontWeight:700 }}>{label}</span>
-                  <span style={{ fontSize:11, color, fontWeight:700 }}>{val}</span>
+            <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:isMobile?"column":"row", gap:8, padding:"26px 10px 10px" }}>
+              <div style={{ background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"8px 10px", display:"flex", flexDirection:"column", gap:6, minWidth:isMobile?"auto":168, backdropFilter:"blur(1px)" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                  <span style={{ fontSize:10, color:"#86efac", fontWeight:700 }}>Lv{lv}</span>
+                  <div style={{ flex:1, height:3, background:"#0a1a0a", borderRadius:2, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${lvPct*100}%`, background:"#4ade80", borderRadius:2 }} />
+                  </div>
                 </div>
-              ))}
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+                  {EQUIP_SLOTS.map(({key,label,icon,drop})=>{
+                    const eq = player[key];
+                    const rc = eq ? RARITY_COLOR[eq.rarity]||"#888" : "#333350";
+                    const isHover = dropTarget === drop;
+                    return (
+                      <div key={key} data-drop={drop} onClick={() => eq && setSel(sel===`slot_${key}`?null:`slot_${key}`)} title={label}
+                        style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+                        <div style={{ width:56, height:56, background:isHover?"#1a2a1a":eq?`${rc}22`:"rgba(10,10,20,0.6)", border:`2px solid ${isHover?"#4ade80":sel===`slot_${key}`?"#a78bfa":rc}`, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, cursor:eq?"pointer":"default", position:"relative", boxShadow:eq?`0 0 8px ${rc}66`:"none" }}>
+                          {eq ? (eq.image ? <img src={eq.image} alt="" style={{ width:"75%", height:"75%", objectFit:"contain", filter:eq.tint||"none" }} /> : eq.icon) : <span style={{ fontSize:13, color:FAINT }}>{icon}</span>}
+                          {eq?.upgradeLevel > 0 && <div style={{ position:"absolute", top:1, right:2, fontSize:10, color:"#fbbf24", fontWeight:700 }}>+{eq.upgradeLevel}</div>}
+                        </div>
+                        <div style={{ fontSize:9, color:eq?rc:FAINT, maxWidth:56, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"center" }}>
+                          {eq ? eq.name : label}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display:"flex", gap:4 }}>
+                  {(player.specialSlots||[null,null,null]).map((slot,i)=>{
+                    const isHover = dropTarget === "special";
+                    return (
+                      <div key={i} data-drop="special" onClick={() => slot && setSel(sel===`cslot_${i}`?null:`cslot_${i}`)}
+                        style={{ width:44, height:44, background:isHover?"#1a2a1a":slot?"rgba(13,13,21,0.7)":"rgba(10,10,20,0.6)", border:`1px solid ${isHover?"#4ade80":sel===`cslot_${i}`?"#4ade80":slot?"#4ade8066":"#333350"}`, borderRadius:5, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:slot?"pointer":"default" }}>
+                        {slot ? (slot.image ? <img src={slot.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:slot.tint||"none" }} /> : slot.icon) : <span style={{ fontSize:10, color:DIM }}>S{i+1}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                  <span style={{ fontSize:10, color:"#f87171", fontWeight:700 }}>HP</span>
+                  <div style={{ flex:1, height:4, background:"#1a0a0a", borderRadius:2, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${(player.hp/stats.maxHp)*100}%`, background: player.hp/stats.maxHp>0.5?"#4ade80":player.hp/stats.maxHp>0.25?"#fbbf24":"#f87171", borderRadius:2 }} />
+                  </div>
+                  <span style={{ fontSize:10, color:DIM }}>{player.hp}/{stats.maxHp}</span>
+                </div>
+              </div>
+
+              <div style={{ flex:1, background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"8px 10px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:5, alignContent:"start", justifyItems:"end", backdropFilter:"blur(1px)" }}>
+                {[
+                  {label:"ATK",  val:stats.atk,        color:"#f87171"},
+                  {label:"MAG",  val:stats.mag,        color:"#a78bfa"},
+                  {label:"DEF",  val:stats.def,        color:"#60a5fa"},
+                  {label:"MDEF", val:stats.mdef,       color:"#38bdf8"},
+                  {label:"EVA",  val:`${stats.eva}%`,  color:"#34d399"},
+                  {label:"CRIT", val:`${stats.crit}%`, color:"#fbbf24"},
+                ].map(({label,val,color})=>(
+                  <div key={label} style={{ width:"100%", background:"rgba(28,19,11,0.75)", border:"1px solid #3a2a18", borderRadius:3, padding:"5px 8px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+                    <span style={{ fontSize:10, color:LABEL, fontWeight:700 }}>{label}</span>
+                    <span style={{ fontSize:11, color, fontWeight:700 }}>{val}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
