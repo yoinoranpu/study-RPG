@@ -31,7 +31,8 @@
   filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.55));
 }
 .guild-prop-btn:active {
-  transform: translateY(-2%);
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.8));
 }
 
 /* ギルド掲示板：「受注」ハンコが勢いよく紙に押される演出 */

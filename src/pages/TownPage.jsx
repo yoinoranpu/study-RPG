@@ -177,7 +177,6 @@ export default function TownPage({ onEnterDungeon }) {
                   const ds = player.dungeons?.[d.id] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
                   const unlocked = isDungeonUnlocked(player.dungeons, d.id);
                   const stamping = stampingDungeonId === d.id;
-                  const isCurrent = unlocked && (player.currentDungeonId || 1) === d.id;
                   const seal = ["/assets/images/dungeon_seal_1.png", "/assets/images/dungeon_seal_2.png", "/assets/images/dungeon_seal_3.png"][idx];
                   const pos = [
                     { left:"10.9%", top:"26.0%", width:"22.3%", height:"52.7%" },
@@ -194,15 +193,8 @@ export default function TownPage({ onEnterDungeon }) {
                           onEnterDungeon();
                         }, 700);
                       }}
+                      className="guild-prop-btn"
                       style={{ position:"absolute", ...pos, background:"transparent", border:"none", padding:"4% 4% 8%", cursor: unlocked?"pointer":"default", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", overflow:"visible" }}>
-                      {isCurrent && (
-                        <>
-                          <div style={{ position:"absolute", inset:"-3%", border:"3px solid #fbbf24", borderRadius:6, boxShadow:"0 0 10px rgba(251,191,36,0.7), inset 0 0 10px rgba(251,191,36,0.25)", pointerEvents:"none" }} />
-                          <div className="rpg-heading" style={{ position:"absolute", top:"-9%", left:"50%", transform:"translateX(-50%)", background:"#fbbf24", color:"#3a2a08", fontSize:"clamp(7px,1.6vw,9px)", fontWeight:900, padding:"2px 8px", borderRadius:10, whiteSpace:"nowrap", boxShadow:"0 2px 4px rgba(0,0,0,0.5)" }}>
-                            挑戦中
-                          </div>
-                        </>
-                      )}
                       {unlocked ? (
                         <div style={{ position:"relative", width:"38%" }}>
                           <img src={seal} alt="" style={{ width:"100%", height:"auto", display:"block", opacity:0.92 }} />
