@@ -177,6 +177,7 @@ export default function TownPage({ onEnterDungeon }) {
                   const ds = player.dungeons?.[d.id] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
                   const unlocked = isDungeonUnlocked(player.dungeons, d.id);
                   const stamping = stampingDungeonId === d.id;
+                  const seal = ["/assets/images/dungeon_seal_1.png", "/assets/images/dungeon_seal_2.png", "/assets/images/dungeon_seal_3.png"][idx];
                   const pos = [
                     { left:"10.9%", top:"26.0%", width:"22.3%", height:"52.7%" },
                     { left:"38.5%", top:"25.5%", width:"22.1%", height:"52.1%" },
@@ -193,11 +194,20 @@ export default function TownPage({ onEnterDungeon }) {
                         }, 700);
                       }}
                       style={{ position:"absolute", ...pos, background:"transparent", border:"none", padding:"4% 4% 8%", cursor: unlocked?"pointer":"default", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", overflow:"hidden" }}>
-                      <span style={{ fontSize:"clamp(13px,3.6vw,20px)" }}>{!unlocked ? "🔒" : ds.cleared ? "🏆" : "🚪"}</span>
-                      <div className="rpg-heading" style={{ fontSize:"clamp(8px,2vw,12px)", color: unlocked?"#4a3520":"#a09888", marginTop:3, whiteSpace:"nowrap" }}>
+                      {unlocked ? (
+                        <div style={{ position:"relative", width:"38%" }}>
+                          <img src={seal} alt="" style={{ width:"100%", height:"auto", display:"block", opacity:0.92 }} />
+                          {ds.cleared && (
+                            <span style={{ position:"absolute", bottom:"-10%", right:"-14%", fontSize:"clamp(11px,3vw,16px)" }}>🏆</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize:"clamp(13px,3.6vw,20px)" }}>🔒</span>
+                      )}
+                      <div className="rpg-heading" style={{ fontSize:"clamp(9px,2.2vw,13px)", fontWeight:900, color: unlocked?"#241608":"#8a7f6c", marginTop:4, whiteSpace:"nowrap", textShadow: unlocked?"0 1px 0 rgba(255,255,255,0.35)":"none" }}>
                         {d.name}
                       </div>
-                      <div style={{ fontSize:"clamp(6px,1.5vw,9px)", color: unlocked?"#6a5030":"#a09888", marginTop:3, lineHeight:1.3, whiteSpace:"nowrap" }}>
+                      <div style={{ fontSize:"clamp(7px,1.7vw,10px)", fontWeight:700, color: unlocked?"#4a3520":"#8a7f6c", marginTop:3, lineHeight:1.3, whiteSpace:"nowrap" }}>
                         {unlocked ? `B${ds.floor}F・マップ${Math.floor(ds.floorMapping||0)}%` : "未解放"}
                       </div>
                       {stamping && (
