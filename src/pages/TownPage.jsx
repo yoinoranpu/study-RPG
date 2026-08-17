@@ -70,7 +70,7 @@ export default function TownPage({ onEnterDungeon }) {
   }, []);
 
   const tabs = [
-    { id:"home",      icon:"🏰", label:"街"      },
+    { id:"home",      icon:"🏰", label:"ギルド"   },
     { id:"character", icon:"🧙", label:"キャラ"  },
     { id:"shop",      icon:"🏪", label:"ショップ" },
     { id:"forge",     icon:"🔨", label:"鍛冶屋"  },
@@ -82,7 +82,7 @@ export default function TownPage({ onEnterDungeon }) {
       <div style={{ background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", padding:"14px 16px 10px", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
         <div className="rpg-heading" style={{ fontSize:10, letterSpacing:5, color:"#c9963d", marginBottom:2, opacity:0.8 }}>STUDY DUNGEON</div>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div className="rpg-heading" style={{ fontSize:18, color:"#fff" }}>街</div>
+          <div className="rpg-heading" style={{ fontSize:18, color:"#fff" }}>ギルド</div>
           <div style={{ flex:1 }} />
           <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 8px", cursor:"pointer", fontSize:12 }}>⚙</button>
           <div style={{ textAlign:"right" }}>

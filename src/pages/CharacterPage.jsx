@@ -240,13 +240,13 @@ export default function CharacterPage() {
         <img src="/assets/images/character-banner.png" alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 30%", display:"block" }} />
         <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(180deg, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.55) 60%, #080810 100%)" }} />
         <div style={{ position:"absolute", left:12, right:12, bottom:6 }}>
-          <div style={{ fontSize:10, color:"#a78bfa", letterSpacing:2 }}>⚔ CHARACTER</div>
+          <div className="rpg-heading" style={{ fontSize:10, color:"#e0b555", letterSpacing:2 }}>⚔ CHARACTER</div>
         </div>
       </div>
 
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
         {[{id:"equip",label:"⚔ 装備"},{id:"skill",label:"✨ スキル"}].map(t=>(
-          <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} style={{ flex:1, padding:"8px 0", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#a78bfa":"transparent"}`, cursor:"pointer", color:tab===t.id?"#a78bfa":DIM, fontSize:11, fontFamily:"monospace" }}>
+          <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} className="rpg-heading" style={{ flex:1, padding:"8px 0", background:tab===t.id?"#241a0e":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#e0b555":"transparent"}`, cursor:"pointer", color:tab===t.id?"#e0b555":DIM, fontSize:11 }}>
             {t.label}
           </button>
         ))}
@@ -254,7 +254,7 @@ export default function CharacterPage() {
 
       {tab === "equip" && (
         <>
-          <div style={{ display:"flex", flexDirection:isMobile?"column":"row", gap:0, background:"#080810", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
+          <div style={{ display:"flex", flexDirection:isMobile?"column":"row", gap:0, background:"linear-gradient(180deg, #241a10 0%, #1a120a 100%)", borderBottom:"1px solid #3a2a18", flexShrink:0 }}>
             <div style={{ padding:"10px 10px", display:"flex", flexDirection:"column", gap:8, minWidth:isMobile?"auto":168 }}>
               <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                 <span style={{ fontSize:10, color:"#86efac", fontWeight:700 }}>Lv{lv}</span>
@@ -310,7 +310,7 @@ export default function CharacterPage() {
                 {label:"EVA",  val:`${stats.eva}%`,  color:"#34d399"},
                 {label:"CRIT", val:`${stats.crit}%`, color:"#fbbf24"},
               ].map(({label,val,color})=>(
-                <div key={label} style={{ width:"100%", background:"#0d0d15", borderRadius:3, padding:"5px 8px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+                <div key={label} style={{ width:"100%", background:"#1c130b", border:"1px solid #3a2a18", borderRadius:3, padding:"5px 8px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
                   <span style={{ fontSize:10, color:LABEL, fontWeight:700 }}>{label}</span>
                   <span style={{ fontSize:11, color, fontWeight:700 }}>{val}</span>
                 </div>
