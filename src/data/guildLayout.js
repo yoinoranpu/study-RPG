@@ -2,7 +2,7 @@
 // 単位は%(壁イラストのwidth/heightに対する割合)。GuildLayoutEditor.jsxで調整できる。
 export const GUILD_LAYOUT_DEFAULT = {
   board:      { left: 3.7, top: 4, width: 56 },
-  questBoard: { left: 60.5, top: 15, width: 16 },
+  questBoard: { left: 63, top: 15, width: 11 },
   book:       { left: 13, bottom: -1, width: 18 },
   trophy:     { right: 35, bottom: 3, width: 14 },
 };

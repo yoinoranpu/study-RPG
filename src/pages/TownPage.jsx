@@ -12,7 +12,8 @@ import AchievementTab from "../components/AchievementTab";
 import DebugItemTab from "../components/DebugItemTab";
 import GuildLayoutEditor from "../components/GuildLayoutEditor";
 import { DUNGEONS, isDungeonUnlocked, getGlobalUnlockDepth } from "../systems/dungeons";
-import { resetQuestsIfNeeded } from "../systems/quests";
+import { resetQuestsIfNeeded, QUEST_DEFS } from "../systems/quests";
+import { ACHIEVEMENT_DEFS } from "../systems/achievements";
 import { GUILD_LAYOUT_DEFAULT } from "../data/guildLayout";
 
 const DIM = "#7a7a9a";
@@ -35,6 +36,16 @@ export default function TownPage({ onEnterDungeon }) {
   const need = expForLevel(lv);
   const lvPct = need > 0 ? Math.min(1, (player.totalExp - used) / need) : 1;
   const DEBUG = import.meta.env.DEV;
+
+  // 報酬を受け取れるクエスト/実績の数（掲示板シーンのバッジ表示用）
+  const q = player.quests || {};
+  const claimableQuestCount = [
+    ...QUEST_DEFS.daily.map(quest => ({ quest, claimedKey:"claimedDaily" })),
+    ...QUEST_DEFS.weekly.map(quest => ({ quest, claimedKey:"claimedWeekly" })),
+  ].filter(({ quest, claimedKey }) => quest.get(q, player) >= quest.target && !q[claimedKey]?.[quest.id]).length;
+
+  const claimedAchievements = player.achievements?.claimed || {};
+  const claimableAchievementCount = ACHIEVEMENT_DEFS.filter(a => a.get(player) >= a.target && !claimedAchievements[a.id]).length;
 
   useEffect(() => {
     const handleResize = () => {
@@ -156,7 +167,7 @@ export default function TownPage({ onEnterDungeon }) {
             )}
 
             {/* ギルドの詰め所：壁に掲示板+クエスト掲示板、床に本+トロフィー */}
-            <div style={{ position:"relative", width:"100%", aspectRatio:"1481/768" }}>
+            <div style={{ position:"relative", width:"100%", aspectRatio:"1408/768" }}>
               <img src="/assets/images/guild_wall.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
 
               {/* 掲示板：貼り紙3枚がダンジョン1/2/3。押すと「受注」印が押されてからダンジョンへ */}
@@ -198,16 +209,33 @@ export default function TownPage({ onEnterDungeon }) {
               </div>
 
               {/* クエスト掲示板：掲示板の横 */}
-              <button onClick={() => setSubTab("quest")} style={{ position:"absolute", left:`${guildLayout.questBoard.left}%`, top:`${guildLayout.questBoard.top}%`, width:`${guildLayout.questBoard.width}%`, aspectRatio:"450/742", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
-                <img src="/assets/images/guild_quest_board.png" alt="クエスト" style={{ width:"100%", height:"100%", display:"block" }} />
+              <button onClick={() => setSubTab("quest")} className="guild-prop-btn" style={{ position:"absolute", left:`${guildLayout.questBoard.left}%`, top:`${guildLayout.questBoard.top}%`, width:`${guildLayout.questBoard.width}%`, background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+                <div style={{ position:"relative" }}>
+                  <img src="/assets/images/guild_quest_board.png" alt="" style={{ width:"100%", aspectRatio:"450/742", display:"block" }} />
+                  {claimableQuestCount > 0 && (
+                    <span style={{ position:"absolute", top:"-8%", right:"-8%", minWidth:"20%", aspectRatio:"1/1", borderRadius:"50%", background:"#ef4444", color:"#fff", fontSize:"clamp(9px,2.2vw,13px)", fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 0 6px rgba(0,0,0,0.6)" }}>
+                      {claimableQuestCount}
+                    </span>
+                  )}
+                </div>
+                <div className="rpg-heading" style={{ fontSize:"clamp(8px,2vw,11px)", color:"#e8dcc0", marginTop:4, textShadow:"0 1px 3px #000" }}>クエスト</div>
               </button>
 
               {/* 床：本(図鑑)とトロフィー(実績) */}
-              <button onClick={() => setSubTab("book")} style={{ position:"absolute", left:`${guildLayout.book.left}%`, bottom:`${guildLayout.book.bottom}%`, width:`${guildLayout.book.width}%`, background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
-                <img src="/assets/images/guild_book.png" alt="図鑑" style={{ width:"100%", height:"auto", display:"block" }} />
+              <button onClick={() => setSubTab("book")} className="guild-prop-btn" style={{ position:"absolute", left:`${guildLayout.book.left}%`, bottom:`${guildLayout.book.bottom}%`, width:`${guildLayout.book.width}%`, background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+                <img src="/assets/images/guild_book.png" alt="" style={{ width:"100%", height:"auto", display:"block" }} />
+                <div className="rpg-heading" style={{ fontSize:"clamp(8px,2vw,11px)", color:"#e8dcc0", marginTop:4, textShadow:"0 1px 3px #000" }}>図鑑</div>
               </button>
-              <button onClick={() => setSubTab("achievement")} style={{ position:"absolute", right:`${guildLayout.trophy.right}%`, bottom:`${guildLayout.trophy.bottom}%`, width:`${guildLayout.trophy.width}%`, background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
-                <img src="/assets/images/guild_trophy.png" alt="実績" style={{ width:"100%", height:"auto", display:"block" }} />
+              <button onClick={() => setSubTab("achievement")} className="guild-prop-btn" style={{ position:"absolute", right:`${guildLayout.trophy.right}%`, bottom:`${guildLayout.trophy.bottom}%`, width:`${guildLayout.trophy.width}%`, background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+                <div style={{ position:"relative" }}>
+                  <img src="/assets/images/guild_trophy.png" alt="" style={{ width:"100%", height:"auto", display:"block" }} />
+                  {claimableAchievementCount > 0 && (
+                    <span style={{ position:"absolute", top:"-8%", right:"-8%", minWidth:"22%", aspectRatio:"1/1", borderRadius:"50%", background:"#ef4444", color:"#fff", fontSize:"clamp(9px,2.2vw,13px)", fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 0 6px rgba(0,0,0,0.6)" }}>
+                      {claimableAchievementCount}
+                    </span>
+                  )}
+                </div>
+                <div className="rpg-heading" style={{ fontSize:"clamp(8px,2vw,11px)", color:"#e8dcc0", marginTop:4, textShadow:"0 1px 3px #000" }}>実績</div>
               </button>
             </div>
             </div>

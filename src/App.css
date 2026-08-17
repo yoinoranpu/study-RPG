@@ -22,6 +22,18 @@
   letter-spacing: 1px;
 }
 
+/* ギルドシーンの本・クエスト板・トロフィー：押せる感を出すホバー/タップ演出 */
+.guild-prop-btn {
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.guild-prop-btn:hover, .guild-prop-btn:focus-visible {
+  transform: translateY(-6%);
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.55));
+}
+.guild-prop-btn:active {
+  transform: translateY(-2%);
+}
+
 /* ギルド掲示板：「受注」ハンコが勢いよく紙に押される演出 */
 @keyframes stampSlam {
   0%   { transform: scale(2.2) rotate(-18deg); opacity: 0; }
