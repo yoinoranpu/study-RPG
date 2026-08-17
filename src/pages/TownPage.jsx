@@ -157,7 +157,7 @@ export default function TownPage({ onEnterDungeon }) {
 
             {/* ギルドの詰め所：壁に掲示板+クエスト掲示板、床に本+トロフィー */}
             <div style={{ position:"relative", width:"100%", aspectRatio:"1408/768" }}>
-              <img src="/assets/images/guild_wall.jpg" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
+              <img src="/assets/images/guild_wall.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
 
               {/* 掲示板：貼り紙3枚がダンジョン1/2/3。押すと「受注」印が押されてからダンジョンへ */}
               <div style={{ position:"absolute", left:`${guildLayout.board.left}%`, top:`${guildLayout.board.top}%`, width:`${guildLayout.board.width}%`, aspectRatio:"1074/597" }}>
@@ -198,7 +198,7 @@ export default function TownPage({ onEnterDungeon }) {
               </div>
 
               {/* クエスト掲示板：掲示板の横 */}
-              <button onClick={() => setSubTab("quest")} style={{ position:"absolute", left:`${guildLayout.questBoard.left}%`, top:`${guildLayout.questBoard.top}%`, width:`${guildLayout.questBoard.width}%`, aspectRatio:"468/754", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
+              <button onClick={() => setSubTab("quest")} style={{ position:"absolute", left:`${guildLayout.questBoard.left}%`, top:`${guildLayout.questBoard.top}%`, width:`${guildLayout.questBoard.width}%`, aspectRatio:"450/742", background:"transparent", border:"none", padding:0, cursor:"pointer" }}>
                 <img src="/assets/images/guild_quest_board.png" alt="クエスト" style={{ width:"100%", height:"100%", display:"block" }} />
               </button>
 
@@ -210,13 +210,6 @@ export default function TownPage({ onEnterDungeon }) {
                 <img src="/assets/images/guild_trophy.png" alt="実績" style={{ width:"100%", height:"auto", display:"block" }} />
               </button>
             </div>
-
-            {player.keyRescueDungeonId != null && !player.keyRescueClaimed && (
-              <div style={{ background:"rgba(13,13,26,0.88)", border:"1px solid #60a5fa44", borderRadius:6, padding:"8px 12px", display:"flex", alignItems:"center", gap:8 }}>
-                <span style={{ fontSize:16 }}>🔑</span>
-                <span style={{ fontSize:10, color:"#60a5fa" }}>5階ごとのボス部屋には鍵が必要です。宝箱で入手できます（ショップにも並ぶことがあります）</span>
-              </div>
-            )}
             </div>
           </div>
         )}

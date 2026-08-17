@@ -37,6 +37,9 @@
 - **バグ修正(Reactの警告)**: `DungeonCanvas.jsx`で`animation`(ショートハンド)と`animationPlayState`(個別プロパティ)を同じstyleオブジェクトに混在させていたため、"mix shorthand and non-shorthand properties"という警告が出ていた。`animationName`/`animationDuration`/`animationTimingFunction`/`animationIterationCount`に分解して解消
 - **壁イラストを差し替え**: ユーザーがより横長(1408×768、松明なしのシンプルな木壁+石床)な`guild_wall`に更新。旧(779×768)と比べて大幅に横長になったため、掲示板・クエスト掲示板・本・トロフィーの位置指定(%)を計算し直し、掲示板+クエスト掲示板のグループが新しい壁の中央に来るよう再配置した(左右の余白がほぼ均等になるよう計算)。実機で確認済み、コンソールエラーなし
 - **ギルド配置エディタを追加**: 「UIのサイズ配置を自分で決められるようにしたい」との要望を受け、モンスターのRigEditor/FloatRigEditorと同じ思想で`GuildLayoutEditor.jsx`(DEBUG専用)を新設。ギルドシーンの4要素(掲示板/クエスト板/本/トロフィー)の位置(%)を`src/data/guildLayout.js`の`GUILD_LAYOUT_DEFAULT`に切り出し、TownPage側は`useState`で保持してJSXから参照するよう変更。要素選択ボタン+フィールドごとの-1/-0.1/入力欄/+0.1/+1ステッパーで調整でき、背後のシーンにその場で反映される(TimerSettings.jsxのステッパーUIと同じ操作感)。「JSONをコピー」ボタンで`GUILD_LAYOUT_DEFAULT`定数としてそのまま貼り付けられる形式を出力する。実機で数値変更→背景のライブ反映を確認済み、コンソールエラーなし
+- **ユーザーが配置エディタで調整した値を反映**: コピーされたJSONをそのまま`GUILD_LAYOUT_DEFAULT`に適用
+- **鍵の救済メッセージを非表示に**: 「5階ごとのボス部屋には鍵が必要です…」のバナーが、一度鍵不足で詰まると`keyRescueClaimed`がtrueになるまで街画面に永続的に表示され続ける仕様だったため、「普段表示しないようにしたい」との要望で削除。救済鍵の購入手段自体は`ShopTab.jsx`の「特殊」タブに既に独立して表示されているため(`rescueKeyTmpl`のUI)、機能自体は失われていない
+- **壁イラストを再度差し替え**: `guild_wall`が松明+開いた扉のあるバージョン(1408×768、今回は最初から透過PNGで問題なし)に更新。`guild_quest_board.png`も木枠なしの巻物単体(450×742)に簡略化されたため、コード側の参照パス・アスペクト比を合わせて修正
 
 **公開準備(Vercelデプロイ済み)**
 
