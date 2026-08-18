@@ -248,7 +248,7 @@ export default function CharacterPage() {
     return (
       <div
         onPointerDown={(e) => beginDrag(e, { kind:"book", bookType:book.type, uid:owned.uid, icon:book.icon, name:book.name })}
-        style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", display:"flex", alignItems:"center", gap:8, padding:"7px 9px", background:equipped?`${color}30`:"rgba(15,10,5,0.6)", borderLeft:`3px solid ${rc}`, border:`1px solid ${equipped?color:"rgba(201,150,61,0.25)"}`, borderRadius:5, marginBottom:4, backdropFilter:"blur(1px)" }}>
+        style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", display:"flex", alignItems:"center", gap:8, padding:"7px 9px", background:equipped?`${color}30`:"rgba(15,10,5,0.6)", borderLeft:`3px solid ${rc}`, borderRadius:5, marginBottom:4 }}>
         <span style={{ fontSize:19 }}>{book.icon}</span>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:10, color:"#e8e0d0" }}>
@@ -312,7 +312,7 @@ export default function CharacterPage() {
             <div className="rpg-heading" style={{ position:"absolute", top:8, left:12, fontSize:10, color:"#f0d9a0", letterSpacing:2, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>⚔ CHARACTER</div>
 
             <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:isMobile?"column":"row", gap:charLayout.panelGap, padding:`${charLayout.contentPaddingTop}px 10px 10px` }}>
-              <div style={{ background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"8px 10px", display:"flex", flexDirection:"column", gap:6, minWidth:isMobile?"auto":168, backdropFilter:"blur(1px)" }}>
+              <div style={{ padding:"8px 10px", display:"flex", flexDirection:"column", gap:8, minWidth:isMobile?"auto":168 }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                   {EQUIP_SLOTS.map(({key,label,icon,drop})=>{
                     const eq = player[key];
@@ -512,8 +512,8 @@ export default function CharacterPage() {
       {tab === "skill" && (
         <div style={{ flex:1, overflowY:"auto", padding:12, background:"linear-gradient(rgba(8,5,2,0.55),rgba(8,5,2,0.72)), url(/assets/images/skill_room_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
           {/* アクティブ */}
-          <div style={{ background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:12, marginBottom:10, backdropFilter:"blur(1px)" }}>
-            <div style={{ fontSize:10, color:"#fb9a9a", letterSpacing:2, marginBottom:8, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ marginBottom:18 }}>
+            <div style={{ fontSize:10, color:"#fb9a9a", letterSpacing:2, marginBottom:8, paddingBottom:6, borderBottom:"1px solid rgba(251,154,154,0.3)", textShadow:"0 1px 3px rgba(0,0,0,0.9)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <span>アクティブ書（最大4・ドラッグでもセット可）</span>
               <div style={{ display:"flex", gap:4 }}>
                 <button onClick={() => updatePlayer({ skillMode:"order" })}
@@ -531,8 +531,8 @@ export default function CharacterPage() {
           </div>
 
           {/* パッシブ */}
-          <div style={{ background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:12, backdropFilter:"blur(1px)" }}>
-            <div style={{ fontSize:10, color:"#c9b6fb", letterSpacing:2, marginBottom:8 }}>パッシブ書（最大6・ドラッグでもセット可）</div>
+          <div>
+            <div style={{ fontSize:10, color:"#c9b6fb", letterSpacing:2, marginBottom:8, paddingBottom:6, borderBottom:"1px solid rgba(201,182,251,0.3)", textShadow:"0 1px 3px rgba(0,0,0,0.9)" }}>パッシブ書（最大6・ドラッグでもセット可）</div>
             <div style={{ display:"grid", gridTemplateColumns:isMobile?"repeat(3,1fr)":"repeat(6,1fr)", gap:8, marginBottom:10 }}>
               {pasSlots.map((uid,i)=> <BookSlotCell key={i} i={i} uid={uid} dz={`passive-${i}`} setSlot={setPassiveSlot} />)}
             </div>
