@@ -264,12 +264,18 @@ export default function CharacterPage() {
                     const eq = player[key];
                     const rc = eq ? RARITY_COLOR[eq.rarity]||"#888" : "#333350";
                     const isHover = dropTarget === drop;
+                    const isSel = sel === `slot_${key}`;
+                    const glowColor = isHover ? "#4ade80" : isSel ? "#a78bfa" : eq ? rc : null;
                     return (
                       <div key={key} data-drop={drop} onClick={() => eq && setSel(sel===`slot_${key}`?null:`slot_${key}`)} title={label}
                         style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                        <div style={{ width:56, height:56, background:isHover?"#1a2a1a":eq?`${rc}22`:"rgba(10,10,20,0.6)", border:`2px solid ${isHover?"#4ade80":sel===`slot_${key}`?"#a78bfa":rc}`, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, cursor:eq?"pointer":"default", position:"relative", boxShadow:eq?`0 0 8px ${rc}66`:"none" }}>
-                          {eq ? (eq.image ? <img src={eq.image} alt="" style={{ width:"75%", height:"75%", objectFit:"contain", filter:eq.tint||"none" }} /> : eq.icon) : <span style={{ fontSize:13, color:FAINT }}>{icon}</span>}
-                          {eq?.upgradeLevel > 0 && <div style={{ position:"absolute", top:1, right:2, fontSize:10, color:"#fbbf24", fontWeight:700 }}>+{eq.upgradeLevel}</div>}
+                        <div style={{ width:56, height:56, position:"relative", cursor:eq?"pointer":"default" }}>
+                          {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:0.6, filter:"blur(8px)" }} />}
+                          <img src="/assets/images/equip_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                          <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>
+                            {eq ? (eq.image ? <img src={eq.image} alt="" style={{ width:"88%", height:"88%", objectFit:"contain", filter:eq.tint||"none" }} /> : eq.icon) : <span style={{ fontSize:12, color:FAINT }}>{icon}</span>}
+                          </div>
+                          {eq?.upgradeLevel > 0 && <div style={{ position:"absolute", top:-2, right:0, fontSize:10, color:"#fbbf24", fontWeight:700, textShadow:"0 1px 2px #000" }}>+{eq.upgradeLevel}</div>}
                         </div>
                         <div style={{ fontSize:9, color:eq?rc:FAINT, maxWidth:56, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"center" }}>
                           {eq ? eq.name : label}
@@ -281,10 +287,16 @@ export default function CharacterPage() {
                 <div style={{ display:"flex", gap:4 }}>
                   {(player.specialSlots||[null,null,null]).map((slot,i)=>{
                     const isHover = dropTarget === "special";
+                    const isSel = sel === `cslot_${i}`;
+                    const glowColor = isHover ? "#4ade80" : isSel ? "#4ade80" : slot ? "#fbbf24" : null;
                     return (
                       <div key={i} data-drop="special" onClick={() => slot && setSel(sel===`cslot_${i}`?null:`cslot_${i}`)}
-                        style={{ width:44, height:44, background:isHover?"#1a2a1a":slot?"rgba(13,13,21,0.7)":"rgba(10,10,20,0.6)", border:`1px solid ${isHover?"#4ade80":sel===`cslot_${i}`?"#4ade80":slot?"#4ade8066":"#333350"}`, borderRadius:5, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, cursor:slot?"pointer":"default" }}>
-                        {slot ? (slot.image ? <img src={slot.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:slot.tint||"none" }} /> : slot.icon) : <span style={{ fontSize:10, color:DIM }}>S{i+1}</span>}
+                        style={{ width:44, height:44, position:"relative", cursor:slot?"pointer":"default" }}>
+                        {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:0.5, filter:"blur(6px)" }} />}
+                        <img src="/assets/images/equip_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                        <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
+                          {slot ? (slot.image ? <img src={slot.image} alt="" style={{ width:"85%", height:"85%", objectFit:"contain", filter:slot.tint||"none" }} /> : slot.icon) : <span style={{ fontSize:9, color:DIM }}>S{i+1}</span>}
+                        </div>
                       </div>
                     );
                   })}
