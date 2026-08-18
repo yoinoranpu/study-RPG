@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { calcPlayerStats } from "../systems/playerStats";
-import { expToLevel, expForLevel, expUsedUpTo } from "../systems/timer";
 import { RARITY_COLOR, RARITY_LABEL, INNATE, getItemStats, getSellPrice } from "../data/items";
 import { SKILL_BOOKS, getBookSellPrice, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
 import { TRIBE_MAT } from "../systems/events";
+import CharacterLayoutEditor from "../components/CharacterLayoutEditor";
+import { CHARACTER_LAYOUT_DEFAULT } from "../data/characterLayout";
 
 const INSTANT_USE_EFFECTS = ["skill_reset", "mat_pack"];
 
@@ -41,13 +42,12 @@ export default function CharacterPage() {
   const [isMobile, setIsMobile] = useState(w < 768);
   const [tab, setTab] = useState("equip");
   const [sel, setSel] = useState(null);
+  const [charLayout, setCharLayout] = useState(CHARACTER_LAYOUT_DEFAULT);
+  const [showCharLayoutEditor, setShowCharLayoutEditor] = useState(false);
+  const DEBUG = import.meta.env.DEV;
   const player = usePlayerStore();
   const { updatePlayer, itemBox, skillBooks, activeSkillSlots, passiveSkillSlots, skillMode } = usePlayerStore();
   const stats = calcPlayerStats(player);
-  const lv = expToLevel(player.totalExp);
-  const used = expUsedUpTo(lv);
-  const need = expForLevel(lv);
-  const lvPct = need > 0 ? Math.min(1, (player.totalExp - used) / need) : 1;
   const equippedUids = new Set(EQUIP_SLOTS.map(s => player[s.key]?.uid).filter(Boolean));
   const selItem = sel ? (itemBox||[]).find(it => it.uid === sel) : null;
 
@@ -244,21 +244,21 @@ export default function CharacterPage() {
         ))}
       </div>
 
+      {DEBUG && tab === "equip" && (
+        <button onClick={() => setShowCharLayoutEditor(true)} style={{ position:"fixed", bottom:16, right:16, zIndex:50, padding:"8px 12px", background:"#1a0a1a", border:"1px solid #a78bfa44", borderRadius:6, cursor:"pointer", color:"#a78bfa", fontSize:10, fontFamily:"monospace" }}>
+          DEBUG: 配置エディタ
+        </button>
+      )}
+
       {tab === "equip" && (
         <>
-          <div style={{ position:"relative", flexShrink:0, height:isMobile?210:260, overflow:"hidden" }}>
+          <div style={{ position:"relative", flexShrink:0, height:charLayout.roomHeight, overflow:"hidden" }}>
             <img src="/assets/images/character_room.jpg" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%", display:"block" }} />
             <div style={{ position:"absolute", inset:0, background:"rgba(10,6,3,0.4)" }} />
             <div className="rpg-heading" style={{ position:"absolute", top:8, left:12, fontSize:10, color:"#f0d9a0", letterSpacing:2, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>⚔ CHARACTER</div>
 
             <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:isMobile?"column":"row", gap:8, padding:"26px 10px 10px" }}>
               <div style={{ background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"8px 10px", display:"flex", flexDirection:"column", gap:6, minWidth:isMobile?"auto":168, backdropFilter:"blur(1px)" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                  <span style={{ fontSize:10, color:"#86efac", fontWeight:700 }}>Lv{lv}</span>
-                  <div style={{ flex:1, height:3, background:"#0a1a0a", borderRadius:2, overflow:"hidden" }}>
-                    <div style={{ height:"100%", width:`${lvPct*100}%`, background:"#4ade80", borderRadius:2 }} />
-                  </div>
-                </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                   {EQUIP_SLOTS.map(({key,label,icon,drop})=>{
                     const eq = player[key];
@@ -269,7 +269,7 @@ export default function CharacterPage() {
                     return (
                       <div key={key} data-drop={drop} onClick={() => eq && setSel(sel===`slot_${key}`?null:`slot_${key}`)} title={label}
                         style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                        <div style={{ width:72, height:72, position:"relative", cursor:eq?"pointer":"default" }}>
+                        <div style={{ width:charLayout.equipSlotSize, height:charLayout.equipSlotSize, position:"relative", cursor:eq?"pointer":"default" }}>
                           {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:0.6, filter:"blur(8px)" }} />}
                           <img src="/assets/images/equip_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                           <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>
@@ -277,7 +277,7 @@ export default function CharacterPage() {
                           </div>
                           {eq?.upgradeLevel > 0 && <div style={{ position:"absolute", top:-2, right:0, fontSize:10, color:"#fbbf24", fontWeight:700, textShadow:"0 1px 2px #000" }}>+{eq.upgradeLevel}</div>}
                         </div>
-                        <div style={{ fontSize:9, color:eq?rc:FAINT, maxWidth:72, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"center" }}>
+                        <div style={{ fontSize:9, color:eq?rc:FAINT, maxWidth:charLayout.equipSlotSize, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"center" }}>
                           {eq ? eq.name : label}
                         </div>
                       </div>
@@ -291,7 +291,7 @@ export default function CharacterPage() {
                     const glowColor = isHover ? "#4ade80" : isSel ? "#4ade80" : slot ? "#fbbf24" : null;
                     return (
                       <div key={i} data-drop="special" onClick={() => slot && setSel(sel===`cslot_${i}`?null:`cslot_${i}`)}
-                        style={{ width:44, height:44, position:"relative", cursor:slot?"pointer":"default" }}>
+                        style={{ width:charLayout.specialSlotSize, height:charLayout.specialSlotSize, position:"relative", cursor:slot?"pointer":"default" }}>
                         {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:0.5, filter:"blur(6px)" }} />}
                         <img src="/assets/images/equip_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                         <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
@@ -311,7 +311,7 @@ export default function CharacterPage() {
               </div>
 
               <div style={{ flex:1, display:"flex", justifyContent:"flex-end" }}>
-              <div style={{ width:isMobile?"auto":150, maxWidth:180, background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"6px 8px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end", backdropFilter:"blur(1px)" }}>
+              <div style={{ width:isMobile?"auto":charLayout.statsPanelWidth, maxWidth:charLayout.statsPanelWidth+30, background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"6px 8px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end", backdropFilter:"blur(1px)" }}>
                 {[
                   {label:"ATK",  val:stats.atk,        color:"#f87171"},
                   {label:"MAG",  val:stats.mag,        color:"#a78bfa"},
@@ -534,6 +534,15 @@ export default function CharacterPage() {
         <div style={{ position:"fixed", left:dragVisual.x-22, top:dragVisual.y-22, width:44, height:44, background:"rgba(18,18,32,0.95)", border:"2px solid #a78bfa", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, pointerEvents:"none", zIndex:1000, boxShadow:"0 4px 16px rgba(0,0,0,0.6)" }}>
           {dragVisual.icon}
         </div>
+      )}
+
+      {showCharLayoutEditor && (
+        <CharacterLayoutEditor
+          layout={charLayout}
+          onChange={(key, value) => setCharLayout(prev => ({ ...prev, [key]: value }))}
+          onReset={() => setCharLayout(CHARACTER_LAYOUT_DEFAULT)}
+          onClose={() => setShowCharLayoutEditor(false)}
+        />
       )}
     </div>
   );
