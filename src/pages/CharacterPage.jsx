@@ -269,7 +269,7 @@ export default function CharacterPage() {
                     return (
                       <div key={key} data-drop={drop} onClick={() => eq && setSel(sel===`slot_${key}`?null:`slot_${key}`)} title={label}
                         style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                        <div style={{ width:56, height:56, position:"relative", cursor:eq?"pointer":"default" }}>
+                        <div style={{ width:72, height:72, position:"relative", cursor:eq?"pointer":"default" }}>
                           {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:0.6, filter:"blur(8px)" }} />}
                           <img src="/assets/images/equip_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                           <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>
@@ -277,7 +277,7 @@ export default function CharacterPage() {
                           </div>
                           {eq?.upgradeLevel > 0 && <div style={{ position:"absolute", top:-2, right:0, fontSize:10, color:"#fbbf24", fontWeight:700, textShadow:"0 1px 2px #000" }}>+{eq.upgradeLevel}</div>}
                         </div>
-                        <div style={{ fontSize:9, color:eq?rc:FAINT, maxWidth:56, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"center" }}>
+                        <div style={{ fontSize:9, color:eq?rc:FAINT, maxWidth:72, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"center" }}>
                           {eq ? eq.name : label}
                         </div>
                       </div>
@@ -310,7 +310,8 @@ export default function CharacterPage() {
                 </div>
               </div>
 
-              <div style={{ flex:1, background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"8px 10px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:5, alignContent:"start", justifyItems:"end", backdropFilter:"blur(1px)" }}>
+              <div style={{ flex:1, display:"flex", justifyContent:"flex-end" }}>
+              <div style={{ width:isMobile?"auto":150, maxWidth:180, background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"6px 8px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end", backdropFilter:"blur(1px)" }}>
                 {[
                   {label:"ATK",  val:stats.atk,        color:"#f87171"},
                   {label:"MAG",  val:stats.mag,        color:"#a78bfa"},
@@ -319,11 +320,12 @@ export default function CharacterPage() {
                   {label:"EVA",  val:`${stats.eva}%`,  color:"#34d399"},
                   {label:"CRIT", val:`${stats.crit}%`, color:"#fbbf24"},
                 ].map(({label,val,color})=>(
-                  <div key={label} style={{ width:"100%", background:"rgba(28,19,11,0.75)", border:"1px solid #3a2a18", borderRadius:3, padding:"5px 8px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
-                    <span style={{ fontSize:10, color:LABEL, fontWeight:700 }}>{label}</span>
-                    <span style={{ fontSize:11, color, fontWeight:700 }}>{val}</span>
+                  <div key={label} style={{ width:"100%", background:"rgba(28,19,11,0.75)", border:"1px solid #3a2a18", borderRadius:3, padding:"3px 5px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+                    <span style={{ fontSize:8, color:LABEL, fontWeight:700 }}>{label}</span>
+                    <span style={{ fontSize:9, color, fontWeight:700 }}>{val}</span>
                   </div>
                 ))}
+              </div>
               </div>
             </div>
           </div>
