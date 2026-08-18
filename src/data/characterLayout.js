@@ -23,9 +23,9 @@ export const CHARACTER_LAYOUT_DEFAULT = {
   statItemPos: {
     ATK:  { x: 0, y: 0 },
     MAG:  { x: 0, y: 0 },
-    DEF:  { x: 0, y: 60 },
-    MDEF: { x: 0, y: 60 },
-    EVA:  { x: 0, y: 120 },
-    CRIT: { x: 0, y: 120 },
+    DEF:  { x: 0, y: 40 },
+    MDEF: { x: 0, y: 40 },
+    EVA:  { x: 0, y: 80 },
+    CRIT: { x: 0, y: 80 },
   },
 };

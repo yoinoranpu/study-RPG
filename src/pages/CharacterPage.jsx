@@ -218,7 +218,7 @@ export default function CharacterPage() {
     return (
       <div
         onPointerDown={(e) => beginDrag(e, { kind:"book", bookType:book.type, uid:owned.uid, icon:book.icon, name:book.name })}
-        style={{ touchAction:"none", cursor:"grab", display:"flex", alignItems:"center", gap:8, padding:"6px 8px", background:equipped?`${color}2a`:`${rc}22`, borderLeft:`3px solid ${rc}`, border:`1px solid ${equipped?color:rc+"66"}`, borderRadius:4, marginBottom:4 }}>
+        style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", display:"flex", alignItems:"center", gap:8, padding:"6px 8px", background:equipped?`${color}2a`:`${rc}22`, borderLeft:`3px solid ${rc}`, border:`1px solid ${equipped?color:rc+"66"}`, borderRadius:4, marginBottom:4 }}>
         <span style={{ fontSize:16 }}>{book.icon}</span>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:10, color:"#e8e0d0" }}>
@@ -350,7 +350,7 @@ export default function CharacterPage() {
                   <div key={it.uid}
                     onPointerDown={(e) => beginDrag(e, { kind:"item", itemType:it.type, item:it, icon:it.icon, name:it.name })}
                     onClick={()=>setSel(isSel?null:it.uid)}
-                    style={{ touchAction:"none", cursor:"grab", aspectRatio:"1", position:"relative", opacity:isEq?0.5:1 }}>
+                    style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", aspectRatio:"1", position:"relative", opacity:isEq?0.5:1 }}>
                     <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:isSel?0.65:0.4, filter:"blur(6px)" }} />
                     <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                     <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -375,9 +375,15 @@ export default function CharacterPage() {
           </div>
 
           {sel && !sel.startsWith("slot_") && !sel.startsWith("cslot_") && selItem && (
-            <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"rgba(6,6,15,0.97)", border:"1px solid #3a3a55", borderTop:"1px solid #4a4a70", borderRadius:"8px 8px 0 0", padding:"10px 12px", zIndex:10 }}>
+            <div className="rpg-panel" style={{ position:"absolute", bottom:8, left:8, right:8, borderRadius:6, padding:"10px 12px", zIndex:10 }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                {selItem.image ? <img src={selItem.image} alt="" style={{ width:24, height:24, objectFit:"contain", filter:selItem.tint||"none" }} /> : <span style={{ fontSize:20 }}>{selItem.icon}</span>}
+                <div style={{ width:36, height:36, position:"relative", flexShrink:0 }}>
+                  <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:RARITY_COLOR[selItem.rarity]||"#888", opacity:0.45, filter:"blur(5px)" }} />
+                  <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                  <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    {selItem.image ? <img src={selItem.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:selItem.tint||"none" }} /> : <span style={{ fontSize:16 }}>{selItem.icon}</span>}
+                  </div>
+                </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:11, fontWeight:700, color:"#e8e0d0" }}>{selItem.name}{selItem.upgradeLevel>0&&<span style={{ color:"#fbbf24" }}> +{selItem.upgradeLevel}</span>}</div>
                   <div style={{ fontSize:10, color:RARITY_COLOR[selItem.rarity]||"#888" }}>{RARITY_LABEL[selItem.rarity]}</div>
