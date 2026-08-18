@@ -266,9 +266,10 @@ export default function CharacterPage() {
                     const isHover = dropTarget === drop;
                     const isSel = sel === `slot_${key}`;
                     const glowColor = isHover ? "#4ade80" : isSel ? "#a78bfa" : eq ? rc : null;
+                    const itemPos = charLayout.equipItemPos?.[key] || { x:0, y:0 };
                     return (
                       <div key={key} data-drop={drop} onClick={() => eq && setSel(sel===`slot_${key}`?null:`slot_${key}`)} title={label}
-                        style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+                        style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, position:"relative", left:itemPos.x, top:itemPos.y }}>
                         <div style={{ width:charLayout.equipSlotSize, height:charLayout.equipSlotSize, position:"relative", cursor:eq?"pointer":"default" }}>
                           {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:0.6, filter:"blur(8px)" }} />}
                           <img src="/assets/images/equip_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
@@ -289,9 +290,10 @@ export default function CharacterPage() {
                     const isHover = dropTarget === "special";
                     const isSel = sel === `cslot_${i}`;
                     const glowColor = isHover ? "#4ade80" : isSel ? "#4ade80" : slot ? "#fbbf24" : null;
+                    const itemPos = charLayout.specialItemPos?.[i] || { x:0, y:0 };
                     return (
                       <div key={i} data-drop="special" onClick={() => slot && setSel(sel===`cslot_${i}`?null:`cslot_${i}`)}
-                        style={{ width:charLayout.specialSlotSize, height:charLayout.specialSlotSize, position:"relative", cursor:slot?"pointer":"default" }}>
+                        style={{ width:charLayout.specialSlotSize, height:charLayout.specialSlotSize, position:"relative", left:itemPos.x, top:itemPos.y, cursor:slot?"pointer":"default" }}>
                         {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:0.5, filter:"blur(6px)" }} />}
                         <img src="/assets/images/equip_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                         <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
@@ -319,12 +321,15 @@ export default function CharacterPage() {
                   {label:"MDEF", val:stats.mdef,       color:"#38bdf8"},
                   {label:"EVA",  val:`${stats.eva}%`,  color:"#34d399"},
                   {label:"CRIT", val:`${stats.crit}%`, color:"#fbbf24"},
-                ].map(({label,val,color})=>(
-                  <div key={label} style={{ width:"100%", background:"rgba(28,19,11,0.75)", border:"1px solid #3a2a18", borderRadius:3, padding:"3px 5px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
-                    <span style={{ fontSize:8, color:LABEL, fontWeight:700 }}>{label}</span>
-                    <span style={{ fontSize:9, color, fontWeight:700 }}>{val}</span>
-                  </div>
-                ))}
+                ].map(({label,val,color})=>{
+                  const itemPos = charLayout.statItemPos?.[label] || { x:0, y:0 };
+                  return (
+                    <div key={label} style={{ width:"100%", background:"rgba(28,19,11,0.75)", border:"1px solid #3a2a18", borderRadius:3, padding:"3px 5px", display:"flex", justifyContent:"space-between", alignItems:"baseline", position:"relative", left:itemPos.x, top:itemPos.y }}>
+                      <span style={{ fontSize:8, color:LABEL, fontWeight:700 }}>{label}</span>
+                      <span style={{ fontSize:9, color, fontWeight:700 }}>{val}</span>
+                    </div>
+                  );
+                })}
               </div>
               </div>
             </div>
@@ -539,7 +544,15 @@ export default function CharacterPage() {
       {showCharLayoutEditor && (
         <CharacterLayoutEditor
           layout={charLayout}
-          onChange={(key, value) => setCharLayout(prev => ({ ...prev, [key]: value }))}
+          onChangeField={(path, value) => setCharLayout(prev => ({ ...prev, [path]: value }))}
+          onChangeItem={(group, key, axis, value) => setCharLayout(prev => {
+            if (group === "specialItemPos") {
+              const arr = [...prev.specialItemPos];
+              arr[key] = { ...arr[key], [axis]: value };
+              return { ...prev, specialItemPos: arr };
+            }
+            return { ...prev, [group]: { ...prev[group], [key]: { ...(prev[group]?.[key]||{x:0,y:0}), [axis]: value } } };
+          })}
           onReset={() => setCharLayout(CHARACTER_LAYOUT_DEFAULT)}
           onClose={() => setShowCharLayoutEditor(false)}
         />

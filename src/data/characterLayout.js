@@ -7,4 +7,25 @@ export const CHARACTER_LAYOUT_DEFAULT = {
   statsPanelWidth: 150,   // ステータス欄(ATK等)の幅(px)
   contentPaddingTop: 26,  // 装備欄全体を部屋の上端からどれだけ下げるか(px)
   panelGap: 8,            // 装備パネルとステータスパネルの間隔(px)
+
+  // 個別配置：グリッド上の通常位置からのズレ(px)。{x:0,y:0}なら通常位置のまま。
+  equipItemPos: {
+    equippedWeapon: { x: 0, y: 0 },
+    equippedArmor:  { x: 0, y: 0 },
+    equippedAcc1:   { x: 0, y: 0 },
+    equippedAcc2:   { x: 0, y: 0 },
+  },
+  specialItemPos: [
+    { x: 0, y: 0 },
+    { x: 0, y: 0 },
+    { x: 0, y: 0 },
+  ],
+  statItemPos: {
+    ATK:  { x: 0, y: 0 },
+    MAG:  { x: 0, y: 0 },
+    DEF:  { x: 0, y: 0 },
+    MDEF: { x: 0, y: 0 },
+    EVA:  { x: 0, y: 0 },
+    CRIT: { x: 0, y: 0 },
+  },
 };
