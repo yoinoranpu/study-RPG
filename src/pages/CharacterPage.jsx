@@ -324,11 +324,11 @@ export default function CharacterPage() {
                 ].map(({label,val,color})=>{
                   const itemPos = charLayout.statItemPos?.[label] || { x:0, y:0 };
                   return (
-                    <div key={label} style={{ width:"100%", position:"relative", left:itemPos.x, top:itemPos.y }}>
+                    <div key={label} style={{ width:"100%", aspectRatio:"1183/549", position:"relative", left:itemPos.x, top:itemPos.y }}>
                       <img src="/assets/images/stat_plate_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
-                      <div style={{ position:"relative", padding:"5px 10px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
-                        <span style={{ fontSize:8, color:LABEL, fontWeight:700 }}>{label}</span>
-                        <span style={{ fontSize:9, color, fontWeight:700 }}>{val}</span>
+                      <div style={{ position:"absolute", inset:"26% 13%", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <span style={{ fontSize:"clamp(8px,2.6vw,13px)", color:LABEL, fontWeight:700 }}>{label}</span>
+                        <span style={{ fontSize:"clamp(9px,2.9vw,15px)", color, fontWeight:700 }}>{val}</span>
                       </div>
                     </div>
                   );
