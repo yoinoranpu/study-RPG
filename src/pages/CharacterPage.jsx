@@ -253,11 +253,11 @@ export default function CharacterPage() {
       {tab === "equip" && (
         <>
           <div style={{ position:"relative", flexShrink:0, height:charLayout.roomHeight, overflow:"hidden" }}>
-            <img src="/assets/images/character_room.jpg" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%", display:"block" }} />
+            <img src="/assets/images/character_room.jpg" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:`center ${charLayout.roomPanY}%`, display:"block" }} />
             <div style={{ position:"absolute", inset:0, background:"rgba(10,6,3,0.4)" }} />
             <div className="rpg-heading" style={{ position:"absolute", top:8, left:12, fontSize:10, color:"#f0d9a0", letterSpacing:2, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>⚔ CHARACTER</div>
 
-            <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:isMobile?"column":"row", gap:8, padding:"26px 10px 10px" }}>
+            <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:isMobile?"column":"row", gap:charLayout.panelGap, padding:`${charLayout.contentPaddingTop}px 10px 10px` }}>
               <div style={{ background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"8px 10px", display:"flex", flexDirection:"column", gap:6, minWidth:isMobile?"auto":168, backdropFilter:"blur(1px)" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                   {EQUIP_SLOTS.map(({key,label,icon,drop})=>{
