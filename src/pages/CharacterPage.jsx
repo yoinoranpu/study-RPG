@@ -248,9 +248,9 @@ export default function CharacterPage() {
     return (
       <div
         onPointerDown={(e) => beginDrag(e, { kind:"book", bookType:book.type, uid:owned.uid, icon:book.icon, name:book.name })}
-        style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", display:"flex", alignItems:"center", gap:8, padding:"6px 8px", background:equipped?`${color}2a`:`${rc}22`, borderLeft:`3px solid ${rc}`, border:`1px solid ${equipped?color:rc+"66"}`, borderRadius:4, marginBottom:4 }}>
-        <span style={{ fontSize:16 }}>{book.icon}</span>
-        <div style={{ flex:1 }}>
+        style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", display:"flex", alignItems:"center", gap:8, padding:"7px 9px", background:equipped?`${color}30`:"rgba(15,10,5,0.6)", borderLeft:`3px solid ${rc}`, border:`1px solid ${equipped?color:"rgba(201,150,61,0.25)"}`, borderRadius:5, marginBottom:4, backdropFilter:"blur(1px)" }}>
+        <span style={{ fontSize:19 }}>{book.icon}</span>
+        <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:10, color:"#e8e0d0" }}>
             {book.name} <span style={{ fontSize:9, color:rc }}>{BOOK_RARITY_LABEL[owned.rarity]}</span>
           </div>
@@ -259,6 +259,30 @@ export default function CharacterPage() {
         {!equipped && empty>=0 && <button onClick={()=>setSlot(empty, owned.uid)} style={{ padding:"3px 8px", background:`${color}18`, border:`1px solid ${color}`, borderRadius:3, cursor:"pointer", color, fontSize:10, fontFamily:"monospace" }}>セット</button>}
         {equipped && <span style={{ fontSize:9, color, border:`1px solid ${color}44`, padding:"1px 4px", borderRadius:2 }}>セット中</span>}
         <button onClick={()=>sellBook(owned.uid)} title="売却" style={{ padding:"3px 8px", background:"#1a0a0a", border:"1px solid #f8717166", borderRadius:3, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace" }}>売却{sellPrice}G</button>
+      </div>
+    );
+  }
+
+  // アクティブ/パッシブ書スロット共通の枠付きセル(item_slot_frame.pngを流用)
+  function BookSlotCell({ i, uid, dz, setSlot }) {
+    const owned = uid ? bookByUid(uid) : null;
+    const book = owned ? SKILL_BOOKS[owned.id] : null;
+    const rc = owned ? BOOK_RARITY_COLOR[owned.rarity] : "#3a3a55";
+    const isHover = dropTarget === dz;
+    const glowColor = isHover ? "#4ade80" : book ? rc : null;
+    return (
+      <div data-drop={dz} style={{ position:"relative", aspectRatio:"1" }}>
+        {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:isHover?0.6:0.4, filter:"blur(6px)" }} />}
+        <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+        <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          {book ? <span style={{ fontSize:20 }}>{book.icon}</span> : <span style={{ fontSize:9, color:FAINT }}>{dz.startsWith("active")?"S":"P"}{i+1}</span>}
+        </div>
+        {book && (
+          <button onClick={()=>setSlot(i,null)} style={{ position:"absolute", top:-4, right:-4, width:16, height:16, borderRadius:"50%", background:"#1a0a0a", border:"1px solid #f87171", color:"#f87171", fontSize:9, lineHeight:"14px", padding:0, cursor:"pointer", zIndex:1 }}>×</button>
+        )}
+        {book && (
+          <div style={{ position:"absolute", bottom:"6%", left:"10%", right:"10%", fontSize:8, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", background:"rgba(0,0,0,0.65)", borderRadius:2, zIndex:1 }}>{book.name}</div>
+        )}
       </div>
     );
   }
@@ -486,10 +510,10 @@ export default function CharacterPage() {
       )}
 
       {tab === "skill" && (
-        <div style={{ flex:1, overflowY:"auto", padding:12 }}>
+        <div style={{ flex:1, overflowY:"auto", padding:12, background:"linear-gradient(rgba(8,5,2,0.55),rgba(8,5,2,0.72)), url(/assets/images/skill_room_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
           {/* アクティブ */}
-          <div style={{ background:"#0d0d15", border:"1px solid #3a3a55", borderRadius:8, padding:12, marginBottom:10 }}>
-            <div style={{ fontSize:10, color:"#f87171", letterSpacing:2, marginBottom:8, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:12, marginBottom:10, backdropFilter:"blur(1px)" }}>
+            <div style={{ fontSize:10, color:"#fb9a9a", letterSpacing:2, marginBottom:8, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <span>アクティブ書（最大4・ドラッグでもセット可）</span>
               <div style={{ display:"flex", gap:4 }}>
                 <button onClick={() => updatePlayer({ skillMode:"order" })}
@@ -498,24 +522,8 @@ export default function CharacterPage() {
                   style={{ padding:"3px 8px", background:skillMode==="random"?"#1a0a0a":"transparent", border:`1px solid ${skillMode==="random"?"#f87171":"#3a3a55"}`, borderRadius:3, cursor:"pointer", color:skillMode==="random"?"#f87171":DIM, fontSize:10, fontFamily:"monospace" }}>🎲 ランダム</button>
               </div>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:8 }}>
-              {actSlots.map((uid,i)=>{
-                const owned = uid ? bookByUid(uid) : null;
-                const book = owned ? SKILL_BOOKS[owned.id] : null;
-                const rc = owned ? BOOK_RARITY_COLOR[owned.rarity] : "#3a3a55";
-                const dz = `active-${i}`;
-                const isHover = dropTarget === dz;
-                return (
-                  <div key={i} data-drop={dz} style={{ background:isHover?"#1a2a1a":book?`${rc}22`:"#0a0a14", border:`1px solid ${isHover?"#4ade80":book?rc:"#3a3a55"}`, borderRadius:5, padding:"6px 8px", display:"flex", alignItems:"center", gap:6, minHeight:36 }}>
-                    <span style={{ fontSize:10, color:LABEL, fontWeight:700 }}>S{i+1}</span>
-                    {book ? (<>
-                      <span style={{ fontSize:12 }}>{book.icon}</span>
-                      <div style={{ flex:1 }}><div style={{ fontSize:10, color:rc }}>{book.name}</div></div>
-                      <button onClick={()=>setActiveSlot(i,null)} style={{ fontSize:10, background:"transparent", border:"none", color:DIM, cursor:"pointer" }}>×</button>
-                    </>) : <div style={{ flex:1, fontSize:10, color:DIM }}>空き</div>}
-                  </div>
-                );
-              })}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:10 }}>
+              {actSlots.map((uid,i)=> <BookSlotCell key={i} i={i} uid={uid} dz={`active-${i}`} setSlot={setActiveSlot} />)}
             </div>
             {ownedActive.length === 0
               ? <div style={{ fontSize:10, color:FAINT, textAlign:"center", padding:8 }}>アクティブ書を持っていない</div>
@@ -523,26 +531,10 @@ export default function CharacterPage() {
           </div>
 
           {/* パッシブ */}
-          <div style={{ background:"#0d0d15", border:"1px solid #3a3a55", borderRadius:8, padding:12 }}>
-            <div style={{ fontSize:10, color:"#a78bfa", letterSpacing:2, marginBottom:8 }}>パッシブ書（最大6・ドラッグでもセット可）</div>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:10 }}>
-              {pasSlots.map((uid,i)=>{
-                const owned = uid ? bookByUid(uid) : null;
-                const book = owned ? SKILL_BOOKS[owned.id] : null;
-                const rc = owned ? BOOK_RARITY_COLOR[owned.rarity] : "#3a3a55";
-                const dz = `passive-${i}`;
-                const isHover = dropTarget === dz;
-                return (
-                  <div key={i} data-drop={dz} style={{ background:isHover?"#1a2a1a":book?`${rc}22`:"#0a0a14", border:`1px solid ${isHover?"#4ade80":book?rc:"#3a3a55"}`, borderRadius:4, padding:"4px 8px", fontSize:10, display:"flex", alignItems:"center", gap:4 }}>
-                    <span style={{ color:LABEL, fontWeight:700 }}>P{i+1}</span>
-                    {book ? (<>
-                      <span>{book.icon}</span>
-                      <span style={{ color:rc }}>{book.name}</span>
-                      <button onClick={()=>setPassiveSlot(i,null)} style={{ fontSize:10, background:"transparent", border:"none", color:DIM, cursor:"pointer" }}>×</button>
-                    </>) : <span style={{ color:DIM }}>空き</span>}
-                  </div>
-                );
-              })}
+          <div style={{ background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:12, backdropFilter:"blur(1px)" }}>
+            <div style={{ fontSize:10, color:"#c9b6fb", letterSpacing:2, marginBottom:8 }}>パッシブ書（最大6・ドラッグでもセット可）</div>
+            <div style={{ display:"grid", gridTemplateColumns:isMobile?"repeat(3,1fr)":"repeat(6,1fr)", gap:8, marginBottom:10 }}>
+              {pasSlots.map((uid,i)=> <BookSlotCell key={i} i={i} uid={uid} dz={`passive-${i}`} setSlot={setPassiveSlot} />)}
             </div>
             {ownedPassive.length === 0
               ? <div style={{ fontSize:10, color:FAINT, textAlign:"center", padding:8 }}>パッシブ書を持っていない</div>
