@@ -345,24 +345,31 @@ export default function CharacterPage() {
                 const rc = RARITY_COLOR[it.rarity]||"#888";
                 const isSel = sel===it.uid;
                 const isEq = equippedUids.has(it.uid);
+                const glowColor = isSel ? "#a78bfa" : rc;
                 return (
                   <div key={it.uid}
                     onPointerDown={(e) => beginDrag(e, { kind:"item", itemType:it.type, item:it, icon:it.icon, name:it.name })}
                     onClick={()=>setSel(isSel?null:it.uid)}
-                    style={{ touchAction:"none", cursor:"grab", aspectRatio:"1", background:isSel?`${rc}55`:`${rc}30`, border:`2px solid ${isSel?rc:rc+"88"}`, borderRadius:6, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:2, position:"relative", opacity:isEq?0.5:1, boxShadow:isSel?`0 0 8px ${rc}88`:"none" }}>
-                    {it.image ? (
-                      <img src={it.image} alt="" style={{ width:"75%", height:"75%", objectFit:"contain", filter:it.tint||"none" }} />
-                    ) : (
-                      <div style={{ fontSize:20, lineHeight:1 }}>{it.icon}</div>
-                    )}
-                    {it.upgradeLevel>0 && <div style={{ position:"absolute", top:1, right:3, fontSize:9, color:"#fbbf24", fontWeight:700 }}>+{it.upgradeLevel}</div>}
-                    {isEq && <div style={{ position:"absolute", bottom:0, left:0, right:0, fontSize:8, color:"#4ade80", textAlign:"center", background:"rgba(0,0,0,0.75)", borderRadius:"0 0 4px 4px" }}>装備中</div>}
-                    <div style={{ position:"absolute", bottom:isEq?9:2, left:3, right:3, height:3, background:rc, borderRadius:1 }} />
+                    style={{ touchAction:"none", cursor:"grab", aspectRatio:"1", position:"relative", opacity:isEq?0.5:1 }}>
+                    <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:isSel?0.65:0.4, filter:"blur(6px)" }} />
+                    <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                    <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      {it.image ? (
+                        <img src={it.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:it.tint||"none" }} />
+                      ) : (
+                        <div style={{ fontSize:18, lineHeight:1 }}>{it.icon}</div>
+                      )}
+                    </div>
+                    {it.upgradeLevel>0 && <div style={{ position:"absolute", top:1, right:3, fontSize:9, color:"#fbbf24", fontWeight:700, textShadow:"0 1px 2px #000", zIndex:1 }}>+{it.upgradeLevel}</div>}
+                    {isEq && <div style={{ position:"absolute", bottom:"11%", left:"14%", right:"14%", fontSize:8, color:"#4ade80", textAlign:"center", background:"rgba(0,0,0,0.8)", borderRadius:2, zIndex:1 }}>装備中</div>}
+                    <div style={{ position:"absolute", bottom:isEq?"20%":"9%", left:"20%", right:"20%", height:3, background:rc, borderRadius:1, zIndex:1 }} />
                   </div>
                 );
               })}
               {Array.from({length:Math.max(0,30-(itemBox||[]).length)}).map((_,i)=>(
-                <div key={`e${i}`} style={{ aspectRatio:"1", background:"#0a0a12", border:"1px dashed #262640", borderRadius:5 }} />
+                <div key={`e${i}`} style={{ aspectRatio:"1", position:"relative", opacity:0.5 }}>
+                  <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                </div>
               ))}
             </div>
           </div>
