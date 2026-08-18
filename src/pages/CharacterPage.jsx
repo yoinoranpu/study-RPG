@@ -209,6 +209,36 @@ export default function CharacterPage() {
     dragStartRef.current = { x:e.clientX, y:e.clientY, payload };
   }
 
+  // アイテム/装備/消耗品スロット共通の詳細パネル。アイコンを大きめにしつつ
+  // maxHeightで縦の圧迫を抑え、はみ出す分は中身だけスクロールさせる。
+  function ItemDetailFrame({ item, subtitle, onClose, footer, children }) {
+    const rc = RARITY_COLOR[item.rarity] || "#888";
+    return (
+      <div className="rpg-panel" style={{ position:"absolute", bottom:8, left:8, right:8, borderRadius:6, padding:"10px 12px", zIndex:10, maxHeight:"58%", display:"flex", flexDirection:"column" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6, flexShrink:0 }}>
+          <div style={{ width:60, height:60, position:"relative", flexShrink:0 }}>
+            <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:rc, opacity:0.5, filter:"blur(7px)" }} />
+            <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+            <div style={{ position:"absolute", inset:"18%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              {item.image ? <img src={item.image} alt="" style={{ width:"82%", height:"82%", objectFit:"contain", filter:item.tint||"none" }} /> : <span style={{ fontSize:26 }}>{item.icon}</span>}
+            </div>
+          </div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:"#e8e0d0", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              {item.name}{item.upgradeLevel>0 && <span style={{ color:"#fbbf24" }}> +{item.upgradeLevel}</span>}
+            </div>
+            <div style={{ fontSize:12, color:rc, letterSpacing:1 }}>{subtitle}</div>
+          </div>
+          <button onClick={onClose} style={{ background:"transparent", border:"none", color:DIM, fontSize:18, cursor:"pointer", flexShrink:0, padding:4 }}>×</button>
+        </div>
+        <div style={{ overflowY:"auto", flex:1, minHeight:0 }}>
+          {children}
+        </div>
+        {footer && <div style={{ display:"flex", gap:8, marginTop:8, flexShrink:0 }}>{footer}</div>}
+      </div>
+    );
+  }
+
   function BookRow({ owned, slots, setSlot, color }) {
     const book = SKILL_BOOKS[owned.id];
     const rc = BOOK_RARITY_COLOR[owned.rarity] || "#888";
@@ -338,8 +368,8 @@ export default function CharacterPage() {
             </div>
           </div>
 
-          <div style={{ flex:1, overflowY:"auto", padding:"8px 10px" }}>
-            <div style={{ fontSize:10, color:DIM, letterSpacing:2, marginBottom:6 }}>ITEM BOX {(itemBox||[]).length}/30 <span style={{ color:"#4a4a6a" }}>（ドラッグでも装備可）</span></div>
+          <div style={{ flex:1, overflowY:"auto", padding:"8px 10px", background:"linear-gradient(rgba(8,5,2,0.45),rgba(8,5,2,0.45)), url(/assets/images/item_box_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
+            <div style={{ fontSize:10, color:"#d8cdb8", letterSpacing:2, marginBottom:6, textShadow:"0 1px 3px rgba(0,0,0,0.9)" }}>ITEM BOX {(itemBox||[]).length}/30 <span style={{ color:"#a89a80" }}>（ドラッグでも装備可）</span></div>
             <div style={{ display:"grid", gridTemplateColumns:`repeat(${isMobile?4:6},1fr)`, gap:4 }}>
               {(itemBox||[]).map(it=>{
                 const rc = RARITY_COLOR[it.rarity]||"#888";
@@ -375,21 +405,22 @@ export default function CharacterPage() {
           </div>
 
           {sel && !sel.startsWith("slot_") && !sel.startsWith("cslot_") && selItem && (
-            <div className="rpg-panel" style={{ position:"absolute", bottom:8, left:8, right:8, borderRadius:6, padding:"10px 12px", zIndex:10 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                <div style={{ width:36, height:36, position:"relative", flexShrink:0 }}>
-                  <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:RARITY_COLOR[selItem.rarity]||"#888", opacity:0.45, filter:"blur(5px)" }} />
-                  <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
-                  <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    {selItem.image ? <img src={selItem.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:selItem.tint||"none" }} /> : <span style={{ fontSize:16 }}>{selItem.icon}</span>}
-                  </div>
-                </div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:"#e8e0d0" }}>{selItem.name}{selItem.upgradeLevel>0&&<span style={{ color:"#fbbf24" }}> +{selItem.upgradeLevel}</span>}</div>
-                  <div style={{ fontSize:10, color:RARITY_COLOR[selItem.rarity]||"#888" }}>{RARITY_LABEL[selItem.rarity]}</div>
-                </div>
-                <button onClick={()=>setSel(null)} style={{ background:"transparent", border:"none", color:DIM, fontSize:16, cursor:"pointer" }}>×</button>
-              </div>
+            <ItemDetailFrame item={selItem} subtitle={RARITY_LABEL[selItem.rarity]||""} onClose={()=>setSel(null)}
+              footer={<>
+                {INSTANT_USE_EFFECTS.includes(selItem.effect) ? (
+                  <button onClick={()=>consumeItem(selItem)} style={{ flex:2, padding:"8px 0", background:"#0a1a0a", border:"1px solid #4ade80", borderRadius:4, cursor:"pointer", color:"#4ade80", fontSize:10, fontFamily:"monospace" }}>
+                    使う
+                  </button>
+                ) : ["weapon","armor","accessory","consumable","special"].includes(selItem.type) && (
+                  <button onClick={()=>equipItem(selItem)} style={{ flex:2, padding:"8px 0", background:"#0a1a0a", border:"1px solid #4ade80", borderRadius:4, cursor:"pointer", color:"#4ade80", fontSize:10, fontFamily:"monospace" }}>
+                    {["consumable","special"].includes(selItem.type) ? "スロットにセット" : "装備する"}
+                  </button>
+                )}
+                <button onClick={()=>{ updatePlayer({ itemBox:(itemBox||[]).filter(x=>x.uid!==selItem.uid), gold:player.gold+getSellPrice(selItem) }); setSel(null); }}
+                  style={{ flex:1, padding:"8px 0", background:"#1a0a0a", border:"1px solid #f87171", borderRadius:4, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace" }}>
+                  売却 {getSellPrice(selItem)}G
+                </button>
+              </>}>
               <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:4 }}>
                 {Object.entries(getItemStats(selItem)).filter(([,v])=>v>0).map(([k,v])=>(
                   <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"1px 5px", borderRadius:2 }}>{k.toUpperCase()} {v}</span>
@@ -407,22 +438,7 @@ export default function CharacterPage() {
               {(selItem.abilities||[]).map((ab,i)=>(
                 <div key={i} style={{ fontSize:10, color:"#a78bfa", marginBottom:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
               ))}
-              <div style={{ display:"flex", gap:8, marginTop:8 }}>
-                {INSTANT_USE_EFFECTS.includes(selItem.effect) ? (
-                  <button onClick={()=>consumeItem(selItem)} style={{ flex:2, padding:"8px 0", background:"#0a1a0a", border:"1px solid #4ade80", borderRadius:4, cursor:"pointer", color:"#4ade80", fontSize:10, fontFamily:"monospace" }}>
-                    使う
-                  </button>
-                ) : ["weapon","armor","accessory","consumable","special"].includes(selItem.type) && (
-                  <button onClick={()=>equipItem(selItem)} style={{ flex:2, padding:"8px 0", background:"#0a1a0a", border:"1px solid #4ade80", borderRadius:4, cursor:"pointer", color:"#4ade80", fontSize:10, fontFamily:"monospace" }}>
-                    {["consumable","special"].includes(selItem.type) ? "スロットにセット" : "装備する"}
-                  </button>
-                )}
-                <button onClick={()=>{ updatePlayer({ itemBox:(itemBox||[]).filter(x=>x.uid!==selItem.uid), gold:player.gold+getSellPrice(selItem) }); setSel(null); }}
-                  style={{ flex:1, padding:"8px 0", background:"#1a0a0a", border:"1px solid #f87171", borderRadius:4, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace" }}>
-                  売却 {getSellPrice(selItem)}G
-                </button>
-              </div>
-            </div>
+            </ItemDetailFrame>
           )}
 
           {sel && sel.startsWith("slot_") && (()=>{
@@ -430,15 +446,8 @@ export default function CharacterPage() {
             const eq = player[key];
             if (!eq) return null;
             return (
-              <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"rgba(6,6,15,0.97)", border:"1px solid #3a3a55", borderTop:"1px solid #4a4a70", borderRadius:"8px 8px 0 0", padding:"10px 12px", zIndex:10 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                  {eq.image ? <img src={eq.image} alt="" style={{ width:24, height:24, objectFit:"contain", filter:eq.tint||"none" }} /> : <span style={{ fontSize:20 }}>{eq.icon}</span>}
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:11, fontWeight:700, color:"#e8e0d0" }}>{eq.name}{eq.upgradeLevel>0&&<span style={{ color:"#fbbf24" }}> +{eq.upgradeLevel}</span>}</div>
-                    <div style={{ fontSize:10, color:RARITY_COLOR[eq.rarity]||"#888" }}>{RARITY_LABEL[eq.rarity]}</div>
-                  </div>
-                  <button onClick={()=>setSel(null)} style={{ background:"transparent", border:"none", color:DIM, fontSize:16, cursor:"pointer" }}>×</button>
-                </div>
+              <ItemDetailFrame item={eq} subtitle={RARITY_LABEL[eq.rarity]||""} onClose={()=>setSel(null)}
+                footer={<button onClick={()=>unequip(key)} style={{ flex:1, padding:"8px 0", background:"#1a0a0a", border:"1px solid #f87171", borderRadius:4, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace" }}>外す</button>}>
                 <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:4 }}>
                   {Object.entries(getItemStats(eq)).filter(([,v])=>v>0).map(([k,v])=>(
                     <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"1px 5px", borderRadius:2 }}>{k.toUpperCase()} {v}</span>
@@ -453,8 +462,7 @@ export default function CharacterPage() {
                 {(eq.abilities||[]).map((ab,i)=>(
                   <div key={i} style={{ fontSize:10, color:"#a78bfa", marginBottom:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
                 ))}
-                <button onClick={()=>unequip(key)} style={{ width:"100%", marginTop:8, padding:"8px 0", background:"#1a0a0a", border:"1px solid #f87171", borderRadius:4, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace" }}>外す</button>
-              </div>
+              </ItemDetailFrame>
             );
           })()}
 
@@ -463,23 +471,15 @@ export default function CharacterPage() {
             const slot = (player.specialSlots||[])[i];
             if (!slot) return null;
             return (
-              <div style={{ position:"absolute", bottom:0, left:0, right:0, background:"rgba(6,6,15,0.97)", border:"1px solid #3a3a55", borderTop:"1px solid #4a4a70", borderRadius:"8px 8px 0 0", padding:"10px 12px", zIndex:10 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                  {slot.image ? <img src={slot.image} alt="" style={{ width:24, height:24, objectFit:"contain", filter:slot.tint||"none" }} /> : <span style={{ fontSize:20 }}>{slot.icon}</span>}
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:11, fontWeight:700, color:"#e8e0d0" }}>{slot.name}</div>
-                    <div style={{ fontSize:10, color:"#4ade80" }}>消耗品スロット {i+1}</div>
-                  </div>
-                  <button onClick={()=>setSel(null)} style={{ background:"transparent", border:"none", color:DIM, fontSize:16, cursor:"pointer" }}>×</button>
-                </div>
-                <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>{slot.desc}</div>
-                <button onClick={()=>{
+              <ItemDetailFrame item={slot} subtitle={`消耗品スロット ${i+1}`} onClose={()=>setSel(null)}
+                footer={<button onClick={()=>{
                   const slots=[...(player.specialSlots||[null,null,null])];
                   slots[i]=null;
                   updatePlayer({ specialSlots:slots });
                   setSel(null);
-                }} style={{ width:"100%", padding:"8px 0", background:"#1a0a0a", border:"1px solid #f87171", borderRadius:4, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace" }}>スロットから外す</button>
-              </div>
+                }} style={{ flex:1, padding:"8px 0", background:"#1a0a0a", border:"1px solid #f87171", borderRadius:4, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace" }}>スロットから外す</button>}>
+                <div style={{ fontSize:10, color:DIM }}>{slot.desc}</div>
+              </ItemDetailFrame>
             );
           })()}
         </>
