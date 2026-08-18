@@ -313,7 +313,7 @@ export default function CharacterPage() {
               </div>
 
               <div style={{ flex:1, display:"flex", justifyContent:"flex-end" }}>
-              <div style={{ width:isMobile?"auto":charLayout.statsPanelWidth, maxWidth:charLayout.statsPanelWidth+30, background:"rgba(15,10,5,0.72)", border:"1px solid rgba(201,150,61,0.35)", borderRadius:8, padding:"6px 8px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end", backdropFilter:"blur(1px)" }}>
+              <div style={{ width:isMobile?"auto":charLayout.statsPanelWidth, maxWidth:charLayout.statsPanelWidth+30, display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end" }}>
                 {[
                   {label:"ATK",  val:stats.atk,        color:"#f87171"},
                   {label:"MAG",  val:stats.mag,        color:"#a78bfa"},
@@ -324,9 +324,12 @@ export default function CharacterPage() {
                 ].map(({label,val,color})=>{
                   const itemPos = charLayout.statItemPos?.[label] || { x:0, y:0 };
                   return (
-                    <div key={label} style={{ width:"100%", background:"rgba(28,19,11,0.75)", border:"1px solid #3a2a18", borderRadius:3, padding:"3px 5px", display:"flex", justifyContent:"space-between", alignItems:"baseline", position:"relative", left:itemPos.x, top:itemPos.y }}>
-                      <span style={{ fontSize:8, color:LABEL, fontWeight:700 }}>{label}</span>
-                      <span style={{ fontSize:9, color, fontWeight:700 }}>{val}</span>
+                    <div key={label} style={{ width:"100%", position:"relative", left:itemPos.x, top:itemPos.y }}>
+                      <img src="/assets/images/stat_plate_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                      <div style={{ position:"relative", padding:"5px 10px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+                        <span style={{ fontSize:8, color:LABEL, fontWeight:700 }}>{label}</span>
+                        <span style={{ fontSize:9, color, fontWeight:700 }}>{val}</span>
+                      </div>
                     </div>
                   );
                 })}
