@@ -23,8 +23,6 @@ const nextRarity = (r) => RARITY_ORDER[RARITY_ORDER.indexOf(r) + 1] || null;
 
 const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
-const BUBBLE_BG = "rgba(18,13,9,0.95)";
-const BUBBLE_BORDER = "#fb923c66";
 
 // ─── 選択グリッド共通部品：レアリティ別グループ化＋検索＋拡大カード ───
 function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getName, emptyText, isMaxed }) {
@@ -44,21 +42,27 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
           <div style={{ fontSize:10, color:getColor({ rarity:r }), letterSpacing:1, marginBottom:4, fontWeight:700 }}>
             {getRarityLabel(r)} ({groups[r].length})
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
             {groups[r].map(it => {
               const rc = getColor(it);
               const isSel = selectedUid === it.uid;
               const maxed = isMaxed?.(it);
               return (
                 <div key={it.uid} onClick={() => !maxed && onSelect(isSel ? null : it.uid)}
-                  style={{ aspectRatio:"1", position:"relative", background:isSel?`${rc}55`:maxed?"#12121a":`${rc}30`, border:`2px solid ${isSel?rc:maxed?"#3a3a55":rc+"88"}`, borderRadius:8, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:maxed?"default":"pointer", padding:3, opacity:maxed?0.5:1, boxShadow:isSel?`0 0 10px ${rc}aa`:maxed?"none":`0 0 5px ${rc}44` }}>
-                  {maxed && <div style={{ position:"absolute", top:2, right:3, fontSize:7, color:"#fbbf24", fontWeight:700 }}>MAX</div>}
-                  {it.image ? (
-                    <img src={it.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:`${it.tint||""} ${maxed?"grayscale(0.6)":""}`.trim()||"none" }} />
-                  ) : (
-                    <div style={{ fontSize:22, filter:maxed?"grayscale(0.6)":"none" }}>{getIcon(it)}</div>
-                  )}
-                  <div style={{ fontSize:9, color:maxed?DIM:"#e8e0d0", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", marginTop:2 }}>{getName(it).slice(0,7)}</div>
+                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, cursor:maxed?"default":"pointer", opacity:maxed?0.5:1 }}>
+                  <div className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:"100%", aspectRatio:"1", position:"relative" }}>
+                    {!maxed && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:rc, opacity:0.4, filter:"blur(6px)" }} />}
+                    <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                    <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      {it.image ? (
+                        <img src={it.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:`${it.tint||""} ${maxed?"grayscale(0.6)":""}`.trim()||"none" }} />
+                      ) : (
+                        <div style={{ fontSize:20, filter:maxed?"grayscale(0.6)":"none" }}>{getIcon(it)}</div>
+                      )}
+                    </div>
+                    {maxed && <div style={{ position:"absolute", top:1, right:2, fontSize:7, color:"#fbbf24", fontWeight:700, background:"rgba(0,0,0,0.75)", borderRadius:2, padding:"1px 3px", zIndex:1 }}>MAX</div>}
+                  </div>
+                  <div style={{ fontSize:9, color:maxed?DIM:"#e8e0d0", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%" }}>{getName(it).slice(0,7)}</div>
                 </div>
               );
             })}
@@ -72,11 +76,12 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
 // ─── 合成プレビュー共通部品：⬜+⬜=>⬜ を常に上部に表示 ───
 function SynthBox({ icon, color, empty }) {
   return (
-    <div style={{ width:52, height:52, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0,
-      background: empty ? "#0a0a14" : `${color}30`,
-      border: empty ? "2px dashed #3a3a55" : `2px solid ${color}`,
-      boxShadow: empty ? "none" : `0 0 8px ${color}55` }}>
-      {empty ? "" : icon}
+    <div style={{ width:52, height:52, position:"relative", flexShrink:0 }}>
+      {!empty && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:color, opacity:0.45, filter:"blur(6px)" }} />}
+      <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:empty?0.5:1 }} />
+      <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>
+        {!empty && icon}
+      </div>
     </div>
   );
 }
@@ -87,7 +92,7 @@ function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getN
   const nextColor = next ? getColor({ rarity:next }) : "#3a3a55";
   const ready = base && mat && next;
   return (
-    <div style={{ background:"#0d0d15", border:`1px solid ${ready?nextColor:"#3a3a55"}`, borderRadius:8, padding:12 }}>
+    <div className="rpg-panel" style={{ borderRadius:6, padding:12 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
         <SynthBox icon={base && getIcon(base)} color={baseColor} empty={!base} />
         <span style={{ fontSize:16, color:DIM, fontWeight:700 }}>+</span>
@@ -294,12 +299,11 @@ export default function ForgeTab() {
             WebkitMaskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
             maskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
           }} />
-          <div style={{ position:"relative", flex:1, minWidth:0, marginLeft:-8, marginBottom:16 }}>
-            <div style={{ position:"absolute", left:-6, bottom:24, width:14, height:14, background:BUBBLE_BG, transform:"rotate(45deg)" }} />
-            <div style={{ position:"relative", background:BUBBLE_BG, border:`2px solid ${BUBBLE_BORDER}`, borderRadius:14, padding:"10px 12px", boxShadow:"0 6px 16px rgba(0,0,0,0.5)" }}>
-              <div style={{ fontSize:11, color:"#e8d8c0" }}>{bubbleText()}</div>
-              <div style={{ fontSize:10, color:DIM, marginTop:6 }}>所持G: {gold.toLocaleString()}</div>
-              {msg && <div style={{ fontSize:10, color:"#4ade80", marginTop:4 }}>{msg}</div>}
+          <div style={{ position:"relative", flex:1, minWidth:0, marginLeft:2, marginBottom:16 }}>
+            <div className="rpg-panel" style={{ borderRadius:6, padding:"12px 14px" }}>
+              <div style={{ fontSize:13, color:"#e8d8c0" }}>{bubbleText()}</div>
+              <div style={{ fontSize:11, color:DIM, marginTop:6 }}>所持G: {gold.toLocaleString()}</div>
+              {msg && <div style={{ fontSize:11, color:"#4ade80", marginTop:4 }}>{msg}</div>}
             </div>
           </div>
         </div>
@@ -317,16 +321,22 @@ export default function ForgeTab() {
           })}
         </div>
 
-        <div style={{ flex:1, overflowY:"auto", padding:10 }}>
+        <div style={{ flex:1, overflowY:"auto", padding:10, background:"linear-gradient(rgba(8,5,2,0.55),rgba(8,5,2,0.55)), url(/assets/images/forge_workshop_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
 
         {/* 強化タブ */}
         {tab === "upgrade" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {upgradeItem && (
               <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
-              <div style={{ background:"#0d0d15", border:"1px solid #3a3a55", borderRadius:8, padding:12 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-                  {upgradeItem.image ? <img src={upgradeItem.image} alt="" style={{ width:26, height:26, objectFit:"contain", filter:upgradeItem.tint||"none" }} /> : <span style={{ fontSize:22 }}>{upgradeItem.icon}</span>}
+              <div className="rpg-panel" style={{ borderRadius:6, padding:12 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
+                  <div style={{ width:44, height:44, position:"relative", flexShrink:0 }}>
+                    <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:RARITY_COLOR[upgradeItem.rarity]||"#888", opacity:0.45, filter:"blur(5px)" }} />
+                    <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                    <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      {upgradeItem.image ? <img src={upgradeItem.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:upgradeItem.tint||"none" }} /> : <span style={{ fontSize:18 }}>{upgradeItem.icon}</span>}
+                    </div>
+                  </div>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>
                       {upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span>
@@ -415,8 +425,8 @@ export default function ForgeTab() {
               emptyText="強化できる装備がない"
             />
 
-            <div style={{ background:"#0d0d15", border:"1px solid #3a3a55", borderRadius:6, padding:10 }}>
-              <div style={{ fontSize:10, color:"#fb923c", letterSpacing:2, marginBottom:6 }}>所持素材</div>
+            <div style={{ padding:"6px 2px", borderTop:"1px solid rgba(251,146,60,0.25)" }}>
+              <div style={{ fontSize:10, color:"#fb923c", letterSpacing:2, marginBottom:6, marginTop:4 }}>所持素材</div>
               {Object.keys(materials||{}).length === 0
                 ? <div style={{ fontSize:10, color:FAINT }}>素材なし</div>
                 : <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
