@@ -70,10 +70,10 @@ export default function TownPage({ onEnterDungeon }) {
   }, []);
 
   const tabs = [
-    { id:"home",      icon:"🏰", label:"ギルド"   },
-    { id:"character", icon:"🧙", label:"キャラ"  },
-    { id:"shop",      icon:"🏪", label:"ショップ" },
-    { id:"forge",     icon:"🔨", label:"鍛冶屋"  },
+    { id:"home",      img:"/assets/images/tab_icon_guild.png",     label:"ギルド"   },
+    { id:"character", img:"/assets/images/tab_icon_character.png", label:"キャラ"  },
+    { id:"shop",      img:"/assets/images/tab_icon_shop.png",      label:"ショップ" },
+    { id:"forge",     img:"/assets/images/tab_icon_forge.png",     label:"鍛冶屋"  },
   ];
   return (
     <div style={{ height:"100vh", background:"#06060f", fontFamily:"monospace", display:"flex", flexDirection:"column", overflow:"hidden" }}>
@@ -98,13 +98,16 @@ export default function TownPage({ onEnterDungeon }) {
       </div>
 
       {/* タブ */}
-      <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:isMobile?"8px 2px":"7px 2px", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#a78bfa":"transparent"}`, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:isMobile?0:1 }}>
-            <span style={{ fontSize:isMobile?14:13 }}>{t.icon}</span>
-            {!isMobile && <span style={{ fontSize:10, color:tab===t.id?"#a78bfa":DIM }}>{t.label}</span>}
-          </button>
-        ))}
+      <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0, background:"linear-gradient(180deg, rgba(8,5,2,0.5), rgba(8,5,2,0.65)), url(/assets/images/tab_bar_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
+        {tabs.map(t => {
+          const isSel = tab === t.id;
+          return (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:isMobile?"6px 2px":"6px 2px", background:"transparent", border:"none", cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:isMobile?1:2 }}>
+              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:isMobile?26:28, height:isMobile?26:28, objectFit:"contain", opacity:isSel?1:0.65 }} />
+              {!isMobile && <span style={{ fontSize:10, color:isSel?"#f0d9a0":DIM }}>{t.label}</span>}
+            </button>
+          );
+        })}
       </div>
 
       {/* コンテンツ */}
