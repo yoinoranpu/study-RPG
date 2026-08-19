@@ -260,12 +260,16 @@ export default function TownPage({ onEnterDungeon }) {
         {tab === "home" && subTab === "book" && (
           <div style={{ height:"100%", display:"flex", flexDirection:"column" }}>
             <button onClick={() => setSubTab("home")} style={{ padding:"6px 12px", background:"transparent", border:"none", color:DIM, cursor:"pointer", fontSize:10, textAlign:"left", fontFamily:"monospace" }}>← 戻る</button>
-            <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-              {[{id:"monster",label:"👾 モンスター"},{id:"skill",label:"📖 スキル書"}].map(t=>(
-                <button key={t.id} onClick={()=>setBookTab(t.id)} style={{ flex:1, padding:"8px 0", background:bookTab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${bookTab===t.id?"#a78bfa":"transparent"}`, cursor:"pointer", color:bookTab===t.id?"#a78bfa":DIM, fontSize:10, fontFamily:"monospace" }}>
-                  {t.label}
-                </button>
-              ))}
+            <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0, background:"linear-gradient(180deg, rgba(8,5,2,0.5), rgba(8,5,2,0.65)), url(/assets/images/tab_bar_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
+              {[{id:"monster",img:"/assets/images/tab_icon_monster.png",label:"モンスター"},{id:"skill",img:"/assets/images/tab_icon_skillbook.png",label:"スキル書"}].map(t=>{
+                const isSel = bookTab===t.id;
+                return (
+                  <button key={t.id} onClick={()=>setBookTab(t.id)} style={{ flex:1, padding:"6px 0", background:"transparent", border:"none", cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+                    <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:20, height:20, objectFit:"contain", opacity:isSel?1:0.65 }} />
+                    <span style={{ color:isSel?"#a78bfa":DIM, fontSize:10 }}>{t.label}</span>
+                  </button>
+                );
+              })}
             </div>
             <div style={{ flex:1, overflow:"hidden" }}>
               {bookTab === "monster" ? <MonsterBookTab /> : <SkillBookTab />}

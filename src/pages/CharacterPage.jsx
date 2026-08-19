@@ -294,12 +294,16 @@ export default function CharacterPage() {
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace", overflow:"hidden", position:"relative" }}>
 
-      <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-        {[{id:"equip",label:"⚔ 装備"},{id:"skill",label:"✨ スキル"}].map(t=>(
-          <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} className="rpg-heading" style={{ flex:1, padding:"8px 0", background:tab===t.id?"#241a0e":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#e0b555":"transparent"}`, cursor:"pointer", color:tab===t.id?"#e0b555":DIM, fontSize:11 }}>
-            {t.label}
-          </button>
-        ))}
+      <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0, background:"linear-gradient(180deg, rgba(8,5,2,0.5), rgba(8,5,2,0.65)), url(/assets/images/tab_bar_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
+        {[{id:"equip",img:"/assets/images/tab_icon_equip.png",label:"装備"},{id:"skill",img:"/assets/images/tab_icon_skill.png",label:"スキル"}].map(t=>{
+          const isSel = tab===t.id;
+          return (
+            <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} className="rpg-heading" style={{ flex:1, padding:"6px 0", background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:22, height:22, objectFit:"contain", opacity:isSel?1:0.65 }} />
+              <span style={{ color:isSel?"#e0b555":DIM, fontSize:10 }}>{t.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {DEBUG && tab === "equip" && (

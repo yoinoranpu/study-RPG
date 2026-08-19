@@ -304,13 +304,17 @@ export default function ForgeTab() {
           </div>
         </div>
 
-        <div style={{ display:"flex", background:"rgba(8,8,16,0.75)", borderTop:"1px solid #1a1a2a", borderBottom:"1px solid #1a1a2a", flexShrink:0, marginTop:14 }}>
-          {[{id:"upgrade",label:"⬆ 強化"},{id:"synth",label:"✨ 合成"},{id:"book",label:"📖 スキル書"}].map(t => (
-            <button key={t.id} onClick={() => { setTab(t.id); setSel(null); setMatSel(null); }}
-              style={{ flex:1, padding:"11px 4px", minHeight:"44px", background:tab===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${tab===t.id?"#fb923c":"transparent"}`, cursor:"pointer", color:tab===t.id?"#fb923c":DIM, fontSize:12, fontFamily:"monospace", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              {t.label}
-            </button>
-          ))}
+        <div style={{ display:"flex", borderTop:"1px solid #1a1a2a", borderBottom:"1px solid #1a1a2a", flexShrink:0, marginTop:14, background:"linear-gradient(180deg, rgba(8,5,2,0.5), rgba(8,5,2,0.65)), url(/assets/images/tab_bar_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
+          {[{id:"upgrade",img:"/assets/images/tab_icon_upgrade.png",label:"強化"},{id:"synth",img:"/assets/images/tab_icon_synth.png",label:"合成"},{id:"book",img:"/assets/images/tab_icon_skillbook.png",label:"スキル書"}].map(t => {
+            const isSel = tab===t.id;
+            return (
+              <button key={t.id} onClick={() => { setTab(t.id); setSel(null); setMatSel(null); }}
+                style={{ flex:1, padding:"8px 4px", minHeight:"44px", background:"transparent", border:"none", cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2 }}>
+                <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:22, height:22, objectFit:"contain", opacity:isSel?1:0.65 }} />
+                <span style={{ color:isSel?"#fb923c":DIM, fontSize:10 }}>{t.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:10 }}>

@@ -84,11 +84,11 @@ export default function ShopTab() {
   }
 
   const tabs = [
-    { id:"weapon",     label:"⚔武器"   },
-    { id:"armor",      label:"🛡防具"   },
-    { id:"accessory",  label:"💍アクセ" },
-    { id:"consumable", label:"🧪消耗品" },
-    { id:"special",    label:"✨特殊"   },
+    { id:"weapon",     img:"/assets/images/tab_icon_weapon.png",     label:"武器"   },
+    { id:"armor",      img:"/assets/images/tab_icon_armor.png",      label:"防具"   },
+    { id:"accessory",  img:"/assets/images/tab_icon_accessory.png",  label:"アクセ" },
+    { id:"consumable", img:"/assets/images/tab_icon_consumable.png", label:"消耗品" },
+    { id:"special",    img:"/assets/images/tab_icon_special.png",    label:"特殊"   },
   ];
 
   return (
@@ -173,13 +173,17 @@ export default function ShopTab() {
         </div>
 
         {/* ② カテゴリタブ */}
-        <div style={{ display:"flex", background:"rgba(8,8,16,0.75)", borderTop:"1px solid #1a1a2a", borderBottom:"1px solid #1a1a2a", flexShrink:0, marginTop:14 }}>
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => { setSub(t.id); setSelectedIdx(0); }}
-              style={{ flex:1, padding:"11px 4px", minHeight:"44px", background:sub===t.id?"#12122a":"transparent", border:"none", borderBottom:`2px solid ${sub===t.id?"#fbbf24":"transparent"}`, cursor:"pointer", color:sub===t.id?"#fbbf24":DIM, fontSize:12, fontFamily:"monospace", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              {t.label}
-            </button>
-          ))}
+        <div style={{ display:"flex", borderTop:"1px solid #1a1a2a", borderBottom:"1px solid #1a1a2a", flexShrink:0, marginTop:14, background:"linear-gradient(180deg, rgba(8,5,2,0.5), rgba(8,5,2,0.65)), url(/assets/images/tab_bar_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
+          {tabs.map(t => {
+            const isSel = sub===t.id;
+            return (
+              <button key={t.id} onClick={() => { setSub(t.id); setSelectedIdx(0); }}
+                style={{ flex:1, padding:"8px 4px", minHeight:"44px", background:"transparent", border:"none", cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2 }}>
+                <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:22, height:22, objectFit:"contain", opacity:isSel?1:0.65 }} />
+                <span style={{ color:isSel?"#fbbf24":DIM, fontSize:10 }}>{t.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* ③ 商品グリッド（大きめタイル、スクロール） */}
@@ -188,7 +192,7 @@ export default function ShopTab() {
             const price = getShopPrice(rescueKeyTmpl);
             const canBuy = gold >= price && (itemBox||[]).length < ITEM_BOX_MAX;
             return (
-              <div style={{ background:"rgba(13,26,21,0.92)", borderLeft:"3px solid #4ade80", border:"1px solid #4ade8066", borderRadius:6, padding:"12px 14px", marginBottom:10 }}>
+              <div style={{ background:"rgba(13,26,21,0.92)", borderLeft:"3px solid #4ade80", borderTop:"1px solid #4ade8066", borderRight:"1px solid #4ade8066", borderBottom:"1px solid #4ade8066", borderRadius:6, padding:"12px 14px", marginBottom:10 }}>
                 <div style={{ fontSize:10, color:"#4ade80", letterSpacing:1, marginBottom:6 }}>💡 初回限定サポート</div>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
                   {rescueKeyTmpl.image ? <img src={rescueKeyTmpl.image} alt="" style={{ width:24, height:24, objectFit:"contain" }} /> : <span style={{ fontSize:20 }}>{rescueKeyTmpl.icon}</span>}
