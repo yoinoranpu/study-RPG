@@ -42,7 +42,9 @@ export function useMonsterPortraitStyle(id, crop, boxSize) {
   return {
     portrait, natural, dispW, dispH, minX, minY,
     style: {
-      backgroundImage: `url(${portrait.src})`,
+      // ファイル名に括弧を含む画像(例: "イノシシ(星2)胴体.png")があり、
+      // 引用符なしのurl()だとCSSとして無効になり無視されてしまうため、必ず引用符で囲む。
+      backgroundImage: `url("${portrait.src}")`,
       backgroundSize: `${dispW}px ${dispH}px`,
       backgroundPosition: `${offX}px ${offY}px`,
       backgroundRepeat: "no-repeat",

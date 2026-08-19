@@ -52,7 +52,7 @@ function CropStage({ id, crop, onChange }) {
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp}
       style={{ width: BOX, height: BOX, margin: "0 auto 10px", position: "relative", background: "#080810", borderRadius: 8, overflow: "hidden", border: "1px solid #2a2a3a", cursor: "grab", touchAction: "none", userSelect: "none" }}>
       {style ? (
-        <div style={{ width: "100%", height: "100%", ...style, pointerEvents: "none" }} />
+        <div key={id} style={{ width: "100%", height: "100%", ...style, pointerEvents: "none" }} />
       ) : (
         <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#5c5c82", fontSize: 10 }}>読み込み中...</div>
       )}

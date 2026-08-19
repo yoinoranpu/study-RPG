@@ -126,7 +126,7 @@ export default function DungeonCanvas({ isRunning, isBreak, isPaused, dungeonId 
         <>
           <div style={{
             position:"absolute", inset:0,
-            backgroundImage: `url(${corridorTileSrc})`,
+            backgroundImage: `url("${corridorTileSrc}")`,
             backgroundRepeat: "repeat-x",
             backgroundSize: "auto 100%",
             "--corridor-shift": `${shiftPx}px`,

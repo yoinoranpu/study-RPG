@@ -108,7 +108,7 @@ export const GROUP_IMAGE_MONSTERS = {
 export const SWAY_IMAGE_MONSTERS = {
   moss_slime:  { src: "/assets/images/苔スライム.png",     pivot: { x:0.5, y:0.90 } },
   world_tree:  { src: "/assets/images/世界樹の苗木.png",   pivot: { x:0.5, y:0.92 } },
-  man_eater:   { src: "/assets/images/食人植物.png",       pivot: { x:0.5, y:0.90 } },
+  man_eater:   { src: "/assets/images/食虫植物.png",       pivot: { x:0.5, y:0.90 } },
   cursed_tree: { src: "/assets/images/古の魔樹.png",       pivot: { x:0.5, y:0.92 } },
 };
 
