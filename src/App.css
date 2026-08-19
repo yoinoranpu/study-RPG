@@ -22,6 +22,15 @@
   letter-spacing: 1px;
 }
 
+/* アイテム/装備/スキルスロット共通：選択中を拡大+金グローで示す（レアリティ色と衝突しないよう独立させる） */
+.slot-cell {
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.slot-selected {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.85));
+}
+
 /* ギルドシーンの本・クエスト板・トロフィー：押せる感を出すホバー/タップ演出 */
 .guild-prop-btn {
   transition: transform 0.15s ease, filter 0.15s ease;

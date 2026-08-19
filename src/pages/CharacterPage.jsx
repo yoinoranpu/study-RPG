@@ -270,15 +270,19 @@ export default function CharacterPage() {
     const rc = owned ? BOOK_RARITY_COLOR[owned.rarity] : "#3a3a55";
     const isHover = dropTarget === dz;
     const glowColor = isHover ? "#4ade80" : book ? rc : null;
+    const selKey = `bslot_${dz}`;
+    const isSel = sel === selKey;
     return (
-      <div data-drop={dz} style={{ position:"relative", aspectRatio:"1" }}>
+      <div data-drop={dz} onClick={() => book && setSel(isSel?null:selKey)}
+        className={`slot-cell${isSel?" slot-selected":""}`}
+        style={{ position:"relative", aspectRatio:"1", cursor:book?"pointer":"default" }}>
         {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:isHover?0.6:0.4, filter:"blur(6px)" }} />}
         <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
         <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
           {book ? <span style={{ fontSize:20 }}>{book.icon}</span> : <span style={{ fontSize:9, color:FAINT }}>{dz.startsWith("active")?"S":"P"}{i+1}</span>}
         </div>
         {book && (
-          <button onClick={()=>setSlot(i,null)} style={{ position:"absolute", top:-4, right:-4, width:16, height:16, borderRadius:"50%", background:"#1a0a0a", border:"1px solid #f87171", color:"#f87171", fontSize:9, lineHeight:"14px", padding:0, cursor:"pointer", zIndex:1 }}>×</button>
+          <button onClick={(e)=>{ e.stopPropagation(); setSlot(i,null); }} style={{ position:"absolute", top:-4, right:-4, width:16, height:16, borderRadius:"50%", background:"#1a0a0a", border:"1px solid #f87171", color:"#f87171", fontSize:9, lineHeight:"14px", padding:0, cursor:"pointer", zIndex:1 }}>×</button>
         )}
         {book && (
           <div style={{ position:"absolute", bottom:"6%", left:"10%", right:"10%", fontSize:8, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", background:"rgba(0,0,0,0.65)", borderRadius:2, zIndex:1 }}>{book.name}</div>
@@ -319,12 +323,12 @@ export default function CharacterPage() {
                     const rc = eq ? RARITY_COLOR[eq.rarity]||"#888" : "#333350";
                     const isHover = dropTarget === drop;
                     const isSel = sel === `slot_${key}`;
-                    const glowColor = isHover ? "#4ade80" : isSel ? "#a78bfa" : eq ? rc : null;
+                    const glowColor = isHover ? "#4ade80" : eq ? rc : null;
                     const itemPos = charLayout.equipItemPos?.[key] || { x:0, y:0 };
                     return (
                       <div key={key} data-drop={drop} onClick={() => eq && setSel(sel===`slot_${key}`?null:`slot_${key}`)} title={label}
                         style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, position:"relative", left:itemPos.x, top:itemPos.y }}>
-                        <div style={{ width:charLayout.equipSlotSize, height:charLayout.equipSlotSize, position:"relative", cursor:eq?"pointer":"default" }}>
+                        <div className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:charLayout.equipSlotSize, height:charLayout.equipSlotSize, position:"relative", cursor:eq?"pointer":"default" }}>
                           {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:0.6, filter:"blur(8px)" }} />}
                           <img src="/assets/images/equip_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                           <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>
@@ -343,10 +347,11 @@ export default function CharacterPage() {
                   {(player.specialSlots||[null,null,null]).map((slot,i)=>{
                     const isHover = dropTarget === "special";
                     const isSel = sel === `cslot_${i}`;
-                    const glowColor = isHover ? "#4ade80" : isSel ? "#4ade80" : slot ? "#fbbf24" : null;
+                    const glowColor = isHover ? "#4ade80" : slot ? "#fbbf24" : null;
                     const itemPos = charLayout.specialItemPos?.[i] || { x:0, y:0 };
                     return (
                       <div key={i} data-drop="special" onClick={() => slot && setSel(sel===`cslot_${i}`?null:`cslot_${i}`)}
+                        className={`slot-cell${isSel?" slot-selected":""}`}
                         style={{ width:charLayout.specialSlotSize, height:charLayout.specialSlotSize, position:"relative", left:itemPos.x, top:itemPos.y, cursor:slot?"pointer":"default" }}>
                         {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:0.5, filter:"blur(6px)" }} />}
                         <img src="/assets/images/equip_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
@@ -399,13 +404,13 @@ export default function CharacterPage() {
                 const rc = RARITY_COLOR[it.rarity]||"#888";
                 const isSel = sel===it.uid;
                 const isEq = equippedUids.has(it.uid);
-                const glowColor = isSel ? "#a78bfa" : rc;
                 return (
                   <div key={it.uid}
                     onPointerDown={(e) => beginDrag(e, { kind:"item", itemType:it.type, item:it, icon:it.icon, name:it.name })}
                     onClick={()=>setSel(isSel?null:it.uid)}
+                    className={`slot-cell${isSel?" slot-selected":""}`}
                     style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", aspectRatio:"1", position:"relative", opacity:isEq?0.5:1 }}>
-                    <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:isSel?0.65:0.4, filter:"blur(6px)" }} />
+                    <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:rc, opacity:0.4, filter:"blur(6px)" }} />
                     <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                     <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
                       {it.image ? (
