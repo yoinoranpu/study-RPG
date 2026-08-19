@@ -25,7 +25,7 @@ function MonsterRow({ m, entry, crop }) {
         {/* アイコン・顔クロップ */}
         <div style={{ width:ICON_BOX, height:ICON_BOX, position:"relative", flexShrink:0 }}>
           {discovered && <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:tc, opacity:0.45, filter:"blur(5px)" }} />}
-          <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", zIndex:1, filter:discovered?"none":"grayscale(1) brightness(0.6)" }} />
+          <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", filter:discovered?"none":"grayscale(1) brightness(0.6)" }} />
           <div style={{ position:"absolute", inset:"19%", overflow:"hidden" }}>
             {discovered && style ? (
               <div style={{ width:"100%", height:"100%", ...style }} />
