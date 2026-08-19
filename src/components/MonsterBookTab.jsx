@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { MONSTER_BASE } from "../systems/monsters";
 import usePlayerStore from "../store/usePlayerStore";
+import { getMonsterPortraitSrc, MONSTER_PORTRAIT_DEFAULT } from "../data/monsterPortraits";
+import MonsterPortraitEditor from "./MonsterPortraitEditor";
 
 const TRIBE_COLOR = {
   "粘体":"#4ade80", "獣":"#fb923c", "ゴブリン":"#fbbf24",
@@ -7,10 +10,13 @@ const TRIBE_COLOR = {
 };
 const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
+const DEBUG = import.meta.env.DEV;
 
 export default function MonsterBookTab() {
   const { monsterBook } = usePlayerStore();
   const book = monsterBook || {};
+  const [portraits, setPortraits] = useState(MONSTER_PORTRAIT_DEFAULT);
+  const [showPortraitEditor, setShowPortraitEditor] = useState(false);
 
   const total = MONSTER_BASE.length;
   const found = MONSTER_BASE.filter(m => book[m.id]?.count > 0).length;
@@ -36,15 +42,21 @@ export default function MonsterBookTab() {
           const entry = book[m.id];
           const discovered = entry?.count > 0;
           const tc = TRIBE_COLOR[m.tribe] || "#888";
+          const portrait = getMonsterPortraitSrc(m.id);
+          const crop = portraits[m.id] || { x:50, y:15, zoom:2.2 };
           return (
             <div key={m.id} style={{ background:discovered?`${tc}1c`:"rgba(15,10,5,0.5)", borderLeft:`3px solid ${discovered?tc:"#3a3a55"}`, borderRadius:6, padding:"10px 12px", marginBottom:6, opacity:discovered?1:0.6 }}>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                {/* アイコン・シルエット */}
-                <div style={{ width:40, height:40, position:"relative", flexShrink:0 }}>
+                {/* アイコン・顔クロップ */}
+                <div style={{ width:52, height:52, position:"relative", flexShrink:0 }}>
                   {discovered && <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:tc, opacity:0.45, filter:"blur(5px)" }} />}
-                  <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", filter:discovered?"none":"grayscale(1) brightness(0.6)" }} />
-                  <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>
-                    {discovered ? "👾" : "❓"}
+                  <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", zIndex:1, filter:discovered?"none":"grayscale(1) brightness(0.6)" }} />
+                  <div style={{ position:"absolute", inset:"19%", overflow:"hidden" }}>
+                    {discovered && portrait ? (
+                      <img src={portrait.src} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:`${crop.x}% ${crop.y}%`, transform:`scale(${crop.zoom})`, filter:portrait.tint||"none" }} />
+                    ) : (
+                      <div style={{ width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>❓</div>
+                    )}
                   </div>
                 </div>
                 <div style={{ flex:1 }}>
@@ -82,6 +94,19 @@ export default function MonsterBookTab() {
           );
         })}
       </div>
+
+      {DEBUG && (
+        <button onClick={() => setShowPortraitEditor(true)} style={{ position:"fixed", bottom:16, right:16, zIndex:50, padding:"8px 12px", background:"#1a0a1a", border:"1px solid #a78bfa44", borderRadius:6, cursor:"pointer", color:"#a78bfa", fontSize:10, fontFamily:"monospace" }}>
+          DEBUG: 顔クロップエディタ
+        </button>
+      )}
+      {showPortraitEditor && (
+        <MonsterPortraitEditor
+          portraits={portraits}
+          onChange={(id, axis, value) => setPortraits(prev => ({ ...prev, [id]: { ...(prev[id]||{x:50,y:15,zoom:2.2}), [axis]:value } }))}
+          onClose={() => setShowPortraitEditor(false)}
+        />
+      )}
     </div>
   );
 }

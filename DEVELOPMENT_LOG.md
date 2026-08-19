@@ -4,6 +4,15 @@
 
 ## 進行中(今ここ)
 
+**図鑑のモンスターアイコンに顔クロップ表示を追加**
+
+- 「図鑑のモンスターのアイコンに顔部分を切り取って入れられないか」との依頼。新規の顔専用イラストは発注せず、既存の立ち絵アセット(`MULTIPART_MONSTERS`等の`body`/`src`、30体全てに用意済み)を`object-fit:cover`+`object-position`+`transform:scale`で拡大トリミングして使い回す方式で対応
+- `src/data/monsterPortraits.js`(新規): `MULTIPART_MONSTERS`/`SIMPLE_IMAGE_MONSTERS`/`GROUP_IMAGE_MONSTERS`/`SWAY_IMAGE_MONSTERS`/`FLOAT_IMAGE_MONSTERS`/`FLOAT_RIG_MONSTERS`/`GROUND_RIG_MONSTERS`からモンスターIDごとの代表画像(+竜の色替えに使うtintフィルター)を解決する`getMonsterPortraitSrc()`と、クロップ位置(`x`/`y`=object-position%、`zoom`=拡大率)の既定値`MONSTER_PORTRAIT_DEFAULT`(全モンスター共通の暫定値からスタート)を追加
+- モンスターごとに立ち絵の構図がバラバラ(直立の人型、4足獣、浮遊系、スライム等)で、共通の初期値だけでは顔が正しく収まらない個体が多い。RigEditor/FloatRigEditor/CharacterLayoutEditorと同じ「暫定値+DEBUG専用の自己調整ツール」方針を踏襲し、`MonsterPortraitEditor.jsx`(新規)を作成: モンスター選択+x/y/zoomのステッパー+ライブプレビュー+「全モンスター分JSONをコピー」ボタンで、目視調整した結果をそのまま`MONSTER_PORTRAIT_DEFAULT`に貼り戻せる
+- `MonsterBookTab.jsx`にDEBUG専用ボタンで結線。図鑑のアイコンサイズも36→52pxに拡大し顔が見やすいように
+- 実機で図鑑画面・エディタ双方を確認(モンスター切り替え・ステッパー操作でプレビューが正しく更新される)。フレッシュタブでコンソールエラーなし(旧タブには編集途中でファイル未作成だった一瞬のHMRエラーが残留していたが、これは既知のスケールHMRアーティファクトで実害なし)
+- 各モンスターの最終的なクロップ値は実際の顔位置を見ながらの微調整が必要なため未完了。ユーザー側でDEBUGボタンから調整してJSONを貼り戻すか、次回の作業で私が一体ずつ確認しながら追い込む想定
+
 **図鑑・クエスト・実績のリスト行を刷新**
 
 - 「図鑑　クエスト　実績　も改良しよう」との依頼。いずれも見出しバナー(イラスト付き)は既に用意されていたが、中身のリスト行(モンスター/スキル書/クエスト/実績)は初期の「フラットな箱+色枠」のままだった
