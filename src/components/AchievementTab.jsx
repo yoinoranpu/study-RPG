@@ -43,7 +43,7 @@ export default function AchievementTab() {
 
     if (!revealed) {
       return (
-        <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderLeft:"3px solid #3a3a55", borderRadius:6, padding:"10px 12px", marginBottom:8, opacity:0.6 }}>
+        <div style={{ background:"rgba(15,10,5,0.5)", borderLeft:"3px solid #3a3a55", borderRadius:6, padding:"10px 12px", marginBottom:8, opacity:0.6 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <span style={{ fontSize:14 }}>🔒</span>
             <span style={{ fontSize:11, color:FAINT }}>？？？</span>

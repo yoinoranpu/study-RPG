@@ -5,7 +5,7 @@ export default function RewardRow({ label, desc, progress, target, claimed, done
   const pct = Math.min(100, (progress / target) * 100);
 
   return (
-    <div style={{ background:"#0d0d15", border:`1px solid ${claimed?"#2a2a3a":color+"66"}`, borderLeft:`3px solid ${color}`, borderRadius:6, padding:"10px 12px", marginBottom:8, opacity:claimed?0.6:1 }}>
+    <div style={{ background:"rgba(15,10,5,0.5)", borderLeft:`3px solid ${color}`, borderRadius:6, padding:"10px 12px", marginBottom:8, opacity:claimed?0.6:1 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: desc ? 4 : 6 }}>
         <span style={{ fontSize:11, color:"#e8e0d0", fontWeight:700 }}>{label}</span>
         <span style={{ fontSize:10, color:DIM }}>{progress}/{target}</span>

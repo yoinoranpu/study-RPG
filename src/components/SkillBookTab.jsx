@@ -19,10 +19,14 @@ export default function SkillBookTab() {
     const discovered = !!entry;
     const rc = discovered ? BOOK_RARITY_COLOR[entry.bestRarity] || "#888" : "#3a3a55";
     return (
-      <div style={{ background:discovered?`${rc}22`:"#0d0d15", borderLeft:`3px solid ${discovered?rc:"#3a3a55"}`, border:`1px solid ${discovered?rc+"66":"#2a2a40"}`, borderRadius:6, padding:"10px 12px", marginBottom:6, opacity:discovered?1:0.6 }}>
+      <div style={{ background:discovered?`${rc}22`:"rgba(15,10,5,0.5)", borderLeft:`3px solid ${discovered?rc:"#3a3a55"}`, borderRadius:6, padding:"10px 12px", marginBottom:6, opacity:discovered?1:0.6 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:36, height:36, background:discovered?rc+"33":"#1a1a2a", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, filter:discovered?"none":"grayscale(1) brightness(0.6)" }}>
-            {discovered ? book.icon : "❓"}
+          <div style={{ width:40, height:40, position:"relative", flexShrink:0 }}>
+            {discovered && <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:rc, opacity:0.45, filter:"blur(5px)" }} />}
+            <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", filter:discovered?"none":"grayscale(1) brightness(0.6)" }} />
+            <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>
+              {discovered ? book.icon : "❓"}
+            </div>
           </div>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:11, fontWeight:700, color:discovered?"#e8e0d0":FAINT }}>
@@ -45,8 +49,8 @@ export default function SkillBookTab() {
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
-      <div style={{ padding:"8px 12px", background:"#080810", borderBottom:"1px solid #1a1a2a", flexShrink:0 }}>
-        <div style={{ fontSize:10, color:"#a78bfa", letterSpacing:2 }}>SKILL BOOK DEX</div>
+      <div style={{ padding:"10px 12px", background:"linear-gradient(180deg,#1a1228,#0a0810)", borderBottom:"1px solid rgba(167,139,250,0.3)", flexShrink:0 }}>
+        <div className="rpg-heading" style={{ fontSize:10, color:"#a78bfa", letterSpacing:2 }}>SKILL BOOK DEX</div>
         <div style={{ fontSize:10, color:DIM, marginTop:2 }}>
           発見: {found}/{total}
           <div style={{ display:"inline-block", width:80, height:4, background:"#1a1a2a", borderRadius:2, overflow:"hidden", marginLeft:8, verticalAlign:"middle" }}>

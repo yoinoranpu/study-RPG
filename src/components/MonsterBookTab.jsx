@@ -37,11 +37,15 @@ export default function MonsterBookTab() {
           const discovered = entry?.count > 0;
           const tc = TRIBE_COLOR[m.tribe] || "#888";
           return (
-            <div key={m.id} style={{ background:discovered?`${tc}1c`:"#0d0d15", borderLeft:`3px solid ${discovered?tc:"#3a3a55"}`, border:`1px solid ${discovered?tc+"66":"#2a2a40"}`, borderRadius:6, padding:"10px 12px", marginBottom:6, opacity:discovered?1:0.6 }}>
+            <div key={m.id} style={{ background:discovered?`${tc}1c`:"rgba(15,10,5,0.5)", borderLeft:`3px solid ${discovered?tc:"#3a3a55"}`, borderRadius:6, padding:"10px 12px", marginBottom:6, opacity:discovered?1:0.6 }}>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                 {/* アイコン・シルエット */}
-                <div style={{ width:36, height:36, background:discovered?tc+"33":"#1a1a2a", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, filter:discovered?"none":"grayscale(1) brightness(0.6)" }}>
-                  {discovered ? "👾" : "❓"}
+                <div style={{ width:40, height:40, position:"relative", flexShrink:0 }}>
+                  {discovered && <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:tc, opacity:0.45, filter:"blur(5px)" }} />}
+                  <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", filter:discovered?"none":"grayscale(1) brightness(0.6)" }} />
+                  <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>
+                    {discovered ? "👾" : "❓"}
+                  </div>
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:11, fontWeight:700, color:discovered?"#e8e0d0":FAINT }}>
@@ -59,7 +63,7 @@ export default function MonsterBookTab() {
                 )}
               </div>
               {discovered && (
-                <div style={{ display:"flex", gap:8, marginTop:6, paddingTop:6, borderTop:"1px solid #2a2a40" }}>
+                <div style={{ display:"flex", gap:8, marginTop:6, paddingTop:6, borderTop:"1px solid rgba(201,150,61,0.2)" }}>
                   {[
                     { label:"HP",   val:m.hp   },
                     { label:"ATK",  val:m.atk  },
