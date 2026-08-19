@@ -720,7 +720,15 @@ export default function DungeonPage({ onBack }) {
 
           hpRef.current = currentHp;
           setHp(currentHp);
-          updatePlayer({ specialSlots: slots, itemBox: newItemBox });
+
+          // 図鑑登録：勝敗に関わらず、一度でも戦えばその場で名前・種族が判明する
+          // (討伐数カウントは従来通り勝利時のみ加算)
+          const newBook = { ...(player.monsterBook||{}) };
+          monsters.forEach(m => {
+            if (!newBook[m.id]) newBook[m.id] = { count:0, name:m.name, tribe:m.tribe, material:m.material };
+          });
+
+          updatePlayer({ specialSlots: slots, itemBox: newItemBox, monsterBook: newBook });
 
           if (!result.won && result.playerHpAfter <= 0) {
             setPlayerDefeated(true);
@@ -755,11 +763,7 @@ export default function DungeonPage({ onBack }) {
             setSessionGoldDisplay(sessionGold.current);
             setSessionMatsDisplay({ ...sessionMats.current });
             setDefeatedCount(defeatedList.current.length);
-            const newBook = { ...(player.monsterBook||{}) };
-            monsters.forEach(m => {
-              if (!newBook[m.id]) newBook[m.id] = { count:0, name:m.name, tribe:m.tribe, material:m.material };
-              newBook[m.id].count += 1;
-            });
+            monsters.forEach(m => { newBook[m.id].count += 1; });
 
             // 実績: 戦闘結果に基づくフラグ更新
             const prevStats = player.stats || makeInitialStats();

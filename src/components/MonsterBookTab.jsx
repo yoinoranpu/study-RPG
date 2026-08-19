@@ -16,7 +16,7 @@ const ICON_BOX = 52;
 const ICON_INNER = 32; // ICON_BOXにitem_slot_frame.pngのinset:19%を適用した内側サイズの近似値
 
 function MonsterRow({ m, entry, crop }) {
-  const discovered = entry?.count > 0;
+  const discovered = !!entry;
   const tc = TRIBE_COLOR[m.tribe] || "#888";
   const { style } = useMonsterPortraitStyle(m.id, crop, ICON_INNER);
   return (
@@ -76,7 +76,7 @@ export default function MonsterBookTab() {
   const [showPortraitEditor, setShowPortraitEditor] = useState(false);
 
   const total = MONSTER_BASE.length;
-  const found = MONSTER_BASE.filter(m => book[m.id]?.count > 0).length;
+  const found = MONSTER_BASE.filter(m => !!book[m.id]).length;
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
