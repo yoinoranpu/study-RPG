@@ -378,19 +378,19 @@ export default function CharacterPage() {
               <div style={{ flex:1, display:"flex", justifyContent:"flex-end" }}>
               <div style={{ width:isMobile?"auto":charLayout.statsPanelWidth, maxWidth:charLayout.statsPanelWidth+30, display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end" }}>
                 {[
-                  {label:"ATK",  val:stats.atk,        color:"#f87171"},
-                  {label:"MAG",  val:stats.mag,        color:"#a78bfa"},
-                  {label:"DEF",  val:stats.def,        color:"#60a5fa"},
-                  {label:"MDEF", val:stats.mdef,       color:"#38bdf8"},
-                  {label:"EVA",  val:`${stats.eva}%`,  color:"#34d399"},
-                  {label:"CRIT", val:`${stats.crit}%`, color:"#fbbf24"},
-                ].map(({label,val,color})=>{
+                  {label:"ATK",  jp:"攻撃", val:stats.atk,        color:"#f87171"},
+                  {label:"MAG",  jp:"魔力", val:stats.mag,        color:"#a78bfa"},
+                  {label:"DEF",  jp:"防御", val:stats.def,        color:"#60a5fa"},
+                  {label:"MDEF", jp:"魔防", val:stats.mdef,       color:"#38bdf8"},
+                  {label:"EVA",  jp:"回避", val:`${stats.eva}%`,  color:"#34d399"},
+                  {label:"CRIT", jp:"会心", val:`${stats.crit}%`, color:"#fbbf24"},
+                ].map(({label,jp,val,color})=>{
                   const itemPos = charLayout.statItemPos?.[label] || { x:0, y:0 };
                   return (
                     <div key={label} style={{ width:"100%", aspectRatio:"1183/549", position:"relative", left:itemPos.x, top:itemPos.y }}>
                       <img src="/assets/images/stat_plate_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                       <div style={{ position:"absolute", inset:"26% 13%", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:"clamp(8px,2.6vw,13px)", color:LABEL, fontWeight:700 }}>{label}</span>
+                        <span style={{ fontSize:"clamp(8px,2.6vw,13px)", color:LABEL, fontWeight:700 }}>{jp}</span>
                         <span style={{ fontSize:"clamp(9px,2.9vw,15px)", color, fontWeight:700 }}>{val}</span>
                       </div>
                     </div>

@@ -26,17 +26,12 @@ const FAINT = "#5c5c82";
 
 // ─── 選択グリッド共通部品：レアリティ別グループ化＋検索＋拡大カード ───
 function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getName, emptyText, isMaxed }) {
-  const [query, setQuery] = useState("");
-  const filtered = query ? items.filter(it => getName(it).toLowerCase().includes(query.toLowerCase())) : items;
   const groups = {};
-  filtered.forEach(it => { const r = getRarity(it); (groups[r] = groups[r] || []).push(it); });
+  items.forEach(it => { const r = getRarity(it); (groups[r] = groups[r] || []).push(it); });
 
   return (
     <div>
-      <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="🔍 名前で検索..."
-        style={{ width:"100%", boxSizing:"border-box", padding:"6px 10px", marginBottom:8, background:"#080810", border:"1px solid #3a3a55", borderRadius:5, color:"#e8e0d0", fontSize:10, fontFamily:"monospace" }} />
       {items.length === 0 && <div style={{ fontSize:10, color:FAINT, padding:8, textAlign:"center" }}>{emptyText}</div>}
-      {items.length > 0 && filtered.length === 0 && <div style={{ fontSize:10, color:FAINT, padding:8, textAlign:"center" }}>該当なし</div>}
       {RARITY_ORDER.filter(r => groups[r]?.length).map(r => (
         <div key={r} style={{ marginBottom:8 }}>
           <div style={{ fontSize:10, color:getColor({ rarity:r }), letterSpacing:1, marginBottom:4, fontWeight:700 }}>
