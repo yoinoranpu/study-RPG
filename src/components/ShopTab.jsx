@@ -8,8 +8,6 @@ import useFlashMessage from "../hooks/useFlashMessage";
 const ITEM_BOX_MAX = 30;
 const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
-const BUBBLE_BG = "rgba(18,13,9,0.95)";
-const BUBBLE_BORDER = "#fbbf2466";
 
 export default function ShopTab() {
   const [sub, setSub] = useState("weapon");
@@ -113,9 +111,8 @@ export default function ShopTab() {
             WebkitMaskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
             maskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
           }} />
-          <div style={{ position:"relative", flex:1, minWidth:0, marginLeft:-8, marginBottom:16 }}>
-            <div style={{ position:"absolute", left:-6, bottom:24, width:14, height:14, background:BUBBLE_BG, transform:"rotate(45deg)" }} />
-            <div style={{ position:"relative", background:BUBBLE_BG, border:`2px solid ${BUBBLE_BORDER}`, borderRadius:14, padding:"12px 14px", boxShadow:"0 6px 16px rgba(0,0,0,0.5)" }}>
+          <div style={{ position:"relative", flex:1, minWidth:0, marginLeft:2, marginBottom:16 }}>
+            <div className="rpg-panel" style={{ borderRadius:6, padding:"12px 14px" }}>
               {selectedItem ? (
                 <>
                   <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
