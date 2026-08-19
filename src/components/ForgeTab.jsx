@@ -68,51 +68,52 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
   );
 }
 
-// ─── 合成プレビュー共通部品：⬜+⬜=>⬜ を常に上部に表示 ───
-function SynthBox({ icon, color, empty }) {
+// ─── 合成プレビュー共通部品：⬜+⬜=>⬜ を吹き出し内にコンパクト表示 ───
+function SynthBox({ icon, color, empty, size = 44 }) {
   return (
-    <div style={{ width:52, height:52, position:"relative", flexShrink:0 }}>
+    <div style={{ width:size, height:size, position:"relative", flexShrink:0 }}>
       {!empty && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:color, opacity:0.45, filter:"blur(6px)" }} />}
       <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:empty?0.5:1 }} />
-      <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>
+      <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:size*0.42 }}>
         {!empty && icon}
       </div>
     </div>
   );
 }
 
+// 店主の吹き出し内に収めるコンパクト版。外枠(.rpg-panel)は吹き出し自体が兼ねるので持たない。
 function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getName, getColor, getRarityLabel, hint }) {
   const baseColor = base ? getColor(base) : "#3a3a55";
   const matColor  = mat  ? getColor(mat)  : "#3a3a55";
   const nextColor = next ? getColor({ rarity:next }) : "#3a3a55";
   const ready = base && mat && next;
   return (
-    <div className="rpg-panel" style={{ borderRadius:6, padding:12 }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
         <SynthBox icon={base && getIcon(base)} color={baseColor} empty={!base} />
-        <span style={{ fontSize:16, color:DIM, fontWeight:700 }}>+</span>
+        <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>+</span>
         <SynthBox icon={mat && getIcon(mat)} color={matColor} empty={!mat} />
-        <span style={{ fontSize:16, color:DIM, fontWeight:700 }}>⇒</span>
+        <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>⇒</span>
         <SynthBox icon={base && getIcon(base)} color={nextColor} empty={!ready} />
-      </div>
-      <div style={{ textAlign:"center", fontSize:10, color:DIM, marginTop:8 }}>
-        {base
-          ? mat
-            ? next
-              ? <span>{getName(base)} <span style={{ color:nextColor, fontWeight:700 }}>→ {getRarityLabel(next)}</span></span>
-              : "これ以上合成できません（最大レアリティ）"
-            : "② 素材を選んでください"
-          : hint}
-      </div>
-      {ready && (
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10 }}>
-          <span style={{ fontSize:10, color:"#fbbf24" }}>コスト: {cost?.toLocaleString()}G</span>
+        <div style={{ flex:1, minWidth:0, marginLeft:4 }}>
+          <div style={{ fontSize:11, color:"#e8d8c0" }}>
+            {base
+              ? mat
+                ? next
+                  ? <span>{getName(base)} <span style={{ color:nextColor, fontWeight:700 }}>→ {getRarityLabel(next)}</span></span>
+                  : "これ以上合成できません（最大レアリティ）"
+                : "② 素材を選んでください"
+              : hint}
+          </div>
+          {ready && <div style={{ fontSize:10, color:"#fbbf24", marginTop:2 }}>コスト: {cost?.toLocaleString()}G</div>}
+        </div>
+        {ready && (
           <button onClick={onSynth} disabled={!canAfford}
-            style={{ padding:"8px 20px", background:"#0a001a", border:`1px solid ${nextColor}`, borderRadius:4, cursor:canAfford?"pointer":"default", color:canAfford?nextColor:FAINT, fontSize:11, fontFamily:"monospace", fontWeight:700 }}>
+            style={{ padding:"8px 14px", minHeight:"44px", background:"#0a001a", border:`1px solid ${nextColor}`, borderRadius:4, cursor:canAfford?"pointer":"default", color:canAfford?nextColor:FAINT, fontSize:11, fontFamily:"monospace", fontWeight:700, flexShrink:0 }}>
             ✨ 合成
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -296,7 +297,37 @@ export default function ForgeTab() {
           }} />
           <div style={{ position:"relative", flex:1, minWidth:0, marginLeft:2, marginBottom:16 }}>
             <div className="rpg-panel" style={{ borderRadius:6, padding:"12px 14px" }}>
-              <div style={{ fontSize:13, color:"#e8d8c0" }}>{bubbleText()}</div>
+              {tab === "upgrade" && upgradeItem ? (
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <div style={{ width:40, height:40, position:"relative", flexShrink:0 }}>
+                    <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:RARITY_COLOR[upgradeItem.rarity]||"#888", opacity:0.45, filter:"blur(5px)" }} />
+                    <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                    <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      {upgradeItem.image ? <img src={upgradeItem.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:upgradeItem.tint||"none" }} /> : <span style={{ fontSize:16 }}>{upgradeItem.icon}</span>}
+                    </div>
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#e8d8c0" }}>{upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span></div>
+                    <div style={{ fontSize:10, color:DIM, marginTop:1 }}>強化コスト <span style={{ color:"#fbbf24", fontWeight:700 }}>{cost}G</span></div>
+                  </div>
+                </div>
+              ) : tab === "synth" && baseItem ? (
+                <SynthPreview
+                  base={baseItem} mat={matItem} next={next}
+                  cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
+                  getIcon={it=>it.icon} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
+                  hint="① ベース装備を選んでください"
+                />
+              ) : tab === "book" && bookItem ? (
+                <SynthPreview
+                  base={bookItem} mat={bookMatItem} next={nextBookR}
+                  cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
+                  getIcon={b=>SKILL_BOOKS[b.id]?.icon} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+                  hint="① ベースのスキル書を選んでください"
+                />
+              ) : (
+                <div style={{ fontSize:13, color:"#e8d8c0" }}>{bubbleText()}</div>
+              )}
               <div style={{ fontSize:11, color:DIM, marginTop:6 }}>所持G: {gold.toLocaleString()}</div>
               {msg && <div style={{ fontSize:11, color:"#4ade80", marginTop:4 }}>{msg}</div>}
             </div>
@@ -324,25 +355,7 @@ export default function ForgeTab() {
             {upgradeItem && (
               <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
               <div className="rpg-panel" style={{ borderRadius:6, padding:12 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
-                  <div style={{ width:44, height:44, position:"relative", flexShrink:0 }}>
-                    <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:RARITY_COLOR[upgradeItem.rarity]||"#888", opacity:0.45, filter:"blur(5px)" }} />
-                    <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
-                    <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                      {upgradeItem.image ? <img src={upgradeItem.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:upgradeItem.tint||"none" }} /> : <span style={{ fontSize:18 }}>{upgradeItem.icon}</span>}
-                    </div>
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>
-                      {upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span>
-                    </div>
-                    <div style={{ fontSize:10, color:RARITY_COLOR[upgradeItem.rarity]||"#888" }}>{RARITY_LABEL[upgradeItem.rarity]}</div>
-                  </div>
-                  <div style={{ textAlign:"right" }}>
-                    <div style={{ fontSize:10, color:DIM }}>強化コスト</div>
-                    <div style={{ fontSize:14, color:"#fbbf24", fontWeight:700 }}>{cost}G</div>
-                  </div>
-                </div>
+                <div style={{ fontSize:10, color:RARITY_COLOR[upgradeItem.rarity]||"#888", letterSpacing:1, marginBottom:8 }}>{RARITY_LABEL[upgradeItem.rarity]}（詳細は上の吹き出しに表示されます）</div>
 
                 {/* 現在のステータス */}
                 <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
@@ -438,17 +451,10 @@ export default function ForgeTab() {
         {tab === "synth" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
-              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ種類・同じ形状(剣は剣、弓は弓)・同じレアリティの装備2つで1段階上のレアリティに合成</div>
-
-              <SynthPreview
-                base={baseItem} mat={matItem} next={next}
-                cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
-                getIcon={it=>it.icon} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
-                hint="① ベース装備を選んでください"
-              />
+              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ種類・同じ形状(剣は剣、弓は弓)・同じレアリティの装備2つで1段階上のレアリティに合成(プレビューは上の吹き出しに表示されます)</div>
 
               {(matItem?.abilities||[]).length > 0 && (
-                <div style={{ fontSize:10, color:"#a78bfa", marginTop:8 }}>
+                <div style={{ fontSize:10, color:"#a78bfa", marginBottom:8 }}>
                   継承: {matItem.abilities[0]?.label}{matItem.abilities[0]?.value}{matItem.abilities[0]?.suffix}
                 </div>
               )}
@@ -493,14 +499,7 @@ export default function ForgeTab() {
         {tab === "book" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
-              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ系統(剣術/魔法など)・同じ区分(アクティブ/パッシブ)・同じレアリティの本2冊で1段階上のレアリティに合成</div>
-
-              <SynthPreview
-                base={bookItem} mat={bookMatItem} next={nextBookR}
-                cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
-                getIcon={b=>SKILL_BOOKS[b.id]?.icon} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
-                hint="① ベースのスキル書を選んでください"
-              />
+              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ系統(剣術/魔法など)・同じ区分(アクティブ/パッシブ)・同じレアリティの本2冊で1段階上のレアリティに合成(プレビューは上の吹き出しに表示されます)</div>
             </div>
 
             <div>
