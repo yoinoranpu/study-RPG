@@ -59,7 +59,7 @@
    JSのメインスレッドが一瞬詰まっても影響を受けにくい。合わせ鏡タイル画像を横に流すだけ） */
 @keyframes dungeonCorridorScroll {
   from { background-position-x: 0; }
-  to   { background-position-x: calc(-1 * var(--corridor-shift, 2000px)); }
+  to   { background-position-x: var(--corridor-shift, 2000px); }
 }
 
 /* ボス階層突入時の場面転換（ポケモン風、左から入って右へ抜ける斜めワイプ） */
