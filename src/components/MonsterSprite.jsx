@@ -516,25 +516,36 @@ export default function MonsterSprite({ monsters, isVisible, onReach, floorY }) 
         // HPバー
         if (monster.maxHp) {
           const barW = size * 2.2;
-          const barH = i === 0 ? 18 : 12;
-          const barY = headroomY - 16;
+          const barH = i === 0 ? 20 : 13;
+          const barY = headroomY - 17;
           const barX = p.x - barW/2;
+          const rad = i === 0 ? 5 : 3;
 
           ctx.fillStyle = "#1a0a0a";
           ctx.beginPath();
-          ctx.roundRect(barX, barY, barW, barH, 3);
+          ctx.roundRect(barX, barY, barW, barH, rad);
           ctx.fill();
 
           const hpPct = Math.max(0, (monster.hp||0) / monster.maxHp);
-          ctx.fillStyle = hpPct > 0.5 ? "#4ade80" : hpPct > 0.25 ? "#fbbf24" : "#f87171";
+          const fillColor = hpPct > 0.5 ? "#4ade80" : hpPct > 0.25 ? "#fbbf24" : "#f87171";
+          ctx.save();
+          ctx.shadowColor = fillColor;
+          ctx.shadowBlur = 5;
+          ctx.fillStyle = fillColor;
           ctx.beginPath();
-          ctx.roundRect(barX, barY, barW * hpPct, barH, 3);
+          ctx.roundRect(barX, barY, barW * hpPct, barH, rad);
+          ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = "rgba(255,255,255,0.16)";
+          ctx.beginPath();
+          ctx.roundRect(barX + 2, barY + 2, Math.max(0, barW * hpPct - 4), barH * 0.32, Math.max(1, rad-1));
           ctx.fill();
 
-          ctx.strokeStyle = "#333";
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = "rgba(201,150,61,0.85)";
+          ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.roundRect(barX, barY, barW, barH, 3);
+          ctx.roundRect(barX, barY, barW, barH, rad);
           ctx.stroke();
 
           ctx.font = `bold ${H * (i===0 ? 0.016 : 0.012)}px monospace`;

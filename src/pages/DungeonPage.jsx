@@ -863,12 +863,12 @@ export default function DungeonPage({ onBack }) {
         <div style={{ flex:1 }} />
         {!isMobile && <div style={{ color:"#86efac", fontSize:10 }}>Lv{lv}</div>}
         {!isMobile && <div style={{ color:"#fbbf24", fontSize:10 }}>G {player.gold + sessionGoldDisplay}</div>}
-        <div style={{ display:"flex", alignItems:"center", gap:4, minHeight:isMobile?"32px":"auto" }}>
-          <span style={{ color:"#f87171", fontSize:10 }}>♥</span>
-          <div style={{ width:isMobile?40:50, height:5, background:"#1a0a0a", borderRadius:3, overflow:"hidden" }}>
-            <div style={{ height:"100%", width:`${(hp/maxHp)*100}%`, background:hp/maxHp>0.5?"#4ade80":hp/maxHp>0.25?"#fbbf24":"#f87171", borderRadius:3, transition:"width 0.5s" }} />
+        <div style={{ display:"flex", alignItems:"center", gap:5, minHeight:isMobile?"32px":"auto" }}>
+          <span style={{ color:"#f87171", fontSize:12 }}>♥</span>
+          <div style={{ width:isMobile?60:84, height:9, background:"#1a0a0a", border:"1px solid rgba(201,150,61,0.7)", borderRadius:4, overflow:"hidden", boxShadow:"inset 0 1px 2px rgba(0,0,0,0.6)" }}>
+            <div style={{ height:"100%", width:`${(hp/maxHp)*100}%`, background:hp/maxHp>0.5?"#4ade80":hp/maxHp>0.25?"#fbbf24":"#f87171", borderRadius:3, transition:"width 0.5s", boxShadow:`0 0 6px ${hp/maxHp>0.5?"#4ade80":hp/maxHp>0.25?"#fbbf24":"#f87171"}` }} />
           </div>
-          <span style={{ color:"#555", fontSize:8 }}>{hp}</span>
+          <span style={{ color:"#a89a80", fontSize:9 }}>{hp}/{maxHp}</span>
         </div>
       </div>
 
@@ -963,35 +963,41 @@ export default function DungeonPage({ onBack }) {
       </div>
 
       {eventPopup && (
-        <div style={{ position:"absolute", top:isMobile?66:96, left:16, right:16, maxWidth:360, margin:"0 auto", background:"rgba(0,0,0,0.92)", border:`1px solid ${eventPopup.color}88`, borderRadius:8, padding:"10px 14px", fontFamily:"monospace", zIndex:6, display:"flex", alignItems:"center", gap:10, boxShadow:`0 0 16px ${eventPopup.color}33` }}>
-          {eventPopup.image ? (
-            <img src={eventPopup.image} alt="" style={{ width:28, height:28, objectFit:"contain", flexShrink:0 }} />
-          ) : (
-            <span style={{ fontSize:24, flexShrink:0 }}>{eventPopup.icon}</span>
-          )}
+        <div className="rpg-panel" style={{ position:"absolute", top:isMobile?66:96, left:16, right:16, maxWidth:360, margin:"0 auto", borderRadius:6, padding:"10px 14px", fontFamily:"monospace", zIndex:6, display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:48, height:48, position:"relative", flexShrink:0 }}>
+            <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:eventPopup.color, opacity:0.5, filter:"blur(6px)" }} />
+            <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+            <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              {eventPopup.image ? (
+                <img src={eventPopup.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain" }} />
+              ) : (
+                <span style={{ fontSize:20 }}>{eventPopup.icon}</span>
+              )}
+            </div>
+          </div>
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:9, color:eventPopup.color, letterSpacing:1, marginBottom:2 }}>{eventPopup.label}</div>
-            <div style={{ fontSize:11, color:"#e8e0d0", lineHeight:1.4 }}>{eventPopup.text}</div>
+            <div style={{ fontSize:10, color:eventPopup.color, letterSpacing:1, marginBottom:2 }}>{eventPopup.label}</div>
+            <div style={{ fontSize:12, color:"#e8e0d0", lineHeight:1.4 }}>{eventPopup.text}</div>
           </div>
         </div>
       )}
 
       {battlePopup && (
-        <div style={{ position:"absolute", bottom:20, left:16, right:16, background:"rgba(0,0,0,0.95)", border:"1px solid #2a2a3a", borderRadius:8, padding:"12px 14px", fontFamily:"monospace", zIndex:5 }}>
+        <div className="rpg-panel" style={{ position:"absolute", bottom:20, left:16, right:16, borderRadius:6, padding:"12px 14px", fontFamily:"monospace", zIndex:5 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-            <span style={{ fontSize:9, color:battlePopup.won?"#4ade80":"#f87171", letterSpacing:2 }}>
+            <span style={{ fontSize:11, color:battlePopup.won?"#4ade80":"#f87171", letterSpacing:2, fontWeight:700 }}>
               {battlePopup.won ? "⚔ 撃破！" : "💨 逃走"}
             </span>
-            <span style={{ fontSize:8, color:"#fbbf24" }}>{"★".repeat(Math.min(battlePopup.dangerStar,10))}</span>
+            <span style={{ fontSize:9, color:"#fbbf24" }}>{"★".repeat(Math.min(battlePopup.dangerStar,10))}</span>
           </div>
           {battlePopup.monsters.map((m,i) => (
-            <div key={i} style={{ fontSize:10, color:m.rarity?.color||"#888", marginBottom:2 }}>{m.displayName}</div>
+            <div key={i} style={{ fontSize:11, color:m.rarity?.color||"#888", marginBottom:2 }}>{m.displayName}</div>
           ))}
-          <div style={{ display:"flex", gap:10, marginTop:6, paddingTop:6, borderTop:"1px solid #1a1a2a", flexWrap:"wrap" }}>
-            <span style={{ color:"#86efac", fontSize:10 }}>+{battlePopup.exp}EXP</span>
-            <span style={{ color:"#fbbf24", fontSize:10 }}>+{battlePopup.gold}G</span>
+          <div style={{ display:"flex", gap:10, marginTop:6, paddingTop:6, borderTop:"1px solid rgba(201,150,61,0.25)", flexWrap:"wrap" }}>
+            <span style={{ color:"#86efac", fontSize:11 }}>+{battlePopup.exp}EXP</span>
+            <span style={{ color:"#fbbf24", fontSize:11 }}>+{battlePopup.gold}G</span>
             {battlePopup.materials.length>0 && (
-              <span style={{ color:"#fb923c", fontSize:10 }}>
+              <span style={{ color:"#fb923c", fontSize:11 }}>
                 📦{[...new Set(battlePopup.materials)].map(m=>`${m}×${battlePopup.materials.filter(x=>x===m).length}`).join(" ")}
               </span>
             )}
