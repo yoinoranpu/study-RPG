@@ -4,6 +4,15 @@
 
 ## 進行中(今ここ)
 
+**バグ修正: 顔クロップエディタで縦位置が動かない問題 → ドラッグ+ホイール操作に刷新**
+
+- 「縦に行かない　カーソルで合わせるのできたら一瞬でできそう」との報告
+- 原因: `object-fit:cover` + `object-position` + `transform:scale`という組み合わせで実装していたが、`transform:scale`は`object-position`が適用された後に要素の中心を基準にかかるため、object-positionでの微調整とscaleでのズームが干渉し合い、特に縦方向がほとんど動いて見えない状態になっていた
+- `src/components/MonsterPortrait.jsx`(新規)に`useMonsterPortraitStyle(id, crop, boxSize)`フックを作成し、画像の実寸(naturalWidth/naturalHeight)を取得した上で「cover相当のスケール×zoom倍率」からbackground-size/positionをpx単位で直接計算する方式に全面変更(transform:scaleを使わない)。これにより縦横とも正確に反応するようになった
+- `MonsterPortraitEditor.jsx`を全面刷新: 数値ステッパーによる操作から、プレビュー画像を直接ドラッグ(位置)・ホイール回転(拡大率、range inputでも可)で調整できる方式に変更。ドラッグ量をpxから%へ変換する計算式は「minX/minY(パン可能範囲)に対する移動量の割合」を使用
+- `MonsterBookTab.jsx`の一覧アイコンも同じ`useMonsterPortraitStyle`を使うよう統一(行ごとに`MonsterRow`サブコンポーネント化してフックのルール違反を回避)
+- 実機でスライム(中央の目に正確に合わせられた)・ゴブリン(既定値のままでも顔がしっかり収まるようになった)を確認。フレッシュタブでコンソールエラーなし(dev serverの依存キャッシュが古い状態を掴んでいた形跡があったため、確認の過程でdev serverを再起動している)
+
 **図鑑のモンスターアイコンに顔クロップ表示を追加**
 
 - 「図鑑のモンスターのアイコンに顔部分を切り取って入れられないか」との依頼。新規の顔専用イラストは発注せず、既存の立ち絵アセット(`MULTIPART_MONSTERS`等の`body`/`src`、30体全てに用意済み)を`object-fit:cover`+`object-position`+`transform:scale`で拡大トリミングして使い回す方式で対応
