@@ -118,8 +118,14 @@ export default function ShopTab() {
             <div style={{ position:"relative", background:BUBBLE_BG, border:`2px solid ${BUBBLE_BORDER}`, borderRadius:14, padding:"10px 12px", boxShadow:"0 6px 16px rgba(0,0,0,0.5)" }}>
               {selectedItem ? (
                 <>
-                  <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-                    {selectedItem.image ? <img src={selectedItem.image} alt="" style={{ width:22, height:22, objectFit:"contain", filter:selectedItem.tint||"none" }} /> : <span style={{ fontSize:18 }}>{selectedItem.icon}</span>}
+                  <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                    <div style={{ width:36, height:36, position:"relative", flexShrink:0 }}>
+                      <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:RARITY_COLOR[selectedItem.rarity]||"#888", opacity:0.45, filter:"blur(5px)" }} />
+                      <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                      <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        {selectedItem.image ? <img src={selectedItem.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:selectedItem.tint||"none" }} /> : <span style={{ fontSize:16 }}>{selectedItem.icon}</span>}
+                      </div>
+                    </div>
                     <span style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>{selectedItem.name}</span>
                     <span style={{ fontSize:10, color:RARITY_COLOR[selectedItem.rarity]||"#888" }}>{RARITY_LABEL[selectedItem.rarity]}</span>
                     {selectedIsSold && <span style={{ fontSize:10, color:DIM }}>SOLD</span>}
@@ -138,7 +144,7 @@ export default function ShopTab() {
                   )}
 
                   {selectedInnate && selectedInnate.key !== "none" && (
-                    <div style={{ marginTop:6, padding:"3px 8px", background:"#0a0800", border:"1px solid #fb923c33", borderRadius:4 }}>
+                    <div style={{ marginTop:6 }}>
                       <div style={{ fontSize:10, color:"#fb923c" }}>◆ {selectedInnate.label}</div>
                       <div style={{ fontSize:9, color:DIM, marginTop:1 }}>{selectedInnate.desc}</div>
                     </div>
@@ -149,7 +155,7 @@ export default function ShopTab() {
                   )}
 
                   {(selectedItem.abilities||[]).length > 0 && (
-                    <div style={{ marginTop:6, padding:"3px 8px", background:"#0a000a", border:"1px solid #a78bfa33", borderRadius:4 }}>
+                    <div style={{ marginTop:6 }}>
                       {selectedItem.abilities.map((ab,j) => (
                         <div key={j} style={{ fontSize:10, color:"#a78bfa" }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
                       ))}
@@ -211,7 +217,7 @@ export default function ShopTab() {
             );
           })()}
 
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:10 }}>
             {allItems.map((tmpl, i) => {
               const isSold = soldOut.has(`${sub}_${i}`);
               const price = getShopPrice(tmpl);
@@ -219,22 +225,21 @@ export default function ShopTab() {
               const isSelected = i === selectedIdx;
               return (
                 <div key={`${sub}_${i}`} onClick={() => setSelectedIdx(i)}
-                  style={{
-                    aspectRatio:"1", position:"relative", cursor:"pointer",
-                    background:isSold?"rgba(10,10,14,0.85)":isSelected?`${rc}33`:"rgba(12,12,20,0.94)",
-                    border:`2px solid ${isSelected?rc:isSold?"#3a3a55":rc}`,
-                    borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-                    padding:4, opacity:isSold?0.45:1,
-                    boxShadow:isSelected?`0 0 10px ${rc}aa`:`0 0 4px ${rc}55`,
-                  }}>
-                  {isSold && <div style={{ position:"absolute", top:3, right:4, fontSize:7, color:DIM, fontWeight:700 }}>SOLD</div>}
-                  {tmpl.image ? (
-                    <img src={tmpl.image} alt="" style={{ width:"70%", height:"70%", objectFit:"contain", filter:`${tmpl.tint||""} ${isSold?"grayscale(0.6)":""}`.trim()||"none" }} />
-                  ) : (
-                    <div style={{ fontSize:26 }}>{tmpl.icon}</div>
-                  )}
-                  <div style={{ fontSize:9, color:"#e8e0d0", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%", marginTop:2 }}>{tmpl.name.slice(0,6)}</div>
-                  <div style={{ fontSize:8, color:rc, letterSpacing:1, minHeight:10, marginTop:1 }}>{RARITY_LABEL[tmpl.rarity]}</div>
+                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, cursor:"pointer", opacity:isSold?0.45:1 }}>
+                  <div className={`slot-cell${isSelected?" slot-selected":""}`} style={{ width:"100%", aspectRatio:"1", position:"relative" }}>
+                    {!isSold && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:rc, opacity:0.4, filter:"blur(6px)" }} />}
+                    <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                    <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      {tmpl.image ? (
+                        <img src={tmpl.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:`${tmpl.tint||""} ${isSold?"grayscale(0.6)":""}`.trim()||"none" }} />
+                      ) : (
+                        <div style={{ fontSize:20 }}>{tmpl.icon}</div>
+                      )}
+                    </div>
+                    {isSold && <div style={{ position:"absolute", top:1, right:2, fontSize:7, color:"#f87171", fontWeight:700, background:"rgba(0,0,0,0.75)", borderRadius:2, padding:"1px 3px", zIndex:1 }}>SOLD</div>}
+                  </div>
+                  <div style={{ fontSize:9, color:"#e8e0d0", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%" }}>{tmpl.name.slice(0,6)}</div>
+                  <div style={{ fontSize:8, color:rc, letterSpacing:1, minHeight:10 }}>{RARITY_LABEL[tmpl.rarity]}</div>
                   <div style={{ fontSize:9, color:isSold?FAINT:"#fbbf24", fontWeight:700 }}>{price.toLocaleString()}G</div>
                 </div>
               );
