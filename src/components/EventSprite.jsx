@@ -11,14 +11,16 @@ const CHEST_EVENT_DESIGNS = Object.fromEntries(
 );
 
 // 罠/回復/NPC/妖精/精霊は宝箱と違い「その場に佇む単体イラスト」を等身大に近いサイズで
-// 表示したいため、バッジ版とは別に大きい一枚絵(event_scene_*)を用意し、sizeで拡大して描画する
+// 表示したいため、バッジ版とは別に大きい一枚絵(event_scene_*)を用意し、sizeで拡大して描画する。
+// float:trueのものだけ上下にふわふわ浮かせる(妖精/精霊)。罠/回復/NPCは床に設置・直立の
+// 表現として浮遊させない。colorAltがあるものは2色の間でグローの色をゆっくり変化させる
 const EVENT_DESIGNS = {
   ...CHEST_EVENT_DESIGNS,
-  trap:      { icon:"⚠",  color:"#fb923c", label:"罠！",         kind:"trap",    image:"/assets/images/event_scene_trap.png",  size:140 },
-  heal:      { icon:"💧", color:"#38bdf8", label:"回復の泉",     kind:"ripple",  image:"/assets/images/event_scene_heal.png",  size:150 },
-  npc:       { icon:"🧝", color:"#34d399", label:"冒険者に遭遇", kind:"npc",     image:"/assets/images/event_scene_npc.png",   size:130 },
-  fairy:     { icon:"🧚", color:"#f472b6", label:"妖精の加護",   kind:"sparkle", image:"/assets/images/event_scene_fairy.png", size:130 },
-  spirit:    { icon:"👻", color:"#a78bfa", label:"精霊の祝福",   kind:"sparkle", image:"/assets/images/event_scene_spirit.png",size:150 },
+  trap:      { icon:"⚠",  color:"#fb923c", label:"罠！",         kind:"trap",    image:"/assets/images/event_scene_trap.png",  size:140, float:false },
+  heal:      { icon:"💧", color:"#38bdf8", label:"回復の泉",     kind:"ripple",  image:"/assets/images/event_scene_heal.png",  size:150, float:false },
+  npc:       { icon:"🧝", color:"#34d399", label:"冒険者に遭遇", kind:"npc",     image:"/assets/images/event_scene_npc.png",   size:130, float:false },
+  fairy:     { icon:"🧚", color:"#4ade80", label:"妖精の加護",   kind:"sparkle", image:"/assets/images/event_scene_fairy.png", size:130, float:true, colorAlt:"#fde047" },
+  spirit:    { icon:"👻", color:"#a78bfa", label:"精霊の祝福",   kind:"sparkle", image:"/assets/images/event_scene_spirit.png",size:150, float:true, colorAlt:"#60a5fa" },
 };
 
 const ACTION_DURATION = { chest:900, trap:500, ripple:99999, npc:700, sparkle:99999 };
@@ -58,6 +60,16 @@ function spawnSpikes(particles, cx, groundY, color, count) {
   }
 }
 
+// 2色の16進カラーをtimeに応じて滑らかに行き来させる(妖精/精霊の色が変わる表現用)
+function shimmerColor(colorA, colorB, t, alpha = 1) {
+  const a = parseInt(colorA.slice(1), 16), b = parseInt(colorB.slice(1), 16);
+  const ar=(a>>16)&255, ag=(a>>8)&255, ab=a&255;
+  const br=(b>>16)&255, bg=(b>>8)&255, bb=b&255;
+  const mix = (Math.sin(t) + 1) / 2;
+  const r = Math.round(ar + (br-ar)*mix), g = Math.round(ag + (bg-ag)*mix), bl = Math.round(ab + (bb-ab)*mix);
+  return `rgba(${r},${g},${bl},${alpha})`;
+}
+
 function drawParticle(ctx, p) {
   if (p.type === "spike") {
     const elapsed = p.maxLife - p.life;
@@ -93,9 +105,8 @@ function drawParticle(ctx, p) {
 }
 
 function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
-  const bounce = phase === "trap" && phaseTime < ACTION_DURATION.trap
-    ? (Math.random() - 0.5) * 6
-    : Math.sin(frame * 0.05) * 6;
+  // float:trueのもの(妖精/精霊)だけ上下にふわふわ浮かせる。罠/回復/NPCは床に設置・直立の表現
+  const bounce = design.float ? Math.sin(frame * 0.05) * 6 : 0;
   const popScale = phase === "action" && design.kind === "chest"
     ? 1 + Math.max(0, 1 - phaseTime / ACTION_DURATION.chest) * 0.35
     : 1 + Math.sin(frame * 0.08) * 0.05;
@@ -104,6 +115,9 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
   const cy = y + bounce;
 
   const baseSize = design.size || 66;
+  // colorAltがあるものはグロー/光の粒子の色を2色の間でゆっくり変化させる(妖精/精霊)
+  const shimmerT = frame * 0.02;
+  const activeColor = design.colorAlt ? shimmerColor(design.color, design.colorAlt, shimmerT) : design.color;
 
   ctx.save();
   ctx.translate(cx, cy);
@@ -111,7 +125,7 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
 
   const glowR = baseSize * 0.8;
   const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, glowR);
-  glow.addColorStop(0, design.color + "44");
+  glow.addColorStop(0, design.colorAlt ? shimmerColor(design.color, design.colorAlt, shimmerT, 0.27) : design.color + "44");
   glow.addColorStop(1, "transparent");
   ctx.fillStyle = glow;
   ctx.fillRect(-glowR, -glowR, glowR * 2, glowR * 2);
@@ -133,8 +147,8 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
       const ang = frame * 0.04 + (i / 5) * Math.PI * 2;
       const r = 34 + Math.sin(frame * 0.06 + i) * 6;
       const sx = Math.cos(ang) * r, sy = Math.sin(ang) * r * 0.6;
-      ctx.fillStyle = design.color;
-      ctx.shadowColor = design.color; ctx.shadowBlur = 6;
+      ctx.fillStyle = activeColor;
+      ctx.shadowColor = activeColor; ctx.shadowBlur = 6;
       ctx.beginPath(); ctx.arc(sx, sy, 2.5, 0, Math.PI * 2); ctx.fill();
     }
   }
@@ -165,7 +179,7 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
 export default function EventSprite({ eventType, isVisible, onReach }) {
   const canvasRef = useRef(null);
   const frameRef  = useRef(null);
-  const stateRef  = useRef({ x:null, targetX:null, animFrame:0, reached:false, phase:"enter", phaseTime:0, particles:[], nextBurst:0 });
+  const stateRef  = useRef({ x:null, targetX:null, animFrame:0, reached:false, phase:"enter", phaseTime:0, particles:[], nextBurst:0, design:null });
   // onReachは親の再レンダーのたびに新しい関数になるため、依存配列に直接入れず
   // refに最新版を格納してループ内から読む(アニメーションループの不要な再起動を防ぐ)
   const cbRef = useRef({});
@@ -188,12 +202,24 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
         canvas.height = H;
       }
       ctx.clearRect(0, 0, W, H);
-      if (!eventType || !isVisible) {
+      const s = stateRef.current;
+      // モンスターと違い、この手のイベントは主人公との遭遇後に唐突に消えるのではなく
+      // 「左から流れてきて→立ち止まって(イベントが生きている間)→右へ流れて消える」動きにする。
+      // isVisibleがfalseになった瞬間にeventTypeもnullになるため、direnctにeventTypeを見るのではなく
+      // 一度設定されたdesignをstateRef側で保持し続け、退場アニメーションの間も参照できるようにする
+      if (!s.design) {
         frameRef.current = requestAnimationFrame(loop);
         return;
       }
-      const s = stateRef.current;
-      const design = EVENT_DESIGNS[eventType] || EVENT_DESIGNS.chest_common;
+      if (!isVisible && s.phase !== "exit" && s.phase !== "gone") {
+        if (s.reached) { s.phase = "exit"; s.phaseTime = 0; }
+        else { s.phase = "gone"; }
+      }
+      if (s.phase === "gone") {
+        frameRef.current = requestAnimationFrame(loop);
+        return;
+      }
+      const design = s.design;
 
       if (s.x === null) {
         s.x = -80;
@@ -204,9 +230,6 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
       if (s.phase === "enter") {
         if (s.x < s.targetX - 2) {
           s.x += dt * 0.15;
-          if (design.kind === "npc" && Math.random() < 0.3) {
-            s.particles.push({ type:"dust", x:s.x - 20, y:H * 0.55 + 30, vx:-0.3, vy:0, life:300, maxLife:300, color:"#4a4a3a" });
-          }
         } else {
           s.x = s.targetX;
           s.phase = "action";
@@ -216,6 +239,10 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
           if (design.kind === "chest") spawnBurst(s.particles, cx, cy, design.color, 14, "spark");
           if (design.kind === "trap")  spawnSpikes(s.particles, cx, cy + 30, design.color, 7);
         }
+      } else if (s.phase === "exit") {
+        s.phaseTime += dt;
+        s.x += dt * 0.28;
+        if (s.x > W + 100) { s.phase = "gone"; }
       } else {
         s.phaseTime += dt;
         const cx = s.x, cy = H * 0.55;
@@ -248,7 +275,11 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
   }, [eventType, isVisible]);
 
   useEffect(() => {
-    stateRef.current = { x:null, targetX:null, animFrame:0, reached:false, phase:"enter", phaseTime:0, particles:[], nextBurst:0 };
+    // eventTypeがnullになる時(=退場アニメーションに入るタイミング)はここでリセットしない。
+    // 新しいイベントが始まった時だけ、その内容でstateを作り直す
+    if (eventType) {
+      stateRef.current = { x:null, targetX:null, animFrame:0, reached:false, phase:"enter", phaseTime:0, particles:[], nextBurst:0, design: EVENT_DESIGNS[eventType] || EVENT_DESIGNS.chest_common };
+    }
   }, [eventType]);
 
   return (
