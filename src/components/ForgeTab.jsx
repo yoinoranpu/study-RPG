@@ -25,7 +25,7 @@ const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
 
 // ─── 選択グリッド共通部品：レアリティ別グループ化＋検索＋拡大カード ───
-function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getName, emptyText, isMaxed }) {
+function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getImage, getName, emptyText, isMaxed }) {
   const groups = {};
   items.forEach(it => { const r = getRarity(it); (groups[r] = groups[r] || []).push(it); });
 
@@ -42,6 +42,7 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
               const rc = getColor(it);
               const isSel = selectedUid === it.uid;
               const maxed = isMaxed?.(it);
+              const img = getImage ? getImage(it) : it.image;
               return (
                 <div key={it.uid} onClick={() => !maxed && onSelect(isSel ? null : it.uid)}
                   style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, cursor:maxed?"default":"pointer", opacity:maxed?0.5:1 }}>
@@ -49,8 +50,8 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
                     {!maxed && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:rc, opacity:0.4, filter:"blur(6px)" }} />}
                     <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                     <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                      {it.image ? (
-                        <img src={it.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:`${it.tint||""} ${maxed?"grayscale(0.6)":""}`.trim()||"none" }} />
+                      {img ? (
+                        <img src={img} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:`${it.tint||""} ${maxed?"grayscale(0.6)":""}`.trim()||"none" }} />
                       ) : (
                         <div style={{ fontSize:20, filter:maxed?"grayscale(0.6)":"none" }}>{getIcon(it)}</div>
                       )}
@@ -69,20 +70,20 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
 }
 
 // ─── 合成プレビュー共通部品：⬜+⬜=>⬜ を吹き出し内にコンパクト表示 ───
-function SynthBox({ icon, color, empty, size = 44 }) {
+function SynthBox({ icon, image, color, empty, size = 44 }) {
   return (
     <div style={{ width:size, height:size, position:"relative", flexShrink:0 }}>
       {!empty && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:color, opacity:0.45, filter:"blur(6px)" }} />}
       <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:empty?0.5:1 }} />
       <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:size*0.42 }}>
-        {!empty && icon}
+        {!empty && (image ? <img src={image} alt="" style={{ width:"100%", height:"100%", objectFit:"contain" }} /> : icon)}
       </div>
     </div>
   );
 }
 
 // 店主の吹き出し内に収めるコンパクト版。外枠(.rpg-panel)は吹き出し自体が兼ねるので持たない。
-function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getName, getColor, getRarityLabel, hint }) {
+function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getImage, getName, getColor, getRarityLabel, hint }) {
   const baseColor = base ? getColor(base) : "#3a3a55";
   const matColor  = mat  ? getColor(mat)  : "#3a3a55";
   const nextColor = next ? getColor({ rarity:next }) : "#3a3a55";
@@ -90,11 +91,11 @@ function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getN
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        <SynthBox icon={base && getIcon(base)} color={baseColor} empty={!base} />
+        <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} color={baseColor} empty={!base} />
         <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>+</span>
-        <SynthBox icon={mat && getIcon(mat)} color={matColor} empty={!mat} />
+        <SynthBox icon={mat && getIcon(mat)} image={mat && getImage?.(mat)} color={matColor} empty={!mat} />
         <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>⇒</span>
-        <SynthBox icon={base && getIcon(base)} color={nextColor} empty={!ready} />
+        <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} color={nextColor} empty={!ready} />
         <div style={{ flex:1, minWidth:0, marginLeft:4 }}>
           <div style={{ fontSize:11, color:"#e8d8c0" }}>
             {base
@@ -315,14 +316,14 @@ export default function ForgeTab() {
                 <SynthPreview
                   base={baseItem} mat={matItem} next={next}
                   cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
-                  getIcon={it=>it.icon} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
+                  getIcon={it=>it.icon} getImage={it=>it.image} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
                   hint="① ベース装備を選んでください"
                 />
               ) : tab === "book" && bookItem ? (
                 <SynthPreview
                   base={bookItem} mat={bookMatItem} next={nextBookR}
                   cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
-                  getIcon={b=>SKILL_BOOKS[b.id]?.icon} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+                  getIcon={b=>SKILL_BOOKS[b.id]?.icon} getImage={b=>SKILL_BOOKS[b.id]?.image} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
                   hint="① ベースのスキル書を選んでください"
                 />
               ) : (
@@ -516,6 +517,7 @@ export default function ForgeTab() {
                   getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
                   getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
                   getIcon={b=>SKILL_BOOKS[b.id]?.icon}
+                  getImage={b=>SKILL_BOOKS[b.id]?.image}
                   getName={b=>SKILL_BOOKS[b.id]?.name||""}
                   isMaxed={b=>!nextBookRarity(b.rarity)}
                   emptyText="合成できるスキル書がない"
@@ -535,6 +537,7 @@ export default function ForgeTab() {
                   getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
                   getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
                   getIcon={b=>SKILL_BOOKS[b.id]?.icon}
+                  getImage={b=>SKILL_BOOKS[b.id]?.image}
                   getName={b=>SKILL_BOOKS[b.id]?.name||""}
                   emptyText="合成できる素材がない（同じ書・同じレアリティが必要）"
                 />

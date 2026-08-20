@@ -249,7 +249,7 @@ export default function CharacterPage() {
       <div
         onPointerDown={(e) => beginDrag(e, { kind:"book", bookType:book.type, uid:owned.uid, icon:book.icon, name:book.name })}
         style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", display:"flex", alignItems:"center", gap:8, padding:"7px 9px", background:equipped?`${color}30`:"rgba(15,10,5,0.6)", borderLeft:`3px solid ${rc}`, borderRadius:5, marginBottom:4 }}>
-        <span style={{ fontSize:19 }}>{book.icon}</span>
+        {book.image ? <img src={book.image} alt="" style={{ width:22, height:22, objectFit:"contain", flexShrink:0 }} /> : <span style={{ fontSize:19 }}>{book.icon}</span>}
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:10, color:"#e8e0d0" }}>
             {book.name} <span style={{ fontSize:9, color:rc }}>{BOOK_RARITY_LABEL[owned.rarity]}</span>
@@ -279,7 +279,7 @@ export default function CharacterPage() {
         {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:isHover?0.6:0.4, filter:"blur(6px)" }} />}
         <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
         <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
-          {book ? <span style={{ fontSize:20 }}>{book.icon}</span> : <span style={{ fontSize:9, color:FAINT }}>{dz.startsWith("active")?"S":"P"}{i+1}</span>}
+          {book ? (book.image ? <img src={book.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain" }} /> : <span style={{ fontSize:20 }}>{book.icon}</span>) : <span style={{ fontSize:9, color:FAINT }}>{dz.startsWith("active")?"S":"P"}{i+1}</span>}
         </div>
         {book && (
           <button onClick={(e)=>{ e.stopPropagation(); setSlot(i,null); }} style={{ position:"absolute", top:-4, right:-4, width:16, height:16, borderRadius:"50%", background:"#1a0a0a", border:"1px solid #f87171", color:"#f87171", fontSize:9, lineHeight:"14px", padding:0, cursor:"pointer", zIndex:1 }}>×</button>

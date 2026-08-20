@@ -25,7 +25,7 @@ export default function SkillBookTab() {
             {discovered && <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:rc, opacity:0.45, filter:"blur(5px)" }} />}
             <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", filter:discovered?"none":"grayscale(1) brightness(0.6)" }} />
             <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>
-              {discovered ? book.icon : "❓"}
+              {discovered ? (book.image ? <img src={book.image} alt="" style={{ width:"100%", height:"100%", objectFit:"contain" }} /> : book.icon) : "❓"}
             </div>
           </div>
           <div style={{ flex:1 }}>

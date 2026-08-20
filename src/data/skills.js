@@ -314,6 +314,17 @@ export const SKILL_BOOKS = {
   },
 };
 
+// ─── 系統ごとのアイコン画像（37冊分の絵は用意せず、系統6種の絵を使い回す）───
+export const SKILL_TREE_ICON = {
+  sword:   "/assets/images/skillbook_sword.png",
+  magic:   "/assets/images/skillbook_magic.png",
+  bow:     "/assets/images/skillbook_bow.png",
+  thief:   "/assets/images/skillbook_thief.png",
+  defense: "/assets/images/skillbook_defense.png",
+  explore: "/assets/images/skillbook_explore.png",
+};
+Object.values(SKILL_BOOKS).forEach(b => { b.image = SKILL_TREE_ICON[b.tree]; });
+
 export const SKILL_BOOK_LIST = Object.values(SKILL_BOOKS);
 
 // ─── レアリティ適用後の効果値を取得 ───
