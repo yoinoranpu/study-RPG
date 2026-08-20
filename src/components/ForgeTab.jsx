@@ -25,9 +25,10 @@ const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
 
 // ─── 選択グリッド共通部品：レアリティ別グループ化＋検索＋拡大カード ───
-function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getImage, getName, emptyText, isMaxed }) {
+function ItemPicker({ items, selectedUid, matUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getImage, getName, emptyText, isMaxed }) {
   const groups = {};
   items.forEach(it => { const r = getRarity(it); (groups[r] = groups[r] || []).push(it); });
+  const dual = matUid !== undefined; // 合成/スキル書タブ(ベース+素材の2択)かどうか
 
   return (
     <div>
@@ -40,25 +41,30 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
             {groups[r].map(it => {
               const rc = getColor(it);
-              const isSel = selectedUid === it.uid;
+              const isBase = selectedUid === it.uid;
+              const isMat = matUid === it.uid;
+              const isSel = isBase || isMat;
               const maxed = isMaxed?.(it);
               const img = getImage ? getImage(it) : it.image;
               return (
-                <div key={it.uid} onClick={() => !maxed && onSelect(isSel ? null : it.uid)}
-                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, cursor:maxed?"default":"pointer", opacity:maxed?0.5:1 }}>
+                <div key={it.uid} onClick={() => onSelect(it.uid)}
+                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, cursor:"pointer", opacity:maxed&&!isSel?0.5:1 }}>
                   <div className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:"100%", aspectRatio:"1", position:"relative" }}>
-                    {!maxed && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:rc, opacity:0.4, filter:"blur(6px)" }} />}
+                    {!(maxed&&!isSel) && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:rc, opacity:0.4, filter:"blur(6px)" }} />}
                     <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
                     <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
                       {img ? (
-                        <img src={img} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:`${it.tint||""} ${maxed?"grayscale(0.6)":""}`.trim()||"none" }} />
+                        <img src={img} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:`${it.tint||""} ${maxed&&!isSel?"grayscale(0.6)":""}`.trim()||"none" }} />
                       ) : (
-                        <div style={{ fontSize:20, filter:maxed?"grayscale(0.6)":"none" }}>{getIcon(it)}</div>
+                        <div style={{ fontSize:20, filter:maxed&&!isSel?"grayscale(0.6)":"none" }}>{getIcon(it)}</div>
                       )}
                     </div>
-                    {maxed && <div style={{ position:"absolute", top:1, right:2, fontSize:7, color:"#fbbf24", fontWeight:700, background:"rgba(0,0,0,0.75)", borderRadius:2, padding:"1px 3px", zIndex:1 }}>MAX</div>}
+                    {dual && isSel && (
+                      <div style={{ position:"absolute", top:1, left:1, fontSize:8, color:"#0a0a0a", fontWeight:700, background:isBase?"#fbbf24":"#4ade80", borderRadius:"50%", width:13, height:13, lineHeight:"13px", textAlign:"center", zIndex:1 }}>{isBase?"1":"2"}</div>
+                    )}
+                    {maxed && !isSel && <div style={{ position:"absolute", top:1, right:2, fontSize:7, color:"#fbbf24", fontWeight:700, background:"rgba(0,0,0,0.75)", borderRadius:2, padding:"1px 3px", zIndex:1 }}>MAX</div>}
                   </div>
-                  <div style={{ fontSize:9, color:maxed?DIM:"#e8e0d0", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%" }}>{getName(it).slice(0,7)}</div>
+                  <div style={{ fontSize:9, color:(maxed&&!isSel)?DIM:"#e8e0d0", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%" }}>{getName(it).slice(0,7)}</div>
                 </div>
               );
             })}
@@ -70,20 +76,21 @@ function ItemPicker({ items, selectedUid, onSelect, getRarity, getColor, getRari
 }
 
 // ─── 合成プレビュー共通部品：⬜+⬜=>⬜ を吹き出し内にコンパクト表示 ───
-function SynthBox({ icon, image, color, empty, size = 44 }) {
+function SynthBox({ icon, image, color, empty, size = 44, onClick }) {
   return (
-    <div style={{ width:size, height:size, position:"relative", flexShrink:0 }}>
+    <div onClick={!empty ? onClick : undefined} style={{ width:size, height:size, position:"relative", flexShrink:0, cursor:!empty&&onClick?"pointer":"default" }}>
       {!empty && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:color, opacity:0.45, filter:"blur(6px)" }} />}
       <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:empty?0.5:1 }} />
       <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:size*0.42 }}>
         {!empty && (image ? <img src={image} alt="" style={{ width:"100%", height:"100%", objectFit:"contain" }} /> : icon)}
       </div>
+      {!empty && onClick && <div style={{ position:"absolute", top:-3, right:-3, width:14, height:14, borderRadius:"50%", background:"#1a0a0a", border:"1px solid #f87171", color:"#f87171", fontSize:9, lineHeight:"12px", textAlign:"center", zIndex:1 }}>×</div>}
     </div>
   );
 }
 
 // 店主の吹き出し内に収めるコンパクト版。外枠(.rpg-panel)は吹き出し自体が兼ねるので持たない。
-function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getImage, getName, getColor, getRarityLabel, hint }) {
+function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getImage, getName, getColor, getRarityLabel, hint, onClickBase, onClickMat }) {
   const baseColor = base ? getColor(base) : "#3a3a55";
   const matColor  = mat  ? getColor(mat)  : "#3a3a55";
   const nextColor = next ? getColor({ rarity:next }) : "#3a3a55";
@@ -91,9 +98,9 @@ function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getI
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} color={baseColor} empty={!base} />
+        <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} color={baseColor} empty={!base} onClick={onClickBase} />
         <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>+</span>
-        <SynthBox icon={mat && getIcon(mat)} image={mat && getImage?.(mat)} color={matColor} empty={!mat} />
+        <SynthBox icon={mat && getIcon(mat)} image={mat && getImage?.(mat)} color={matColor} empty={!mat} onClick={onClickMat} />
         <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>⇒</span>
         <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} color={nextColor} empty={!ready} />
         <div style={{ flex:1, minWidth:0, marginLeft:4 }}>
@@ -187,6 +194,23 @@ export default function ForgeTab() {
   const next = baseItem ? nextRarity(baseItem.rarity) : null;
   const synthCost = baseItem ? SYNTHESIS_COST[baseItem.rarity] : null;
 
+  // 装備一覧は常に1つのグリッドのまま：1回目のタップがベース、2回目のタップが素材。
+  // 同じものを再タップで選択解除、ベースと噛み合わない装備をタップした場合はベースの選び直し扱いにする
+  function pickSynth(uid) {
+    if (sel === uid) { setSel(null); setMatSel(null); return; }
+    if (matSel === uid) { setMatSel(null); return; }
+    if (!sel) {
+      const it = itemBox.find(i => i.uid === uid);
+      if (it && !nextRarity(it.rarity)) { flash("これ以上合成できません"); return; }
+      setSel(uid);
+      return;
+    }
+    if (synthCandidates.some(c => c.uid === uid)) { setMatSel(uid); return; }
+    const it = itemBox.find(i => i.uid === uid);
+    if (it && !nextRarity(it.rarity)) { flash("これ以上合成できません"); return; }
+    setSel(uid); setMatSel(null);
+  }
+
   function synthesize() {
     if (!baseItem || !matItem) { flash("ベースと素材を選択して！"); return; }
     if (!next) { flash("これ以上合成できません"); return; }
@@ -244,6 +268,21 @@ export default function ForgeTab() {
   const bookMatItem = (skillBooks||[]).find(b => b.uid === matSel);
   const nextBookR = bookItem ? nextBookRarity(bookItem.rarity) : null;
   const bookSynthCost = bookItem ? BOOK_SYNTHESIS_COST[bookItem.rarity] : null;
+
+  function pickBook(uid) {
+    if (sel === uid) { setSel(null); setMatSel(null); return; }
+    if (matSel === uid) { setMatSel(null); return; }
+    if (!sel) {
+      const b = (skillBooks||[]).find(x => x.uid === uid);
+      if (b && !nextBookRarity(b.rarity)) { flash("これ以上合成できません"); return; }
+      setSel(uid);
+      return;
+    }
+    if (bookCandidates.some(c => c.uid === uid)) { setMatSel(uid); return; }
+    const b = (skillBooks||[]).find(x => x.uid === uid);
+    if (b && !nextBookRarity(b.rarity)) { flash("これ以上合成できません"); return; }
+    setSel(uid); setMatSel(null);
+  }
 
   function synthesizeBook() {
     if (!bookItem || !bookMatItem) { flash("ベースと素材を選択して！"); return; }
@@ -317,14 +356,16 @@ export default function ForgeTab() {
                   base={baseItem} mat={matItem} next={next}
                   cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
                   getIcon={it=>it.icon} getImage={it=>it.image} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
-                  hint="① ベース装備を選んでください"
+                  onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
+                  hint="合成元の装備をタップしてください"
                 />
               ) : tab === "book" && bookItem ? (
                 <SynthPreview
                   base={bookItem} mat={bookMatItem} next={nextBookR}
                   cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
                   getIcon={b=>SKILL_BOOKS[b.id]?.icon} getImage={b=>SKILL_BOOKS[b.id]?.image} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
-                  hint="① ベースのスキル書を選んでください"
+                  onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
+                  hint="合成元のスキル書をタップしてください"
                 />
               ) : (
                 <div style={{ fontSize:13, color:"#e8d8c0" }}>{bubbleText()}</div>
@@ -425,7 +466,7 @@ export default function ForgeTab() {
             <ItemPicker
               items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
               selectedUid={sel}
-              onSelect={setSel}
+              onSelect={(uid)=>setSel(prev=>prev===uid?null:uid)}
               getRarity={it=>it.rarity}
               getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
               getRarityLabel={r=>RARITY_LABEL[r]||r}
@@ -448,11 +489,11 @@ export default function ForgeTab() {
           </div>
         )}
 
-        {/* 合成タブ */}
+        {/* 合成タブ：1つのグリッドのまま。1回目のタップ=合成元、2回目のタップ=素材(同じものを再タップで解除、吹き出しのアイコンをタップでも解除できます) */}
         {tab === "synth" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
-              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ種類・同じ形状(剣は剣、弓は弓)・同じレアリティの装備2つで1段階上のレアリティに合成(プレビューは上の吹き出しに表示されます)</div>
+              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ種類・同じ形状(剣は剣、弓は弓)・同じレアリティの装備2つで1段階上のレアリティに合成。1つ目のタップが合成元、2つ目が素材(プレビューは上の吹き出しに表示されます)</div>
 
               {(matItem?.abilities||[]).length > 0 && (
                 <div style={{ fontSize:10, color:"#a78bfa", marginBottom:8 }}>
@@ -461,88 +502,44 @@ export default function ForgeTab() {
               )}
             </div>
 
-            {!baseItem ? (
-              <div>
-                <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベース装備を選択</div>
-                <ItemPicker
-                  items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
-                  selectedUid={sel}
-                  onSelect={(uid)=>{ setSel(uid); setMatSel(null); }}
-                  getRarity={it=>it.rarity}
-                  getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
-                  getRarityLabel={r=>RARITY_LABEL[r]||r}
-                  getIcon={it=>it.icon}
-                  getName={it=>it.name}
-                  isMaxed={it=>!nextRarity(it.rarity)}
-                  emptyText="合成できる装備がない"
-                />
-              </div>
-            ) : (
-              <div>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-                  <span style={{ fontSize:10, color:"#a78bfa" }}>② 素材装備をタップ(同じものを選ぶと合成できます)</span>
-                  <button onClick={()=>{ setSel(null); setMatSel(null); }} style={{ padding:"3px 8px", background:"transparent", border:"1px solid #3a3a55", borderRadius:3, cursor:"pointer", color:DIM, fontSize:9, fontFamily:"monospace" }}>ベースを選び直す</button>
-                </div>
-                <ItemPicker
-                  items={synthCandidates}
-                  selectedUid={matSel}
-                  onSelect={setMatSel}
-                  getRarity={it=>it.rarity}
-                  getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
-                  getRarityLabel={r=>RARITY_LABEL[r]||r}
-                  getIcon={it=>it.icon}
-                  getName={it=>it.name}
-                  emptyText="合成できる素材がない（同じ種類・同じ形状・同じレアリティが必要）"
-                />
-              </div>
-            )}
+            <ItemPicker
+              items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
+              selectedUid={sel}
+              matUid={matSel}
+              onSelect={pickSynth}
+              getRarity={it=>it.rarity}
+              getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
+              getRarityLabel={r=>RARITY_LABEL[r]||r}
+              getIcon={it=>it.icon}
+              getImage={it=>it.image}
+              getName={it=>it.name}
+              isMaxed={it=>!nextRarity(it.rarity)}
+              emptyText="合成できる装備がない"
+            />
           </div>
         )}
 
-        {/* スキル書合成タブ */}
+        {/* スキル書合成タブ：合成タブと同じく1つのグリッドのまま1回目=ベース、2回目=素材 */}
         {tab === "book" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
-              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ系統(剣術/魔法など)・同じ区分(アクティブ/パッシブ)・同じレアリティの本2冊で1段階上のレアリティに合成(プレビューは上の吹き出しに表示されます)</div>
+              <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ系統(剣術/魔法など)・同じ区分(アクティブ/パッシブ)・同じレアリティの本2冊で1段階上のレアリティに合成。1つ目のタップがベース、2つ目が素材(プレビューは上の吹き出しに表示されます)</div>
             </div>
 
-            {!bookItem ? (
-              <div>
-                <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベースのスキル書を選択</div>
-                <ItemPicker
-                  items={skillBooks||[]}
-                  selectedUid={sel}
-                  onSelect={(uid)=>{ setSel(uid); setMatSel(null); }}
-                  getRarity={b=>b.rarity}
-                  getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
-                  getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
-                  getIcon={b=>SKILL_BOOKS[b.id]?.icon}
-                  getImage={b=>SKILL_BOOKS[b.id]?.image}
-                  getName={b=>SKILL_BOOKS[b.id]?.name||""}
-                  isMaxed={b=>!nextBookRarity(b.rarity)}
-                  emptyText="合成できるスキル書がない"
-                />
-              </div>
-            ) : (
-              <div>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-                  <span style={{ fontSize:10, color:"#a78bfa" }}>② 素材の本をタップ(同じものを選ぶと合成できます)</span>
-                  <button onClick={()=>{ setSel(null); setMatSel(null); }} style={{ padding:"3px 8px", background:"transparent", border:"1px solid #3a3a55", borderRadius:3, cursor:"pointer", color:DIM, fontSize:9, fontFamily:"monospace" }}>ベースを選び直す</button>
-                </div>
-                <ItemPicker
-                  items={bookCandidates}
-                  selectedUid={matSel}
-                  onSelect={setMatSel}
-                  getRarity={b=>b.rarity}
-                  getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
-                  getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
-                  getIcon={b=>SKILL_BOOKS[b.id]?.icon}
-                  getImage={b=>SKILL_BOOKS[b.id]?.image}
-                  getName={b=>SKILL_BOOKS[b.id]?.name||""}
-                  emptyText="合成できる素材がない（同じ書・同じレアリティが必要）"
-                />
-              </div>
-            )}
+            <ItemPicker
+              items={skillBooks||[]}
+              selectedUid={sel}
+              matUid={matSel}
+              onSelect={pickBook}
+              getRarity={b=>b.rarity}
+              getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
+              getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+              getIcon={b=>SKILL_BOOKS[b.id]?.icon}
+              getImage={b=>SKILL_BOOKS[b.id]?.image}
+              getName={b=>SKILL_BOOKS[b.id]?.name||""}
+              isMaxed={b=>!nextBookRarity(b.rarity)}
+              emptyText="合成できるスキル書がない"
+            />
           </div>
         )}
       </div>
