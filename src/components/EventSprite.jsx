@@ -10,13 +10,15 @@ const CHEST_EVENT_DESIGNS = Object.fromEntries(
   ])
 );
 
+// 罠/回復/NPC/妖精/精霊は宝箱と違い「その場に佇む単体イラスト」を等身大に近いサイズで
+// 表示したいため、バッジ版とは別に大きい一枚絵(event_scene_*)を用意し、sizeで拡大して描画する
 const EVENT_DESIGNS = {
   ...CHEST_EVENT_DESIGNS,
-  trap:      { icon:"⚠",  color:"#fb923c", label:"罠！",         kind:"trap",    image:"/assets/images/event_trap.png"   },
-  heal:      { icon:"💧", color:"#38bdf8", label:"回復の泉",     kind:"ripple",  image:"/assets/images/event_heal.png"   },
-  npc:       { icon:"🧝", color:"#34d399", label:"冒険者に遭遇", kind:"npc",     image:"/assets/images/event_npc.png"    },
-  fairy:     { icon:"🧚", color:"#f472b6", label:"妖精の加護",   kind:"sparkle", image:"/assets/images/event_fairy.png"  },
-  spirit:    { icon:"👻", color:"#a78bfa", label:"精霊の祝福",   kind:"sparkle", image:"/assets/images/event_spirit.png" },
+  trap:      { icon:"⚠",  color:"#fb923c", label:"罠！",         kind:"trap",    image:"/assets/images/event_scene_trap.png",  size:140 },
+  heal:      { icon:"💧", color:"#38bdf8", label:"回復の泉",     kind:"ripple",  image:"/assets/images/event_scene_heal.png",  size:150 },
+  npc:       { icon:"🧝", color:"#34d399", label:"冒険者に遭遇", kind:"npc",     image:"/assets/images/event_scene_npc.png",   size:130 },
+  fairy:     { icon:"🧚", color:"#f472b6", label:"妖精の加護",   kind:"sparkle", image:"/assets/images/event_scene_fairy.png", size:130 },
+  spirit:    { icon:"👻", color:"#a78bfa", label:"精霊の祝福",   kind:"sparkle", image:"/assets/images/event_scene_spirit.png",size:150 },
 };
 
 const ACTION_DURATION = { chest:900, trap:500, ripple:99999, npc:700, sparkle:99999 };
@@ -101,15 +103,18 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
   const cx = x + bounce * 0;
   const cy = y + bounce;
 
+  const baseSize = design.size || 66;
+
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(popScale, popScale);
 
-  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 50);
+  const glowR = baseSize * 0.8;
+  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, glowR);
   glow.addColorStop(0, design.color + "44");
   glow.addColorStop(1, "transparent");
   ctx.fillStyle = glow;
-  ctx.fillRect(-50, -50, 100, 100);
+  ctx.fillRect(-glowR, -glowR, glowR * 2, glowR * 2);
 
   if (design.kind === "ripple") {
     const t = (frame * 0.02) % 1;
@@ -136,10 +141,13 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
 
   if (phase === "trap-shake") ctx.translate((Math.random() - 0.5) * 6, 0);
   const img = design.image ? getCachedImage(design.image) : null;
+  let drawH = baseSize;
   if (img && img.complete && img.naturalWidth > 0) {
-    const drawW = 66;
-    const drawH = drawW * (img.naturalHeight / img.naturalWidth);
-    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+    const drawW = baseSize;
+    drawH = drawW * (img.naturalHeight / img.naturalWidth);
+    // 縦長の立ち絵は台座(cy)に足元が来るよう下寄せ、バッジ級の小さいアイコンは中央寄せのまま
+    const offsetY = design.size ? -drawH * 0.85 : -drawH / 2;
+    ctx.drawImage(img, -drawW / 2, offsetY, drawW, drawH);
   } else {
     ctx.font = "48px serif";
     ctx.textAlign = "center";
@@ -151,7 +159,7 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
   ctx.font = "bold 13px monospace";
   ctx.textAlign = "center";
   ctx.fillStyle = design.color;
-  ctx.fillText(design.label, cx, cy - 44);
+  ctx.fillText(design.label, cx, cy - (design.size ? drawH * 0.9 : 44));
 }
 
 export default function EventSprite({ eventType, isVisible, onReach }) {
