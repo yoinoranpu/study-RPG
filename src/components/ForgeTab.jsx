@@ -460,25 +460,28 @@ export default function ForgeTab() {
               )}
             </div>
 
-            <div>
-              <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベース装備を選択</div>
-              <ItemPicker
-                items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
-                selectedUid={sel}
-                onSelect={(uid)=>{ setSel(uid); setMatSel(null); }}
-                getRarity={it=>it.rarity}
-                getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
-                getRarityLabel={r=>RARITY_LABEL[r]||r}
-                getIcon={it=>it.icon}
-                getName={it=>it.name}
-                isMaxed={it=>!nextRarity(it.rarity)}
-                emptyText="合成できる装備がない"
-              />
-            </div>
-
-            {baseItem && (
+            {!baseItem ? (
               <div>
-                <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>② 素材装備を選択</div>
+                <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベース装備を選択</div>
+                <ItemPicker
+                  items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
+                  selectedUid={sel}
+                  onSelect={(uid)=>{ setSel(uid); setMatSel(null); }}
+                  getRarity={it=>it.rarity}
+                  getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
+                  getRarityLabel={r=>RARITY_LABEL[r]||r}
+                  getIcon={it=>it.icon}
+                  getName={it=>it.name}
+                  isMaxed={it=>!nextRarity(it.rarity)}
+                  emptyText="合成できる装備がない"
+                />
+              </div>
+            ) : (
+              <div>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                  <span style={{ fontSize:10, color:"#a78bfa" }}>② 素材装備をタップ(同じものを選ぶと合成できます)</span>
+                  <button onClick={()=>{ setSel(null); setMatSel(null); }} style={{ padding:"3px 8px", background:"transparent", border:"1px solid #3a3a55", borderRadius:3, cursor:"pointer", color:DIM, fontSize:9, fontFamily:"monospace" }}>ベースを選び直す</button>
+                </div>
                 <ItemPicker
                   items={synthCandidates}
                   selectedUid={matSel}
@@ -502,25 +505,28 @@ export default function ForgeTab() {
               <div style={{ fontSize:10, color:DIM, marginBottom:8 }}>同じ系統(剣術/魔法など)・同じ区分(アクティブ/パッシブ)・同じレアリティの本2冊で1段階上のレアリティに合成(プレビューは上の吹き出しに表示されます)</div>
             </div>
 
-            <div>
-              <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベースのスキル書を選択</div>
-              <ItemPicker
-                items={skillBooks||[]}
-                selectedUid={sel}
-                onSelect={(uid)=>{ setSel(uid); setMatSel(null); }}
-                getRarity={b=>b.rarity}
-                getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
-                getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
-                getIcon={b=>SKILL_BOOKS[b.id]?.icon}
-                getName={b=>SKILL_BOOKS[b.id]?.name||""}
-                isMaxed={b=>!nextBookRarity(b.rarity)}
-                emptyText="合成できるスキル書がない"
-              />
-            </div>
-
-            {bookItem && (
+            {!bookItem ? (
               <div>
-                <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>② 素材のスキル書を選択</div>
+                <div style={{ fontSize:10, color:"#a78bfa", marginBottom:6 }}>① ベースのスキル書を選択</div>
+                <ItemPicker
+                  items={skillBooks||[]}
+                  selectedUid={sel}
+                  onSelect={(uid)=>{ setSel(uid); setMatSel(null); }}
+                  getRarity={b=>b.rarity}
+                  getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
+                  getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+                  getIcon={b=>SKILL_BOOKS[b.id]?.icon}
+                  getName={b=>SKILL_BOOKS[b.id]?.name||""}
+                  isMaxed={b=>!nextBookRarity(b.rarity)}
+                  emptyText="合成できるスキル書がない"
+                />
+              </div>
+            ) : (
+              <div>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                  <span style={{ fontSize:10, color:"#a78bfa" }}>② 素材の本をタップ(同じものを選ぶと合成できます)</span>
+                  <button onClick={()=>{ setSel(null); setMatSel(null); }} style={{ padding:"3px 8px", background:"transparent", border:"1px solid #3a3a55", borderRadius:3, cursor:"pointer", color:DIM, fontSize:9, fontFamily:"monospace" }}>ベースを選び直す</button>
+                </div>
                 <ItemPicker
                   items={bookCandidates}
                   selectedUid={matSel}

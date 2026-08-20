@@ -170,7 +170,10 @@ export default function TownPage({ onEnterDungeon }) {
             )}
 
             {/* ギルドの詰め所：壁に掲示板+クエスト掲示板、床に本+トロフィー */}
-            <div style={{ position:"relative", width:"100%", aspectRatio:"1408/768" }}>
+            {/* 元々はwidth:100%(=画面幅いっぱい)だったため、デスクトップ/タブレット幅では
+                aspectRatioにより縦に非常に長くなり、画面全体がスクロール必須になっていた。
+                横幅上限を設けて中央寄せすることで、広い画面でも縦の占有量を抑える。 */}
+            <div style={{ position:"relative", width:"100%", maxWidth:560, margin:"0 auto", aspectRatio:"1408/768" }}>
               <img src="/assets/images/guild_wall.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
 
               {/* 掲示板：貼り紙3枚がダンジョン1/2/3。押すと「受注」印が押されてからダンジョンへ */}
