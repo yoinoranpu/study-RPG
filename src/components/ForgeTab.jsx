@@ -338,11 +338,33 @@ export default function ForgeTab() {
           <div style={{ position:"relative", flex:1, minWidth:0, marginLeft:2, marginBottom:16 }}>
             <div className="rpg-panel" style={{ borderRadius:6, padding:"12px 14px" }}>
               {tab === "upgrade" && upgradeItem ? (
-                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                  <SynthBox icon={upgradeItem.icon} image={upgradeItem.image} tint={upgradeItem.tint} color={RARITY_COLOR[upgradeItem.rarity]||"#888"} empty={false} size={40} onClick={()=>setSel(null)} />
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:12, fontWeight:700, color:"#e8d8c0" }}>{upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span></div>
-                    <div style={{ fontSize:10, color:DIM, marginTop:1 }}>強化コスト <span style={{ color:"#fbbf24", fontWeight:700 }}>{cost}G</span></div>
+                <div>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <SynthBox icon={upgradeItem.icon} image={upgradeItem.image} tint={upgradeItem.tint} color={RARITY_COLOR[upgradeItem.rarity]||"#888"} empty={false} size={40} onClick={()=>setSel(null)} />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#e8d8c0" }}>{upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span></div>
+                      <div style={{ fontSize:10, color:DIM, marginTop:1 }}>強化コスト <span style={{ color:"#fbbf24", fontWeight:700 }}>{cost}G</span></div>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8 }}>
+                    {matOpts.map(mo => {
+                      const have = materials?.[mo.mat] || 0;
+                      const can = have >= 1 && gold >= cost;
+                      return (
+                        <button key={mo.mat} onClick={() => upgrade(mo)} disabled={!can}
+                          style={{ padding:"5px 10px", minHeight:36, background:can?"#1a1000":"#0a0a0a", border:`1px solid ${can?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:can?"pointer":"default", color:can?"#fbbf24":FAINT, fontSize:10, fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", lineHeight:1.4 }}>
+                          <span>{mo.label}</span>
+                          <span style={{ fontSize:9, color:have>=1?"#fb923c":FAINT }}>{mo.mat}×{have}</span>
+                        </button>
+                      );
+                    })}
+                    {forgeStone && (
+                      <button onClick={useForgeStone}
+                        style={{ padding:"5px 10px", minHeight:36, background:"#140a2a", border:"1px solid #a78bfa", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:10, fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", lineHeight:1.4 }}>
+                        <span>💠 秘石で+2</span>
+                        <span style={{ fontSize:9 }}>無料</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : tab === "synth" && baseItem ? (
@@ -391,7 +413,7 @@ export default function ForgeTab() {
             {upgradeItem && (
               <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
               <div className="rpg-panel" style={{ borderRadius:6, padding:12 }}>
-                <div style={{ fontSize:10, color:RARITY_COLOR[upgradeItem.rarity]||"#888", letterSpacing:1, marginBottom:8 }}>{RARITY_LABEL[upgradeItem.rarity]}（詳細は上の吹き出しに表示されます）</div>
+                <div style={{ fontSize:10, color:RARITY_COLOR[upgradeItem.rarity]||"#888", letterSpacing:1, marginBottom:8 }}>{RARITY_LABEL[upgradeItem.rarity]}（強化は上の吹き出しから行えます）</div>
 
                 {/* 現在のステータス */}
                 <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
@@ -422,37 +444,6 @@ export default function ForgeTab() {
                   ))}
                 </div>
 
-                {matOpts.map(mo => {
-                  const have = materials?.[mo.mat] || 0;
-                  const can = have >= 1 && gold >= cost;
-                  return (
-                    <div key={mo.mat} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:"#080810", borderRadius:5, marginBottom:6 }}>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:10, color:"#e8e0d0" }}>{mo.mat}</div>
-                        <div style={{ fontSize:10, color:DIM }}>{mo.label}</div>
-                      </div>
-                      <div style={{ fontSize:10, color:have>=1?"#fb923c":FAINT }}>×{have}</div>
-                      <button onClick={() => upgrade(mo)} disabled={!can}
-                        style={{ padding:"6px 14px", minHeight:"44px", minWidth:"44px", background:can?"#1a1000":"#0a0a0a", border:`1px solid ${can?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:can?"pointer":"default", color:can?"#fbbf24":FAINT, fontSize:10, fontFamily:"monospace", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        強化
-                      </button>
-                    </div>
-                  );
-                })}
-
-                {forgeStone && (
-                  <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:"#0a0818", border:"1px solid #a78bfa66", borderRadius:5, marginTop:6 }}>
-                    {forgeStone.image ? <img src={forgeStone.image} alt="" style={{ width:22, height:22, objectFit:"contain" }} /> : <span style={{ fontSize:18 }}>{forgeStone.icon}</span>}
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:10, color:"#e8e0d0" }}>{forgeStone.name}</div>
-                      <div style={{ fontSize:9, color:DIM }}>所持中の秘石で無料で+2強化できます</div>
-                    </div>
-                    <button onClick={useForgeStone}
-                      style={{ padding:"6px 14px", background:"#140a2a", border:"1px solid #a78bfa", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:10, fontFamily:"monospace" }}>
-                      💠 +2強化
-                    </button>
-                  </div>
-                )}
               </div>
               </div>
             )}
