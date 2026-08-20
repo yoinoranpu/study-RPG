@@ -460,17 +460,21 @@ export default function CharacterPage() {
                 ))}
               </div>
               {selItem.innate && selItem.innate!=="none" && INNATE[selItem.innate] && (
-                <div style={{ marginBottom:4 }}>
-                  <div style={{ fontSize:10, color:"#fb923c" }}>◆ {INNATE[selItem.innate].label}</div>
-                  <div style={{ fontSize:9, color:DIM }}>{INNATE[selItem.innate].desc}</div>
+                <div style={{ fontSize:10, color:"#fb923c", marginBottom:4 }}>
+                  ◆ {INNATE[selItem.innate].label}
+                  <span style={{ fontSize:9, color:DIM, marginLeft:6 }}>（{INNATE[selItem.innate].desc}）</span>
                 </div>
               )}
               {selItem.desc && (
                 <div style={{ fontSize:9, color:DIM, marginBottom:4 }}>{selItem.desc}</div>
               )}
-              {(selItem.abilities||[]).map((ab,i)=>(
-                <div key={i} style={{ fontSize:10, color:"#a78bfa", marginBottom:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
-              ))}
+              {(selItem.abilities||[]).length > 0 && (
+                <div style={{ display:"flex", flexWrap:"wrap", columnGap:10, rowGap:2 }}>
+                  {(selItem.abilities||[]).map((ab,i)=>(
+                    <span key={i} style={{ fontSize:10, color:"#a78bfa" }}>✦ {ab.label}{ab.value}{ab.suffix}</span>
+                  ))}
+                </div>
+              )}
             </ItemDetailFrame>
           )}
 
@@ -487,14 +491,18 @@ export default function CharacterPage() {
                   ))}
                 </div>
                 {eq.innate && eq.innate!=="none" && INNATE[eq.innate] && (
-                  <div style={{ marginBottom:4 }}>
-                    <div style={{ fontSize:10, color:"#fb923c" }}>◆ {INNATE[eq.innate].label}</div>
-                    <div style={{ fontSize:9, color:DIM }}>{INNATE[eq.innate].desc}</div>
+                  <div style={{ fontSize:10, color:"#fb923c", marginBottom:4 }}>
+                    ◆ {INNATE[eq.innate].label}
+                    <span style={{ fontSize:9, color:DIM, marginLeft:6 }}>（{INNATE[eq.innate].desc}）</span>
                   </div>
                 )}
-                {(eq.abilities||[]).map((ab,i)=>(
-                  <div key={i} style={{ fontSize:10, color:"#a78bfa", marginBottom:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
-                ))}
+                {(eq.abilities||[]).length > 0 && (
+                  <div style={{ display:"flex", flexWrap:"wrap", columnGap:10, rowGap:2 }}>
+                    {(eq.abilities||[]).map((ab,i)=>(
+                      <span key={i} style={{ fontSize:10, color:"#a78bfa" }}>✦ {ab.label}{ab.value}{ab.suffix}</span>
+                    ))}
+                  </div>
+                )}
               </ItemDetailFrame>
             );
           })()}
