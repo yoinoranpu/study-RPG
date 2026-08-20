@@ -5,10 +5,12 @@ import { SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_SYNTHESIS_COST,
 import { makeInitialStats } from "../systems/achievements";
 import useFlashMessage from "../hooks/useFlashMessage";
 
-const MILESTONE = {
-  weapon:    { 5:{stat:"crit",val:1,label:"クリ率+1%"}, 10:{stat:"atk",val:5,label:"ATK+5"}, 15:{stat:"crit",val:2,label:"クリ率+2%"}, 20:{stat:"atk",val:10,label:"ATK+10"} },
-  armor:     { 5:{stat:"hp",val:10,label:"HP+10"}, 10:{stat:"def",val:5,label:"DEF+5"}, 15:{stat:"eva",val:2,label:"回避+2%"}, 20:{stat:"mdef",val:10,label:"MDEF+10"} },
-  accessory: { 5:{stat:"eva",val:1,label:"回避+1%"}, 10:{stat:"crit",val:1,label:"クリ率+1%"}, 15:{stat:"gold",val:5,label:"G獲得+5%"}, 20:{stat:"exp",val:3,label:"EXP+3%"} },
+// 強化大成功：レベルに関わらず強化のたびに一定確率でボーナス能力が追加でつく(このタイプの装備のボーナス候補からランダムに1つ)
+const CRIT_UPGRADE_CHANCE = 0.15;
+const MILESTONE_POOL = {
+  weapon:    [{stat:"crit",val:1,label:"クリ率+1%"}, {stat:"atk",val:5,label:"ATK+5"}, {stat:"crit",val:2,label:"クリ率+2%"}, {stat:"atk",val:10,label:"ATK+10"}],
+  armor:     [{stat:"hp",val:10,label:"HP+10"}, {stat:"def",val:5,label:"DEF+5"}, {stat:"eva",val:2,label:"回避+2%"}, {stat:"mdef",val:10,label:"MDEF+10"}],
+  accessory: [{stat:"eva",val:1,label:"回避+1%"}, {stat:"crit",val:1,label:"クリ率+1%"}, {stat:"gold",val:5,label:"G獲得+5%"}, {stat:"exp",val:3,label:"EXP+3%"}],
 };
 
 const MAT_UP = {
@@ -170,9 +172,13 @@ export default function ForgeTab() {
     const newLv = upgradeItem.upgradeLevel + 1;
     const newB = { ...upgradeItem.bonuses };
     newB[mo.stat] = (newB[mo.stat] || 0) + 1;
-    const ms = MILESTONE[upgradeItem.type]?.[newLv];
     let msMsg = "";
-    if (ms) { newB[ms.stat] = (newB[ms.stat] || 0) + ms.val; msMsg = ` ✨${ms.label}`; }
+    const pool = MILESTONE_POOL[upgradeItem.type];
+    if (pool && Math.random() < CRIT_UPGRADE_CHANCE) {
+      const bonus = pool[Math.floor(Math.random() * pool.length)];
+      newB[bonus.stat] = (newB[bonus.stat] || 0) + bonus.val;
+      msMsg = ` ✨強化大成功！${bonus.label}`;
+    }
     const updated = { ...upgradeItem, upgradeLevel: newLv, bonuses: newB };
     const prevStats = stats || makeInitialStats();
     updatePlayer({
@@ -366,14 +372,7 @@ export default function ForgeTab() {
                     </div>
                   )}
 
-                  {/* 節目ボーナス */}
-                  <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:6 }}>
-                    {Object.entries(MILESTONE[upgradeItem.type]||{}).map(([lv,b])=>(
-                      <span key={lv} style={{ fontSize:9, color:upgradeItem.upgradeLevel>=(+lv)?"#fbbf24":FAINT, background:"#080810", padding:"2px 6px", borderRadius:3 }}>
-                        +{lv} {b.label}{upgradeItem.upgradeLevel>=(+lv)&&" ✓"}
-                      </span>
-                    ))}
-                  </div>
+                  <div style={{ fontSize:9, color:FAINT, marginTop:6 }}>※強化のたびに確率で大成功、ボーナス能力が追加でつくことがある</div>
 
                   {/* 強化アクション：横幅に余裕があるので1行に収め、折り返しをやめて文字を大きく */}
                   <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8, paddingTop:8, borderTop:"1px solid rgba(251,191,36,0.2)" }}>
