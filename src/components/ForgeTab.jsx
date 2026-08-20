@@ -374,24 +374,24 @@ export default function ForgeTab() {
                     ))}
                   </div>
 
-                  {/* 強化アクション */}
+                  {/* 強化アクション：横幅に余裕があるので1行に収め、折り返しをやめて文字を大きく */}
                   <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8, paddingTop:8, borderTop:"1px solid rgba(251,191,36,0.2)" }}>
                     {matOpts.map(mo => {
                       const have = materials?.[mo.mat] || 0;
                       const can = have >= 1 && gold >= cost;
                       return (
                         <button key={mo.mat} onClick={() => upgrade(mo)} disabled={!can}
-                          style={{ padding:"5px 10px", minHeight:36, background:can?"#1a1000":"#0a0a0a", border:`1px solid ${can?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:can?"pointer":"default", color:can?"#fbbf24":FAINT, fontSize:10, fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", lineHeight:1.4 }}>
+                          style={{ padding:"7px 12px", minHeight:36, background:can?"#1a1000":"#0a0a0a", border:`1px solid ${can?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:can?"pointer":"default", color:can?"#fbbf24":FAINT, fontSize:12, fontFamily:"monospace", display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap" }}>
                           <span>{mo.label}</span>
-                          <span style={{ fontSize:9, color:have>=1?"#fb923c":FAINT }}>{mo.mat}×{have}</span>
+                          <span style={{ fontSize:11, color:have>=1?"#fb923c":FAINT }}>{mo.mat}×{have}</span>
                         </button>
                       );
                     })}
                     {forgeStone && (
                       <button onClick={useForgeStone}
-                        style={{ padding:"5px 10px", minHeight:36, background:"#140a2a", border:"1px solid #a78bfa", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:10, fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", lineHeight:1.4 }}>
+                        style={{ padding:"7px 12px", minHeight:36, background:"#140a2a", border:"1px solid #a78bfa", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:12, fontFamily:"monospace", display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap" }}>
                         <span>💠 秘石で+2</span>
-                        <span style={{ fontSize:9 }}>無料</span>
+                        <span style={{ fontSize:11 }}>無料</span>
                       </button>
                     )}
                   </div>
