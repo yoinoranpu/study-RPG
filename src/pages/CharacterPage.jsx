@@ -214,7 +214,7 @@ export default function CharacterPage() {
   function ItemDetailFrame({ item, subtitle, onClose, footer, children }) {
     const rc = RARITY_COLOR[item.rarity] || "#888";
     return (
-      <div className="rpg-panel" style={{ position:"absolute", bottom:8, left:8, right:8, borderRadius:6, padding:"10px 12px", zIndex:10, maxHeight:"58%", display:"flex", flexDirection:"column" }}>
+      <div className="rpg-panel" style={{ position:"absolute", bottom:8, left:8, right:8, borderRadius:6, padding:"10px 12px", zIndex:10, maxHeight:"40%", display:"flex", flexDirection:"column" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6, flexShrink:0 }}>
           <div style={{ width:60, height:60, position:"relative", flexShrink:0 }}>
             <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:rc, opacity:0.5, filter:"blur(7px)" }} />
