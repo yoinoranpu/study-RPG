@@ -339,31 +339,32 @@ export default function ForgeTab() {
             <div className="rpg-panel" style={{ borderRadius:6, padding:"12px 14px" }}>
               {tab === "upgrade" && upgradeItem ? (
                 <div>
-                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  {/* アイテムによって行数がバラつくと吹き出しの高さが毎回変わり、UIが動く違和感につながるため、
+                      名前/レアリティ/ステータス/コストを1つのflexWrap行にまとめて折り返しに任せる(ブロックの
+                      増減ではなく普通のテキスト折り返しにする) */}
+                  <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
                     <SynthBox icon={upgradeItem.icon} image={upgradeItem.image} tint={upgradeItem.tint} color={RARITY_COLOR[upgradeItem.rarity]||"#888"} empty={false} size={40} onClick={()=>setSel(null)} />
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:"#e8d8c0" }}>{upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span> <span style={{ fontSize:9, color:RARITY_COLOR[upgradeItem.rarity]||"#888" }}>{RARITY_LABEL[upgradeItem.rarity]}</span></div>
-                      <div style={{ fontSize:10, color:DIM, marginTop:1 }}>強化コスト <span style={{ color:"#fbbf24", fontWeight:700 }}>{cost}G</span></div>
+                    <div style={{ flex:1, minWidth:0, display:"flex", flexWrap:"wrap", alignItems:"baseline", columnGap:8, rowGap:2 }}>
+                      <span style={{ fontSize:12, fontWeight:700, color:"#e8d8c0" }}>{upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span></span>
+                      <span style={{ fontSize:9, color:RARITY_COLOR[upgradeItem.rarity]||"#888" }}>{RARITY_LABEL[upgradeItem.rarity]}</span>
+                      {Object.entries(getItemStats(upgradeItem)).filter(([,v])=>v>0).map(([k,v])=>(
+                        <span key={k} style={{ fontSize:10, color:"#86efac" }}>{k.toUpperCase()} {v}</span>
+                      ))}
+                      <span style={{ fontSize:10, color:DIM }}>強化コスト <span style={{ color:"#fbbf24", fontWeight:700 }}>{cost}G</span></span>
                     </div>
                   </div>
 
-                  {/* 現在のステータス */}
-                  <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:8 }}>
-                    {Object.entries(getItemStats(upgradeItem)).filter(([,v])=>v>0).map(([k,v])=>(
-                      <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"2px 6px", borderRadius:3 }}>{k.toUpperCase()} {v}</span>
-                    ))}
-                  </div>
-
-                  {/* 固有能力・ランダム能力 */}
-                  {upgradeItem.innate && upgradeItem.innate !== "none" && INNATE[upgradeItem.innate] && (
-                    <div style={{ marginTop:6 }}>
-                      <span style={{ fontSize:10, color:"#fb923c" }}>◆ {INNATE[upgradeItem.innate].label}</span>
-                      <span style={{ fontSize:9, color:DIM, marginLeft:6 }}>{INNATE[upgradeItem.innate].desc}</span>
+                  {/* 固有能力・ランダム能力：能力数が変わっても行が増減しないよう1つのflexWrap行に集約 */}
+                  {(upgradeItem.innate && upgradeItem.innate !== "none" && INNATE[upgradeItem.innate] || (upgradeItem.abilities||[]).length > 0) && (
+                    <div style={{ display:"flex", flexWrap:"wrap", columnGap:10, rowGap:2, marginTop:6 }}>
+                      {upgradeItem.innate && upgradeItem.innate !== "none" && INNATE[upgradeItem.innate] && (
+                        <span style={{ fontSize:10, color:"#fb923c" }}>◆ {INNATE[upgradeItem.innate].label}</span>
+                      )}
+                      {(upgradeItem.abilities||[]).map((ab,i)=>(
+                        <span key={i} style={{ fontSize:10, color:"#a78bfa" }}>✦ {ab.label}{ab.value}{ab.suffix}</span>
+                      ))}
                     </div>
                   )}
-                  {(upgradeItem.abilities||[]).map((ab,i)=>(
-                    <div key={i} style={{ fontSize:10, color:"#a78bfa", marginTop:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
-                  ))}
 
                   {/* 節目ボーナス */}
                   <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:6 }}>
