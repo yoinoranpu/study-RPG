@@ -12,11 +12,11 @@ const CHEST_EVENT_DESIGNS = Object.fromEntries(
 
 const EVENT_DESIGNS = {
   ...CHEST_EVENT_DESIGNS,
-  trap:      { icon:"⚠",  color:"#fb923c", label:"罠！",         kind:"trap"    },
-  heal:      { icon:"💧", color:"#38bdf8", label:"回復の泉",     kind:"ripple"  },
-  npc:       { icon:"🧝", color:"#34d399", label:"冒険者に遭遇", kind:"npc"     },
-  fairy:     { icon:"🧚", color:"#f472b6", label:"妖精の加護",   kind:"sparkle" },
-  spirit:    { icon:"👻", color:"#a78bfa", label:"精霊の祝福",   kind:"sparkle" },
+  trap:      { icon:"⚠",  color:"#fb923c", label:"罠！",         kind:"trap",    image:"/assets/images/event_trap.png"   },
+  heal:      { icon:"💧", color:"#38bdf8", label:"回復の泉",     kind:"ripple",  image:"/assets/images/event_heal.png"   },
+  npc:       { icon:"🧝", color:"#34d399", label:"冒険者に遭遇", kind:"npc",     image:"/assets/images/event_npc.png"    },
+  fairy:     { icon:"🧚", color:"#f472b6", label:"妖精の加護",   kind:"sparkle", image:"/assets/images/event_fairy.png"  },
+  spirit:    { icon:"👻", color:"#a78bfa", label:"精霊の祝福",   kind:"sparkle", image:"/assets/images/event_spirit.png" },
 };
 
 const ACTION_DURATION = { chest:900, trap:500, ripple:99999, npc:700, sparkle:99999 };

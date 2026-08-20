@@ -45,7 +45,7 @@ export default function AchievementTab() {
       return (
         <div style={{ background:"rgba(15,10,5,0.5)", borderLeft:"3px solid #3a3a55", borderRadius:6, padding:"10px 12px", marginBottom:8, opacity:0.6 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ fontSize:14 }}>🔒</span>
+            <img src="/assets/images/hud_lock.png" alt="" style={{ width:14, height:14, objectFit:"contain" }} />
             <span style={{ fontSize:11, color:FAINT }}>？？？</span>
           </div>
         </div>
@@ -70,7 +70,9 @@ export default function AchievementTab() {
         <img src="/assets/images/achievement-banner.png" alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 30%", display:"block" }} />
         <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(180deg, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.55) 60%, #080810 100%)" }} />
         <div style={{ position:"absolute", left:12, right:12, bottom:6 }}>
-          <div style={{ fontSize:10, color:"#fbbf24", letterSpacing:2 }}>🏆 ACHIEVEMENTS</div>
+          <div style={{ fontSize:10, color:"#fbbf24", letterSpacing:2, display:"flex", alignItems:"center", gap:5 }}>
+            <img src="/assets/images/hud_achievement.png" alt="" style={{ width:12, height:12, objectFit:"contain" }} /> ACHIEVEMENTS
+          </div>
           <div style={{ fontSize:10, color:DIM, marginTop:2 }}>
             達成: {totalDone}/{ACHIEVEMENT_DEFS.length}
             <div style={{ display:"inline-block", width:80, height:4, background:"#1a1a2a", borderRadius:2, overflow:"hidden", marginLeft:8, verticalAlign:"middle" }}>

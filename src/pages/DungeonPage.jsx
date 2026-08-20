@@ -28,6 +28,10 @@ import { makeInitialStats } from "../systems/achievements";
 const BASE_MAX_EVENTS = 4;
 const EVENT_POPUP_DURATION_LONG = 45000; // 妖精/罠/NPC会話など、じっくり読ませたいイベント
 const EVENT_KIND_LABEL = { heal:"回復の泉", npc:"冒険者に遭遇", fairy:"妖精の加護", spirit:"精霊の祝福" };
+const EVENT_KIND_IMAGE = {
+  heal:"/assets/images/event_heal.png", npc:"/assets/images/event_npc.png",
+  fairy:"/assets/images/event_fairy.png", spirit:"/assets/images/event_spirit.png",
+};
 const DEBUG = import.meta.env.DEV;
 
 function ChestOpenSection({ chests, onAllOpened }) {
@@ -424,7 +428,7 @@ export default function DungeonPage({ onBack }) {
       addLog(`⚠ 罠発動！${dmg}ダメージ！`, "#fb923c");
       setMonsterVisible(false); setCurrentMonsters([]);
       setCurrentEvent("trap"); setEventVisible(true); setMonsterArrived(false);
-      showEventPopup({ icon:"⚠", label:"罠発動！", text:`-${dmg} ダメージ`, color:"#fb923c" }, EVENT_POPUP_DURATION_LONG);
+      showEventPopup({ icon:"⚠", image:"/assets/images/event_trap.png", label:"罠発動！", text:`-${dmg} ダメージ`, color:"#fb923c" }, EVENT_POPUP_DURATION_LONG);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, EVENT_POPUP_DURATION_LONG);
 
     } else {
@@ -450,7 +454,7 @@ export default function DungeonPage({ onBack }) {
       setMonsterVisible(false); setCurrentMonsters([]);
       setCurrentEvent(kind);
       setEventVisible(true); setMonsterArrived(false);
-      showEventPopup({ icon: ev.icon, label: EVENT_KIND_LABEL[kind] || "?", text: ev.text, color: ev.color }, duration);
+      showEventPopup({ icon: ev.icon, image: EVENT_KIND_IMAGE[kind], label: EVENT_KIND_LABEL[kind] || "?", text: ev.text, color: ev.color }, duration);
       setTimeout(() => { setEventVisible(false); setCurrentEvent(null); setMonsterArrived(false); }, duration);
     }
   }, [addLog, addMapping, player, dungeonId, showEventPopup, spawnBattle]);
@@ -842,8 +846,9 @@ export default function DungeonPage({ onBack }) {
             const keyName = keyItem?.name || SPECIAL_DB.find(it => it.effect === keyEffect)?.name || "鍵";
             return (
               <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
-                <div style={{ fontSize:10, color:hasKey?"#4ade80":"#f87171" }}>
-                  {hasKey ? `🗝 鍵あり: ${keyItem.name}` : "🔒 鍵がない！"}
+                <div style={{ fontSize:10, color:hasKey?"#4ade80":"#f87171", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                  <img src={hasKey ? "/assets/images/hud_key.png" : "/assets/images/hud_lock.png"} alt="" style={{ width:12, height:12, objectFit:"contain" }} />
+                  {hasKey ? `鍵あり: ${keyItem.name}` : "鍵がない！"}
                 </div>
                 {!hasKey && (
                   <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
@@ -862,13 +867,15 @@ export default function DungeonPage({ onBack }) {
 
       <div style={{ padding:isMobile?"6px 8px":"10px 16px", background:"rgba(0,0,0,0.9)", borderBottom:"1px solid #1a1a2a", display:"flex", alignItems:"center", gap:isMobile?6:12, position:"relative", zIndex:1, flexWrap:isMobile?"wrap":"nowrap" }}>
         <button onClick={onBack} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:isMobile?"3px 6px":"4px 10px", cursor:"pointer", fontSize:isMobile?8:10, minWidth:isMobile?"auto":"auto" }}>← 街へ</button>
-        <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:isMobile?"3px 6px":"4px 10px", cursor:"pointer", fontSize:10, minHeight:isMobile?"32px":"auto" }}>⚙</button>
+        <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, padding:isMobile?"3px 6px":"4px 10px", cursor:"pointer", minHeight:isMobile?"32px":"auto", display:"flex", alignItems:"center" }}>
+          <img src="/assets/images/hud_settings.png" alt="設定" style={{ width:12, height:12, objectFit:"contain" }} />
+        </button>
         <div style={{ color:"#60a5fa", fontSize:isMobile?10:12, letterSpacing:2 }}>{dungeon.name} B{floor}F</div>
         <div style={{ flex:1 }} />
         {!isMobile && <div style={{ color:"#86efac", fontSize:10 }}>Lv{lv}</div>}
         {!isMobile && <div style={{ color:"#fbbf24", fontSize:10 }}>G {player.gold + sessionGoldDisplay}</div>}
         <div style={{ display:"flex", alignItems:"center", gap:5, minHeight:isMobile?"32px":"auto" }}>
-          <span style={{ color:"#f87171", fontSize:12 }}>♥</span>
+          <img src="/assets/images/hud_hp.png" alt="" style={{ width:12, height:12, objectFit:"contain" }} />
           <div style={{ width:isMobile?60:84, height:9, background:"#1a0a0a", border:"1px solid rgba(201,150,61,0.7)", borderRadius:4, overflow:"hidden", boxShadow:"inset 0 1px 2px rgba(0,0,0,0.6)" }}>
             <div style={{ height:"100%", width:`${(hp/maxHp)*100}%`, background:hp/maxHp>0.5?"#4ade80":hp/maxHp>0.25?"#fbbf24":"#f87171", borderRadius:3, transition:"width 0.5s", boxShadow:`0 0 6px ${hp/maxHp>0.5?"#4ade80":hp/maxHp>0.25?"#fbbf24":"#f87171"}` }} />
           </div>
@@ -1001,8 +1008,9 @@ export default function DungeonPage({ onBack }) {
             <span style={{ color:"#86efac", fontSize:11 }}>+{battlePopup.exp}EXP</span>
             <span style={{ color:"#fbbf24", fontSize:11 }}>+{battlePopup.gold}G</span>
             {battlePopup.materials.length>0 && (
-              <span style={{ color:"#fb923c", fontSize:11 }}>
-                📦{[...new Set(battlePopup.materials)].map(m=>`${m}×${battlePopup.materials.filter(x=>x===m).length}`).join(" ")}
+              <span style={{ color:"#fb923c", fontSize:11, display:"inline-flex", alignItems:"center", gap:4 }}>
+                <img src="/assets/images/hud_material_bag.png" alt="" style={{ width:12, height:12, objectFit:"contain" }} />
+                {[...new Set(battlePopup.materials)].map(m=>`${m}×${battlePopup.materials.filter(x=>x===m).length}`).join(" ")}
               </span>
             )}
           </div>

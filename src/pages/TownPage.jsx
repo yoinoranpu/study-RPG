@@ -84,7 +84,9 @@ export default function TownPage({ onEnterDungeon }) {
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div className="rpg-heading" style={{ fontSize:18, color:"#fff" }}>ギルド</div>
           <div style={{ flex:1 }} />
-          <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, color:"#666", padding:"4px 8px", cursor:"pointer", fontSize:12 }}>⚙</button>
+          <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, padding:"4px 8px", cursor:"pointer", display:"flex", alignItems:"center" }}>
+            <img src="/assets/images/hud_settings.png" alt="設定" style={{ width:14, height:14, objectFit:"contain" }} />
+          </button>
           <div style={{ textAlign:"right" }}>
             <div style={{ display:"flex", alignItems:"center", gap:6, justifyContent:"flex-end" }}>
               <span style={{ fontSize:10, color:"#86efac" }}>Lv {lv}</span>
@@ -129,7 +131,7 @@ export default function TownPage({ onEnterDungeon }) {
             <div style={{ position:"relative", zIndex:1, padding:isMobile?"100px 10px 10px":"150px 14px 14px", display:"flex", flexDirection:"column", gap:isMobile?6:10 }}>
             <div className="rpg-panel" style={{ padding:14 }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
-                <span style={{ fontSize:28 }}>🧙</span>
+                <img src="/assets/images/hud_player.png" alt="" style={{ width:28, height:28, objectFit:"contain" }} />
                 <div style={{ flex:1 }}>
                   <div className="rpg-heading" style={{ fontSize:14, color:"#e8e0d0" }}>Lv {lv}</div>
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3 }}>
@@ -202,11 +204,11 @@ export default function TownPage({ onEnterDungeon }) {
                         <div style={{ position:"relative", width:"38%" }}>
                           <img src={seal} alt="" style={{ width:"100%", height:"auto", display:"block", opacity:0.92 }} />
                           {ds.cleared && (
-                            <span style={{ position:"absolute", bottom:"-10%", right:"-14%", fontSize:"clamp(11px,3vw,16px)" }}>🏆</span>
+                            <img src="/assets/images/hud_achievement.png" alt="" style={{ position:"absolute", bottom:"-10%", right:"-14%", width:"clamp(11px,3vw,16px)", height:"clamp(11px,3vw,16px)", objectFit:"contain" }} />
                           )}
                         </div>
                       ) : (
-                        <span style={{ fontSize:"clamp(13px,3.6vw,20px)" }}>🔒</span>
+                        <img src="/assets/images/hud_lock.png" alt="" style={{ width:"clamp(13px,3.6vw,20px)", height:"clamp(13px,3.6vw,20px)", objectFit:"contain" }} />
                       )}
                       <div className="rpg-heading" style={{ fontSize:"clamp(9px,2.2vw,13px)", fontWeight:900, color: unlocked?"#241608":"#8a7f6c", marginTop:4, whiteSpace:"nowrap", textShadow: unlocked?"0 1px 0 rgba(255,255,255,0.35)":"none" }}>
                         {d.name}

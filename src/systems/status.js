@@ -4,30 +4,30 @@
 
 export const STATUS_DEFS = {
   poison: {
-    name:"毒", icon:"☠", color:"#a78bfa",
+    name:"毒", icon:"☠", image:"/assets/images/status_poison.png", color:"#a78bfa",
     maxStacks: 5,
     permanent: true,
     dmgPerStack: 0.15,  // 付与者のMAG × これ × スタック数
   },
   burn: {
-    name:"火傷", icon:"🔥", color:"#ef4444",
+    name:"火傷", icon:"🔥", image:"/assets/images/status_burn.png", color:"#ef4444",
     duration: 3,
     dmgMul: 0.4,  // 付与者のMAG × これ
   },
   paralyze: {
-    name:"麻痺", icon:"⚡", color:"#fbbf24",
+    name:"麻痺", icon:"⚡", image:"/assets/images/status_paralyze.png", color:"#fbbf24",
     duration: 3,
     skipChance: 0.30,
     rankDebuff: { stat:"def", amount:-1 },
   },
   freeze: {
-    name:"凍結", icon:"❄", color:"#38bdf8",
+    name:"凍結", icon:"❄", image:"/assets/images/status_freeze.png", color:"#38bdf8",
     duration: 1,
     fullSkip: true,
     rankDebuff: { stat:"spd", amount:-2, duration:2 },
   },
   stun: {
-    name:"スタン", icon:"💫", color:"#e8e0d0",
+    name:"スタン", icon:"💫", image:"/assets/images/status_stun.png", color:"#e8e0d0",
     duration: 1,
     fullSkip: true,
   },

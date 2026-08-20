@@ -1,5 +1,18 @@
 import { useEffect, useRef } from "react";
 import { BOOK_RARITY_MUL } from "../data/skills";
+import { STATUS_DEFS } from "../systems/status";
+
+// キャンバス描画用の画像プリロードキャッシュ（EventSprite.jsxと同じ方式）
+const imageCache = {};
+function getCachedImage(src) {
+  if (!src) return null;
+  if (!imageCache[src]) {
+    const img = new Image();
+    img.src = src;
+    imageCache[src] = img;
+  }
+  return imageCache[src];
+}
 
 const TURN_DURATION = 2200;
 // レアリティが上がるほどエフェクトを大きく・激しく（common=1.0 〜 origin=2.4）
@@ -165,34 +178,32 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
           const isEnemy = turn.actor === "player";
           const tx = isEnemy ? mx : px;
           const ty = isEnemy ? my : py;
-          const STATUS_COLOR = { poison:"#a78bfa", burn:"#ef4444", paralyze:"#fbbf24", freeze:"#38bdf8" };
-          const STATUS_ICON = { poison:"☠", burn:"🔥", paralyze:"⚡", freeze:"❄" };
+          const def = STATUS_DEFS[turn.statusType];
           s.effects.push({
             x:tx, y:ty-70, vx:0, vy:-1.2,
             life:800, maxLife:800, alpha:1,
-            text:`${STATUS_ICON[turn.statusType]||""}${turn.dmg}`,
-            color:STATUS_COLOR[turn.statusType]||"#a0a0a0",
-            type:"number",
+            text:`${turn.dmg}`, icon:def?.icon, image:def?.image,
+            color:def?.color||"#a0a0a0",
+            type:"statusNumber",
           });
 
         } else if (turn.type === "status") {
-          const STATUS_COLOR = { poison:"#a78bfa", burn:"#ef4444", paralyze:"#fbbf24", freeze:"#38bdf8", stun:"#e8e0d0" };
-          const STATUS_ICON = { poison:"☠", burn:"🔥", paralyze:"⚡", freeze:"❄", stun:"💫" };
+          const def = STATUS_DEFS[turn.statusType];
           const tx = turn.target >= 0 ? mx : px;
           const ty = turn.target >= 0 ? my : py;
           s.effects.push({
             x:tx, y:ty-90, vx:0, vy:-0.6,
             life:1000, maxLife:1000, alpha:1,
-            text:STATUS_ICON[turn.statusType]||"?",
-            color:STATUS_COLOR[turn.statusType]||"#a0a0a0",
-            type:"skillname",
+            icon:def?.icon||"?", image:def?.image,
+            color:def?.color||"#a0a0a0",
+            type:"statusIcon",
           });
           // 状態異常の輪
           s.effects.push({
             x:tx, y:ty-40, vx:0, vy:0,
             life:600, maxLife:600, alpha:1,
             radius:0, maxRadius:45,
-            color:STATUS_COLOR[turn.statusType]||"#a0a0a0",
+            color:def?.color||"#a0a0a0",
             type:"shockwave",
           });
         }
@@ -234,6 +245,33 @@ export default function BattleEffect({ isActive, turns, onComplete, onPlayerHpUp
           ctx.font = `bold ${H*0.026*sc}px monospace`; ctx.textAlign = "center";
           ctx.fillStyle = e.color; ctx.shadowColor = e.color; ctx.shadowBlur = 10 * sc;
           ctx.fillText(e.text, e.x, e.y);
+        } else if (e.type === "statusIcon") {
+          const img = e.image ? getCachedImage(e.image) : null;
+          if (img && img.complete && img.naturalWidth > 0) {
+            const drawW = 30, drawH = drawW * (img.naturalHeight / img.naturalWidth);
+            ctx.shadowColor = e.color; ctx.shadowBlur = 8;
+            ctx.drawImage(img, e.x - drawW / 2, e.y - drawH / 2, drawW, drawH);
+          } else {
+            ctx.font = `bold ${H*0.026}px monospace`; ctx.textAlign = "center";
+            ctx.fillStyle = e.color; ctx.shadowColor = e.color; ctx.shadowBlur = 10;
+            ctx.fillText(e.icon, e.x, e.y);
+          }
+        } else if (e.type === "statusNumber") {
+          const img = e.image ? getCachedImage(e.image) : null;
+          const fontSize = H * 0.035;
+          ctx.font = `bold ${fontSize}px monospace`;
+          ctx.fillStyle = e.color; ctx.shadowColor = e.color; ctx.shadowBlur = 8;
+          if (img && img.complete && img.naturalWidth > 0) {
+            const iconSize = fontSize;
+            const textW = ctx.measureText(e.text).width;
+            const totalW = iconSize + 4 + textW;
+            ctx.drawImage(img, e.x - totalW / 2, e.y - iconSize * 0.78, iconSize, iconSize);
+            ctx.textAlign = "left";
+            ctx.fillText(e.text, e.x - totalW / 2 + iconSize + 4, e.y);
+          } else {
+            ctx.textAlign = "center";
+            ctx.fillText(`${e.icon||""}${e.text}`, e.x, e.y);
+          }
         }
         ctx.restore();
       });

@@ -55,7 +55,7 @@ export default function QuestTab() {
     const rewardChips = [
       { text:`${quest.reward.gold}G`, color:"#fbbf24" },
       { text:`${quest.reward.exp}EXP`, color:"#86efac" },
-      ...(chestType ? [{ text:`${chestType.icon}${chestType.label}`, color:chestType.color }] : []),
+      ...(chestType ? [{ text:chestType.label, image:chestType.image, color:chestType.color }] : []),
     ];
 
     return (
@@ -71,7 +71,9 @@ export default function QuestTab() {
         <img src="/assets/images/quest-banner.png" alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 30%", display:"block" }} />
         <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(180deg, rgba(8,8,16,0.15) 0%, rgba(8,8,16,0.55) 60%, #080810 100%)" }} />
         <div style={{ position:"absolute", left:12, right:12, bottom:6 }}>
-          <div style={{ fontSize:10, color:"#fbbf24", letterSpacing:2 }}>🎯 QUEST</div>
+          <div style={{ fontSize:10, color:"#fbbf24", letterSpacing:2, display:"flex", alignItems:"center", gap:5 }}>
+            <img src="/assets/images/hud_quest.png" alt="" style={{ width:12, height:12, objectFit:"contain" }} /> QUEST
+          </div>
         </div>
       </div>
 

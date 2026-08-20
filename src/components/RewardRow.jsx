@@ -16,7 +16,12 @@ export default function RewardRow({ label, desc, progress, target, claimed, done
       </div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div style={{ display:"flex", gap:8, fontSize:10 }}>
-          {rewardChips.map((c, i) => <span key={i} style={{ color:c.color }}>{c.text}</span>)}
+          {rewardChips.map((c, i) => (
+            <span key={i} style={{ color:c.color, display:"inline-flex", alignItems:"center", gap:3 }}>
+              {c.image && <img src={c.image} alt="" style={{ width:12, height:12, objectFit:"contain" }} />}
+              {c.text}
+            </span>
+          ))}
         </div>
         {claimed ? (
           <span style={{ fontSize:9, color:DIM }}>受取済み</span>
