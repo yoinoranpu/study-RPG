@@ -327,9 +327,9 @@ export default function ForgeTab() {
 
       <div style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", height:"100%" }}>
         {/* ステージ：鍛冶屋(大)＋吹き出し */}
-        <div style={{ flexShrink:0, display:"flex", alignItems:"flex-end", padding:"14px 10px 0" }}>
+        <div style={{ flexShrink:0, display:"flex", alignItems:"flex-start", padding:"14px 10px 0" }}>
           <div style={{
-            width:168, height:208, flexShrink:0, marginBottom:-2,
+            width:168, height:208, flexShrink:0,
             backgroundImage:`url("/assets/images/blacksmith.png")`,
             backgroundSize:"cover", backgroundPosition:"center 20%", backgroundRepeat:"no-repeat",
             WebkitMaskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
@@ -342,11 +342,40 @@ export default function ForgeTab() {
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                     <SynthBox icon={upgradeItem.icon} image={upgradeItem.image} tint={upgradeItem.tint} color={RARITY_COLOR[upgradeItem.rarity]||"#888"} empty={false} size={40} onClick={()=>setSel(null)} />
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:"#e8d8c0" }}>{upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span></div>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#e8d8c0" }}>{upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span> <span style={{ fontSize:9, color:RARITY_COLOR[upgradeItem.rarity]||"#888" }}>{RARITY_LABEL[upgradeItem.rarity]}</span></div>
                       <div style={{ fontSize:10, color:DIM, marginTop:1 }}>強化コスト <span style={{ color:"#fbbf24", fontWeight:700 }}>{cost}G</span></div>
                     </div>
                   </div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8 }}>
+
+                  {/* 現在のステータス */}
+                  <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:8 }}>
+                    {Object.entries(getItemStats(upgradeItem)).filter(([,v])=>v>0).map(([k,v])=>(
+                      <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"2px 6px", borderRadius:3 }}>{k.toUpperCase()} {v}</span>
+                    ))}
+                  </div>
+
+                  {/* 固有能力・ランダム能力 */}
+                  {upgradeItem.innate && upgradeItem.innate !== "none" && INNATE[upgradeItem.innate] && (
+                    <div style={{ marginTop:6 }}>
+                      <span style={{ fontSize:10, color:"#fb923c" }}>◆ {INNATE[upgradeItem.innate].label}</span>
+                      <span style={{ fontSize:9, color:DIM, marginLeft:6 }}>{INNATE[upgradeItem.innate].desc}</span>
+                    </div>
+                  )}
+                  {(upgradeItem.abilities||[]).map((ab,i)=>(
+                    <div key={i} style={{ fontSize:10, color:"#a78bfa", marginTop:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
+                  ))}
+
+                  {/* 節目ボーナス */}
+                  <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:6 }}>
+                    {Object.entries(MILESTONE[upgradeItem.type]||{}).map(([lv,b])=>(
+                      <span key={lv} style={{ fontSize:9, color:upgradeItem.upgradeLevel>=(+lv)?"#fbbf24":FAINT, background:"#080810", padding:"2px 6px", borderRadius:3 }}>
+                        +{lv} {b.label}{upgradeItem.upgradeLevel>=(+lv)&&" ✓"}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* 強化アクション */}
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8, paddingTop:8, borderTop:"1px solid rgba(251,191,36,0.2)" }}>
                     {matOpts.map(mo => {
                       const have = materials?.[mo.mat] || 0;
                       const can = have >= 1 && gold >= cost;
@@ -407,47 +436,9 @@ export default function ForgeTab() {
 
         <div style={{ flex:1, overflowY:"auto", padding:10, background:"linear-gradient(rgba(8,5,2,0.55),rgba(8,5,2,0.55)), url(/assets/images/forge_workshop_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
 
-        {/* 強化タブ */}
+        {/* 強化タブ：詳細・強化アクションはすべて上の吹き出しに集約(合成/スキル書タブと統一) */}
         {tab === "upgrade" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {upgradeItem && (
-              <div style={{ position:"sticky", top:-10, zIndex:2, background:"#080810"}}>
-              <div className="rpg-panel" style={{ borderRadius:6, padding:12 }}>
-                <div style={{ fontSize:10, color:RARITY_COLOR[upgradeItem.rarity]||"#888", letterSpacing:1, marginBottom:8 }}>{RARITY_LABEL[upgradeItem.rarity]}（強化は上の吹き出しから行えます）</div>
-
-                {/* 現在のステータス */}
-                <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
-                  {Object.entries(getItemStats(upgradeItem)).filter(([,v])=>v>0).map(([k,v])=>(
-                    <span key={k} style={{ fontSize:10, color:"#86efac", background:"#080810", padding:"2px 6px", borderRadius:3 }}>{k.toUpperCase()} {v}</span>
-                  ))}
-                </div>
-
-                {/* 固有能力 */}
-                {upgradeItem.innate && upgradeItem.innate !== "none" && INNATE[upgradeItem.innate] && (
-                  <div style={{ marginBottom:6 }}>
-                    <div style={{ fontSize:10, color:"#fb923c" }}>◆ {INNATE[upgradeItem.innate].label}</div>
-                    <div style={{ fontSize:9, color:DIM }}>{INNATE[upgradeItem.innate].desc}</div>
-                  </div>
-                )}
-
-                {/* ランダム能力 */}
-                {(upgradeItem.abilities||[]).map((ab,i)=>(
-                  <div key={i} style={{ fontSize:10, color:"#a78bfa", marginBottom:2 }}>✦ {ab.label}{ab.value}{ab.suffix}</div>
-                ))}
-
-                {/* 節目ボーナス */}
-                <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10, padding:"6px 8px", background:"#080810", borderRadius:4 }}>
-                  {Object.entries(MILESTONE[upgradeItem.type]||{}).map(([lv,b])=>(
-                    <span key={lv} style={{ fontSize:10, color:upgradeItem.upgradeLevel>=(+lv)?"#fbbf24":FAINT }}>
-                      +{lv} {b.label}{upgradeItem.upgradeLevel>=(+lv)&&" ✓"}
-                    </span>
-                  ))}
-                </div>
-
-              </div>
-              </div>
-            )}
-
             <ItemPicker
               items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
               selectedUid={sel}
