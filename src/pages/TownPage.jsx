@@ -110,24 +110,6 @@ export default function TownPage({ onEnterDungeon }) {
         })}
       </div>
 
-      {/* ホーム用の学習時間ステータス：スクロール領域の外(固定)に置くことで、
-          詰め所シーンの縦幅を圧迫せずスクロール不要を実現する。Lv/Gはヘッダーに既出のため重複させない */}
-      {tab === "home" && subTab === "home" && (
-        <div style={{ flexShrink:0, display:"flex", alignItems:"center", justifyContent:"space-around", padding:"5px 10px", background:"linear-gradient(180deg,#140e08,#0d0905)", borderBottom:"1px solid rgba(201,150,61,0.15)" }}>
-          {[
-            { label:"今日", val:`${player.studyMinutesToday||0}分`, color:"#86efac" },
-            { label:"今週", val:`${player.studyMinutesWeek||0}分`,  color:"#60a5fa" },
-            { label:"累計", val:`${((player.studyMinutesTotal||0)/60).toFixed(1)}h`, color:"#a78bfa" },
-            { label:"通算深度", val:getGlobalUnlockDepth(player.dungeons), color:"#fb923c" },
-          ].map(({label,val,color})=>(
-            <div key={label} style={{ textAlign:"center" }}>
-              <div style={{ fontSize:9, color:DIM }}>{label}</div>
-              <div style={{ fontSize:11, color, fontWeight:700 }}>{val}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* コンテンツ */}
       <div style={{ flex:1, overflowY:"auto", padding: ["character","shop","forge"].includes(tab) ? 0 : 14 }}>
 
@@ -144,7 +126,38 @@ export default function TownPage({ onEnterDungeon }) {
               }} />
             </div>
 
-            <div style={{ position:"relative", zIndex:1, padding:isMobile?"100px 10px 10px":"95px 14px 10px", display:"flex", flexDirection:"column", gap:isMobile?6:10 }}>
+            <div style={{ position:"relative", zIndex:1, padding:isMobile?"100px 10px 10px":"150px 14px 14px", display:"flex", flexDirection:"column", gap:isMobile?6:10 }}>
+            <div className="rpg-panel" style={{ padding:14 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+                <span style={{ fontSize:28 }}>🧙</span>
+                <div style={{ flex:1 }}>
+                  <div className="rpg-heading" style={{ fontSize:14, color:"#e8e0d0" }}>Lv {lv}</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3 }}>
+                    <div style={{ flex:1, height:5, background:"#0a1a0a", borderRadius:3, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${lvPct*100}%`, background:"#4ade80", borderRadius:3 }} />
+                    </div>
+                    <span style={{ fontSize:10, color:DIM }}>{player.totalExp - used}/{need}</span>
+                  </div>
+                </div>
+                <div style={{ textAlign:"right" }}>
+                  <div style={{ fontSize:14, color:"#fbbf24", fontWeight:700 }}>G {player.gold.toLocaleString()}</div>
+                  <div style={{ fontSize:10, color:DIM, marginTop:2 }}>通算深度{getGlobalUnlockDepth(player.dungeons)}</div>
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                {[
+                  { label:"今日", val:`${player.studyMinutesToday||0}分`, color:"#86efac" },
+                  { label:"今週", val:`${player.studyMinutesWeek||0}分`,  color:"#60a5fa" },
+                  { label:"累計", val:`${((player.studyMinutesTotal||0)/60).toFixed(1)}h`, color:"#a78bfa" },
+                ].map(({label,val,color})=>(
+                  <div key={label} style={{ flex:1, background:"#080810", borderRadius:4, padding:"6px 8px", textAlign:"center" }}>
+                    <div style={{ fontSize:10, color:DIM, marginBottom:2 }}>{label}</div>
+                    <div style={{ fontSize:11, color, fontWeight:700 }}>{val}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {Object.keys(player.materials||{}).length > 0 && (
               <div style={{ background:"#0d0d1a", border:"1px solid #3a3a55", borderRadius:8, padding:10 }}>
                 <div style={{ fontSize:10, color:"#fb923c", marginBottom:6, letterSpacing:2 }}>所持素材</div>

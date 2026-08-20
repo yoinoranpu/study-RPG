@@ -76,13 +76,13 @@ function ItemPicker({ items, selectedUid, matUid, onSelect, getRarity, getColor,
 }
 
 // ─── 合成プレビュー共通部品：⬜+⬜=>⬜ を吹き出し内にコンパクト表示 ───
-function SynthBox({ icon, image, color, empty, size = 44, onClick }) {
+function SynthBox({ icon, image, tint, color, empty, size = 44, onClick }) {
   return (
     <div onClick={!empty ? onClick : undefined} style={{ width:size, height:size, position:"relative", flexShrink:0, cursor:!empty&&onClick?"pointer":"default" }}>
       {!empty && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:color, opacity:0.45, filter:"blur(6px)" }} />}
       <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:empty?0.5:1 }} />
       <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:size*0.42 }}>
-        {!empty && (image ? <img src={image} alt="" style={{ width:"100%", height:"100%", objectFit:"contain" }} /> : icon)}
+        {!empty && (image ? <img src={image} alt="" style={{ width:"100%", height:"100%", objectFit:"contain", filter:tint||"none" }} /> : icon)}
       </div>
       {!empty && onClick && <div style={{ position:"absolute", top:-3, right:-3, width:14, height:14, borderRadius:"50%", background:"#1a0a0a", border:"1px solid #f87171", color:"#f87171", fontSize:9, lineHeight:"12px", textAlign:"center", zIndex:1 }}>×</div>}
     </div>
@@ -90,7 +90,7 @@ function SynthBox({ icon, image, color, empty, size = 44, onClick }) {
 }
 
 // 店主の吹き出し内に収めるコンパクト版。外枠(.rpg-panel)は吹き出し自体が兼ねるので持たない。
-function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getImage, getName, getColor, getRarityLabel, hint, onClickBase, onClickMat }) {
+function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getImage, getTint, getName, getColor, getRarityLabel, hint, onClickBase, onClickMat }) {
   const baseColor = base ? getColor(base) : "#3a3a55";
   const matColor  = mat  ? getColor(mat)  : "#3a3a55";
   const nextColor = next ? getColor({ rarity:next }) : "#3a3a55";
@@ -98,11 +98,11 @@ function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getI
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} color={baseColor} empty={!base} onClick={onClickBase} />
+        <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} tint={base && getTint?.(base)} color={baseColor} empty={!base} onClick={onClickBase} />
         <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>+</span>
-        <SynthBox icon={mat && getIcon(mat)} image={mat && getImage?.(mat)} color={matColor} empty={!mat} onClick={onClickMat} />
+        <SynthBox icon={mat && getIcon(mat)} image={mat && getImage?.(mat)} tint={mat && getTint?.(mat)} color={matColor} empty={!mat} onClick={onClickMat} />
         <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>⇒</span>
-        <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} color={nextColor} empty={!ready} />
+        <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} tint={base && getTint?.(base)} color={nextColor} empty={!ready} />
         <div style={{ flex:1, minWidth:0, marginLeft:4 }}>
           <div style={{ fontSize:11, color:"#e8d8c0" }}>
             {base
@@ -339,13 +339,7 @@ export default function ForgeTab() {
             <div className="rpg-panel" style={{ borderRadius:6, padding:"12px 14px" }}>
               {tab === "upgrade" && upgradeItem ? (
                 <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                  <div style={{ width:40, height:40, position:"relative", flexShrink:0 }}>
-                    <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:RARITY_COLOR[upgradeItem.rarity]||"#888", opacity:0.45, filter:"blur(5px)" }} />
-                    <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
-                    <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                      {upgradeItem.image ? <img src={upgradeItem.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:upgradeItem.tint||"none" }} /> : <span style={{ fontSize:16 }}>{upgradeItem.icon}</span>}
-                    </div>
-                  </div>
+                  <SynthBox icon={upgradeItem.icon} image={upgradeItem.image} tint={upgradeItem.tint} color={RARITY_COLOR[upgradeItem.rarity]||"#888"} empty={false} size={40} onClick={()=>setSel(null)} />
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:12, fontWeight:700, color:"#e8d8c0" }}>{upgradeItem.name} <span style={{ color:"#fbbf24" }}>+{upgradeItem.upgradeLevel}</span></div>
                     <div style={{ fontSize:10, color:DIM, marginTop:1 }}>強化コスト <span style={{ color:"#fbbf24", fontWeight:700 }}>{cost}G</span></div>
@@ -355,7 +349,7 @@ export default function ForgeTab() {
                 <SynthPreview
                   base={baseItem} mat={matItem} next={next}
                   cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
-                  getIcon={it=>it.icon} getImage={it=>it.image} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
+                  getIcon={it=>it.icon} getImage={it=>it.image} getTint={it=>it.tint} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
                   onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
                   hint="合成元の装備をタップしてください"
                 />
