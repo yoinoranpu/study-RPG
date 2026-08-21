@@ -10,17 +10,19 @@ const CHEST_EVENT_DESIGNS = Object.fromEntries(
   ])
 );
 
-// 罠/回復/NPC/妖精/精霊は宝箱と違い「その場に佇む単体イラスト」を等身大に近いサイズで
-// 表示したいため、バッジ版とは別に大きい一枚絵(event_scene_*)を用意し、sizeで拡大して描画する。
-// float:trueのものだけ上下にふわふわ浮かせる(妖精/精霊)。罠/回復/NPCは床に設置・直立の
-// 表現として浮遊させない。colorAltがあるものは2色の間でグローの色をゆっくり変化させる
+// 罠/回復/NPC/妖精/精霊は宝箱と違い「その場に佇む単体イラスト」をモンスターの立ち絵と
+// 同程度の大きさで表示したいため、バッジ版とは別に大きい一枚絵(event_scene_*)を用意する。
+// sizeはMonsterSprite.jsxのfitScaleと同じ考え方の倍率(k)：長辺がH*0.18*kに収まるようスケールする
+// (H*0.18はモンスター側の基準サイズと合わせてある)。float:trueのものだけ上下にふわふわ浮かせる
+// (妖精/精霊)。罠/回復/NPCは床に設置・直立の表現として浮遊させない。colorAltがあるものは
+// 2色の間でグローの色をゆっくり変化させる
 const EVENT_DESIGNS = {
   ...CHEST_EVENT_DESIGNS,
-  trap:      { icon:"⚠",  color:"#fb923c", label:"罠！",         kind:"trap",    image:"/assets/images/event_scene_trap.png",  size:140, float:false },
-  heal:      { icon:"💧", color:"#38bdf8", label:"回復の泉",     kind:"ripple",  image:"/assets/images/event_scene_heal.png",  size:150, float:false },
-  npc:       { icon:"🧝", color:"#34d399", label:"冒険者に遭遇", kind:"npc",     image:"/assets/images/event_scene_npc.png",   size:130, float:false },
-  fairy:     { icon:"🧚", color:"#4ade80", label:"妖精の加護",   kind:"sparkle", image:"/assets/images/event_scene_fairy.png", size:130, float:true, colorAlt:"#fde047" },
-  spirit:    { icon:"👻", color:"#a78bfa", label:"精霊の祝福",   kind:"sparkle", image:"/assets/images/event_scene_spirit.png",size:150, float:true, colorAlt:"#60a5fa" },
+  trap:      { icon:"⚠",  color:"#fb923c", label:"罠！",         kind:"trap",    image:"/assets/images/event_scene_trap.png",  size:1.4, float:false },
+  heal:      { icon:"💧", color:"#38bdf8", label:"回復の泉",     kind:"ripple",  image:"/assets/images/event_scene_heal.png",  size:1.5, float:false },
+  npc:       { icon:"🧝", color:"#34d399", label:"冒険者に遭遇", kind:"npc",     image:"/assets/images/event_scene_npc.png",   size:1.6, float:false },
+  fairy:     { icon:"🧚", color:"#4ade80", label:"妖精の加護",   kind:"sparkle", image:"/assets/images/event_scene_fairy.png", size:1.3, float:true, colorAlt:"#fde047" },
+  spirit:    { icon:"👻", color:"#a78bfa", label:"精霊の祝福",   kind:"sparkle", image:"/assets/images/event_scene_spirit.png",size:1.5, float:true, colorAlt:"#60a5fa" },
 };
 
 const ACTION_DURATION = { chest:900, trap:500, ripple:99999, npc:700, sparkle:99999 };
@@ -104,26 +106,41 @@ function drawParticle(ctx, p) {
   ctx.restore();
 }
 
-function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
+function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame, H) {
   // float:trueのもの(妖精/精霊)だけ上下にふわふわ浮かせる。罠/回復/NPCは床に設置・直立の表現
   const bounce = design.float ? Math.sin(frame * 0.05) * 6 : 0;
   const popScale = phase === "action" && design.kind === "chest"
     ? 1 + Math.max(0, 1 - phaseTime / ACTION_DURATION.chest) * 0.35
     : 1 + Math.sin(frame * 0.08) * 0.05;
 
-  const cx = x + bounce * 0;
+  // yは呼び出し側で「バッジ(宝箱)=中心の高さ／シーン立ち絵=接地ライン(足元)の高さ」を渡す
+  const cx = x;
   const cy = y + bounce;
 
-  const baseSize = design.size || 66;
-  // colorAltがあるものはグロー/光の粒子の色を2色の間でゆっくり変化させる(妖精/精霊)
   const shimmerT = frame * 0.02;
   const activeColor = design.colorAlt ? shimmerColor(design.color, design.colorAlt, shimmerT) : design.color;
+
+  const img = design.image ? getCachedImage(design.image) : null;
+  const hasNaturalSize = img && img.complete && img.naturalWidth > 0;
+
+  // サイズ計算：バッジ(宝箱)は従来通り固定px。シーン立ち絵(罠/回復/NPC/妖精/精霊)は
+  // モンスター立ち絵と同じ考え方(長辺がH*0.18*sizeKに収まる)でスケールする
+  let drawW, drawH;
+  if (design.size && hasNaturalSize) {
+    const longSide = Math.max(img.naturalWidth, img.naturalHeight);
+    const scale = (H * 0.18 * design.size) / longSide;
+    drawW = img.naturalWidth * scale;
+    drawH = img.naturalHeight * scale;
+  } else {
+    drawW = design.size || 66;
+    drawH = hasNaturalSize ? drawW * (img.naturalHeight / img.naturalWidth) : drawW;
+  }
 
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(popScale, popScale);
 
-  const glowR = baseSize * 0.8;
+  const glowR = design.size ? Math.max(drawW, drawH) * 0.42 : drawW * 0.8;
   const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, glowR);
   glow.addColorStop(0, design.colorAlt ? shimmerColor(design.color, design.colorAlt, shimmerT, 0.27) : design.color + "44");
   glow.addColorStop(1, "transparent");
@@ -137,16 +154,18 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
       ctx.strokeStyle = design.color;
       ctx.globalAlpha = 1 - rt;
       ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.ellipse(0, 30, 12 + rt * 46, 4 + rt * 14, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, -drawH * 0.05, drawW * (0.1 + rt * 0.35), drawW * (0.03 + rt * 0.1), 0, 0, Math.PI * 2); ctx.stroke();
     }
     ctx.globalAlpha = 1;
   }
 
   if (design.kind === "sparkle") {
+    const orbitY = -drawH * 0.45;
+    const orbitR = drawW * 0.5;
     for (let i = 0; i < 5; i++) {
       const ang = frame * 0.04 + (i / 5) * Math.PI * 2;
-      const r = 34 + Math.sin(frame * 0.06 + i) * 6;
-      const sx = Math.cos(ang) * r, sy = Math.sin(ang) * r * 0.6;
+      const r = orbitR + Math.sin(frame * 0.06 + i) * orbitR * 0.15;
+      const sx = Math.cos(ang) * r, sy = orbitY + Math.sin(ang) * r * 0.5;
       ctx.fillStyle = activeColor;
       ctx.shadowColor = activeColor; ctx.shadowBlur = 6;
       ctx.beginPath(); ctx.arc(sx, sy, 2.5, 0, Math.PI * 2); ctx.fill();
@@ -154,13 +173,9 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
   }
 
   if (phase === "trap-shake") ctx.translate((Math.random() - 0.5) * 6, 0);
-  const img = design.image ? getCachedImage(design.image) : null;
-  let drawH = baseSize;
-  if (img && img.complete && img.naturalWidth > 0) {
-    const drawW = baseSize;
-    drawH = drawW * (img.naturalHeight / img.naturalWidth);
-    // 縦長の立ち絵は台座(cy)に足元が来るよう下寄せ、バッジ級の小さいアイコンは中央寄せのまま
-    const offsetY = design.size ? -drawH * 0.85 : -drawH / 2;
+  if (hasNaturalSize) {
+    // シーン立ち絵は接地ライン(0)に足元が来るよう上方向に描画、バッジ級の小さいアイコンは中央寄せのまま
+    const offsetY = design.size ? -drawH : -drawH / 2;
     ctx.drawImage(img, -drawW / 2, offsetY, drawW, drawH);
   } else {
     ctx.font = "48px serif";
@@ -173,7 +188,7 @@ function drawKindEffect(ctx, x, y, design, phase, phaseTime, frame) {
   ctx.font = "bold 13px monospace";
   ctx.textAlign = "center";
   ctx.fillStyle = design.color;
-  ctx.fillText(design.label, cx, cy - (design.size ? drawH * 0.9 : 44));
+  ctx.fillText(design.label, cx, cy - (design.size ? drawH * 1.05 : 44));
 }
 
 export default function EventSprite({ eventType, isVisible, onReach }) {
@@ -220,6 +235,9 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
         return;
       }
       const design = s.design;
+      // シーン立ち絵(size指定あり)はモンスターの足元の高さに合わせて下寄りに、
+      // バッジ(宝箱)は従来通りやや上のセンター位置に表示する
+      const anchorY = design.size ? H * 0.70 : H * 0.55;
 
       if (s.x === null) {
         s.x = -80;
@@ -235,7 +253,7 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
           s.phase = "action";
           s.phaseTime = 0;
           if (!s.reached) { s.reached = true; onReach && onReach(); }
-          const cx = s.x, cy = H * 0.55;
+          const cx = s.x, cy = anchorY;
           if (design.kind === "chest") spawnBurst(s.particles, cx, cy, design.color, 14, "spark");
           if (design.kind === "trap")  spawnSpikes(s.particles, cx, cy + 30, design.color, 7);
         }
@@ -245,7 +263,7 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
         if (s.x > W + 100) { s.phase = "gone"; }
       } else {
         s.phaseTime += dt;
-        const cx = s.x, cy = H * 0.55;
+        const cx = s.x, cy = anchorY;
         if (design.kind === "ripple" && s.phaseTime > s.nextBurst) {
           s.nextBurst = s.phaseTime + 900;
           s.particles.push({ type:"bubble", x:cx + (Math.random()-0.5)*20, y:cy + 20, vx:0, vy:-0.4, life:1200, maxLife:1200, color:design.color });
@@ -265,7 +283,7 @@ export default function EventSprite({ eventType, isVisible, onReach }) {
       });
 
       const drawPhase = design.kind === "trap" && s.phase === "action" && s.phaseTime < ACTION_DURATION.trap ? "trap-shake" : s.phase;
-      drawKindEffect(ctx, s.x, H * 0.55, design, drawPhase, s.phaseTime, s.animFrame);
+      drawKindEffect(ctx, s.x, anchorY, design, drawPhase, s.phaseTime, s.animFrame, H);
 
       frameRef.current = requestAnimationFrame(loop);
     };
