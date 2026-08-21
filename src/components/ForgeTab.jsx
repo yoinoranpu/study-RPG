@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import usePlayerStore from "../store/usePlayerStore";
 import { RARITY_COLOR, RARITY_LABEL, getItemStats, INNATE, SYNTHESIS_COST, getAbilitySlots } from "../data/items";
 import { SKILL_BOOKS, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL, BOOK_SYNTHESIS_COST, nextBookRarity, makeBook, mergeBookDex } from "../data/skills";
 import { makeInitialStats } from "../systems/achievements";
 import useFlashMessage from "../hooks/useFlashMessage";
+import useViewport from "../hooks/useViewport";
 
 // 強化大成功：レベルに関わらず強化のたびに一定確率でボーナス能力が追加でつく(このタイプの装備のボーナス候補からランダムに1つ)
 const CRIT_UPGRADE_CHANCE = 0.15;
@@ -92,38 +93,41 @@ function SynthBox({ icon, image, tint, color, empty, size = 44, onClick }) {
 }
 
 // 店主の吹き出し内に収めるコンパクト版。外枠(.rpg-panel)は吹き出し自体が兼ねるので持たない。
-function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getImage, getTint, getName, getColor, getRarityLabel, hint, onClickBase, onClickMat }) {
+// モバイルは横幅が狭く、アイテム枠3つ+テキストを1行に収めるとテキスト側がほぼ0幅まで
+// 潰れ、日本語が1文字ずつ改行される致命的なバグになるため、isMobileの時は
+// 「アイテム枠の行」と「テキスト」を上下に分けて、テキストが横幅いっぱい使えるようにする
+function SynthPreview({ base, mat, next, cost, canAfford, onSynth, getIcon, getImage, getTint, getName, getColor, getRarityLabel, hint, onClickBase, onClickMat, isMobile }) {
   const baseColor = base ? getColor(base) : "#3a3a55";
   const matColor  = mat  ? getColor(mat)  : "#3a3a55";
   const nextColor = next ? getColor({ rarity:next }) : "#3a3a55";
   const ready = base && mat && next;
   return (
-    <div>
+    <div style={{ display:"flex", flexDirection:isMobile?"column":"row", alignItems:isMobile?"stretch":"center", gap:8 }}>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
         <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} tint={base && getTint?.(base)} color={baseColor} empty={!base} onClick={onClickBase} />
         <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>+</span>
         <SynthBox icon={mat && getIcon(mat)} image={mat && getImage?.(mat)} tint={mat && getTint?.(mat)} color={matColor} empty={!mat} onClick={onClickMat} />
         <span style={{ fontSize:13, color:DIM, fontWeight:700 }}>⇒</span>
         <SynthBox icon={base && getIcon(base)} image={base && getImage?.(base)} tint={base && getTint?.(base)} color={nextColor} empty={!ready} />
-        <div style={{ flex:1, minWidth:0, marginLeft:4 }}>
-          <div style={{ fontSize:11, color:"#e8d8c0" }}>
-            {base
-              ? mat
-                ? next
-                  ? <span>{getName(base)} <span style={{ color:nextColor, fontWeight:700 }}>→ {getRarityLabel(next)}</span></span>
-                  : "これ以上合成できません（最大レアリティ）"
-                : "② 素材を選んでください"
-              : hint}
-          </div>
-          {ready && <div style={{ fontSize:10, color:"#fbbf24", marginTop:2 }}>コスト: {cost?.toLocaleString()}G</div>}
-        </div>
-        {ready && (
-          <button onClick={onSynth} disabled={!canAfford}
-            style={{ padding:"8px 14px", minHeight:"44px", background:"#0a001a", border:`1px solid ${nextColor}`, borderRadius:4, cursor:canAfford?"pointer":"default", color:canAfford?nextColor:FAINT, fontSize:11, fontFamily:"monospace", fontWeight:700, flexShrink:0 }}>
-            ✨ 合成
-          </button>
-        )}
       </div>
+      <div style={{ flex:1, minWidth:0, marginLeft:isMobile?0:4 }}>
+        <div style={{ fontSize:11, color:"#e8d8c0" }}>
+          {base
+            ? mat
+              ? next
+                ? <span>{getName(base)} <span style={{ color:nextColor, fontWeight:700 }}>→ {getRarityLabel(next)}</span></span>
+                : "これ以上合成できません（最大レアリティ）"
+              : "② 素材を選んでください"
+            : hint}
+        </div>
+        {ready && <div style={{ fontSize:10, color:"#fbbf24", marginTop:2 }}>コスト: {cost?.toLocaleString()}G</div>}
+      </div>
+      {ready && (
+        <button onClick={onSynth} disabled={!canAfford}
+          style={{ padding:"8px 14px", minHeight:"44px", background:"#0a001a", border:`1px solid ${nextColor}`, borderRadius:4, cursor:canAfford?"pointer":"default", color:canAfford?nextColor:FAINT, fontSize:11, fontFamily:"monospace", fontWeight:700, flexShrink:0, width:isMobile?"100%":undefined }}>
+          ✨ 合成
+        </button>
+      )}
     </div>
   );
 }
@@ -133,20 +137,8 @@ export default function ForgeTab() {
   const [sel, setSel] = useState(null);
   const [matSel, setMatSel] = useState(null);
   const [msg, flash] = useFlashMessage(3000);
-  const w = window.innerWidth;
-  const [isMobile, setIsMobile] = useState(w < 768);
-  const [isTablet, setIsTablet] = useState(w >= 768 && w < 1024);
+  const { isMobile, isTablet } = useViewport();
   const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex, stats } = usePlayerStore();
-
-  useEffect(() => {
-    const handleResize = () => {
-      const w = window.innerWidth;
-      setIsMobile(w < 768);
-      setIsTablet(w >= 768 && w < 1024);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const upgradeItem = itemBox.find(it => it.uid === sel);
   const matOpts = upgradeItem ? MAT_UP[upgradeItem.type] || [] : [];
@@ -335,14 +327,17 @@ export default function ForgeTab() {
         {/* ステージ：鍛冶屋(大)＋吹き出し */}
         <div style={{ flexShrink:0, display:"flex", alignItems:"flex-start", padding:"14px 10px 0" }}>
           <div style={{
-            width:168, height:208, flexShrink:0,
+            width:isMobile?96:168, height:isMobile?119:208, flexShrink:0,
             backgroundImage:`url("/assets/images/blacksmith.png")`,
             backgroundSize:"cover", backgroundPosition:"center 20%", backgroundRepeat:"no-repeat",
             WebkitMaskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
             maskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
           }} />
           <div style={{ position:"relative", flex:1, minWidth:0, marginLeft:2, marginBottom:16 }}>
-            <div className="rpg-panel" style={{ borderRadius:6, padding:"12px 14px" }}>
+            {/* モバイルは横幅が狭く、単語ごとに改行されて吹き出しの高さがアイテムごとに
+                大きくばらつくため、肖像を小さくして吹き出しの横幅を確保しつつ、
+                短い内容でも吹き出しが極端に小さくならないようminHeightを設定 */}
+            <div className="rpg-panel" style={{ borderRadius:6, padding:"12px 14px", minHeight:isMobile?119:undefined, display:"flex", flexDirection:"column", justifyContent:"center" }}>
               {tab === "upgrade" && upgradeItem ? (
                 <div>
                   {/* アイテムによって行数がバラつくと吹き出しの高さが毎回変わり、UIが動く違和感につながるため、
@@ -402,7 +397,7 @@ export default function ForgeTab() {
                   cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
                   getIcon={it=>it.icon} getImage={it=>it.image} getTint={it=>it.tint} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]??r}
                   onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
-                  hint="合成元の装備をタップしてください"
+                  hint="合成元の装備をタップしてください" isMobile={isMobile}
                 />
               ) : tab === "book" && bookItem ? (
                 <SynthPreview
@@ -410,7 +405,7 @@ export default function ForgeTab() {
                   cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
                   getIcon={b=>SKILL_BOOKS[b.id]?.icon} getImage={b=>SKILL_BOOKS[b.id]?.image} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]??r}
                   onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
-                  hint="合成元のスキル書をタップしてください"
+                  hint="合成元のスキル書をタップしてください" isMobile={isMobile}
                 />
               ) : (
                 <div style={{ fontSize:13, color:"#e8d8c0" }}>{bubbleText()}</div>
