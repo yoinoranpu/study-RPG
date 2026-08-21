@@ -433,7 +433,7 @@ export default function DungeonPage({ onBack }) {
 
     } else {
       const ev = rollNpcEvent();
-      addLog(`${ev.icon} ${ev.text}`, ev.color);
+      addLog(`${ev.icon} ${ev.text.replace(/\n/g, " ")}`, ev.color);
       const kind = ev.effect==="heal"?"heal":ev.effect==="buff"?"fairy":ev.effect==="enhance"?"spirit":"npc";
       const duration = ev.effect === "heal" ? 8000 : EVENT_POPUP_DURATION_LONG;
       if (ev.effect==="heal") {
@@ -988,7 +988,7 @@ export default function DungeonPage({ onBack }) {
           </div>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ fontSize:10, color:eventPopup.color, letterSpacing:1, marginBottom:2 }}>{eventPopup.label}</div>
-            <div style={{ fontSize:12, color:"#e8e0d0", lineHeight:1.4 }}>{eventPopup.text}</div>
+            <div style={{ fontSize:12, color:"#e8e0d0", lineHeight:1.4, whiteSpace:"pre-line" }}>{eventPopup.text}</div>
           </div>
         </div>
       )}
