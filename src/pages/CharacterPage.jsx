@@ -295,8 +295,12 @@ export default function CharacterPage() {
     dragStartRef.current = { x:e.clientX, y:e.clientY, payload };
   }
 
+  // height:"100%"だと親(TownPageのoverflowY:auto領域)の高さぴったりに固定され、overflow:"hidden"と
+  // 組み合わさることで中身が親の高さを超えたときに親のスクロールへ委譲されず内部で切り捨てられて
+  // しまう(モバイル幅でステータスプレートが完全に見えなくなるバグの原因)。minHeightにすることで
+  // 中身が親より高い時はその分だけ自然に伸び、親側のスクロールで正しく見えるようにする
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace", overflow:"hidden", position:"relative" }}>
+    <div style={{ display:"flex", flexDirection:"column", minHeight:"100%", fontFamily:"monospace", overflow:"hidden", position:"relative" }}>
 
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0, background:"linear-gradient(180deg, rgba(8,5,2,0.5), rgba(8,5,2,0.65)), url(/assets/images/tab_bar_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
         {[{id:"equip",img:"/assets/images/tab_icon_equip.png",label:"装備"},{id:"skill",img:"/assets/images/tab_icon_skill.png",label:"スキル"}].map(t=>{
@@ -318,7 +322,11 @@ export default function CharacterPage() {
 
       {tab === "equip" && (
         <>
-          <div style={{ position:"relative", flexShrink:0, height:charLayout.roomHeight, overflow:"hidden" }}>
+          {/* モバイル幅では装備スロット+ステータスプレートが横並びではなく縦積みになるため、
+              デスクトップ用の固定roomHeightのままだとステータスプレートがoverflow:hiddenで
+              完全に見切れて操作不能になっていた。縦積み時の実測必要高さ(約675px)に余裕を
+              持たせてモバイルだけ高さを拡張する */}
+          <div style={{ position:"relative", flexShrink:0, height:isMobile?Math.max(charLayout.roomHeight,720):charLayout.roomHeight, overflow:"hidden" }}>
             <img src="/assets/images/character_room.jpg" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:`center ${charLayout.roomPanY}%`, display:"block" }} />
             <div style={{ position:"absolute", inset:0, background:"rgba(10,6,3,0.4)" }} />
             <div className="rpg-heading" style={{ position:"absolute", top:8, left:12, fontSize:10, color:"#f0d9a0", letterSpacing:2, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>⚔ CHARACTER</div>
@@ -380,7 +388,7 @@ export default function CharacterPage() {
               </div>
 
               <div style={{ flex:1, display:"flex", justifyContent:"flex-end" }}>
-              <div style={{ width:isMobile?"auto":charLayout.statsPanelWidth, maxWidth:charLayout.statsPanelWidth+30, display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end" }}>
+              <div style={{ width:isMobile?"100%":charLayout.statsPanelWidth, maxWidth:charLayout.statsPanelWidth+30, display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end" }}>
                 {[
                   {label:"ATK",  jp:"攻撃", val:stats.atk,        color:"#f87171"},
                   {label:"MAG",  jp:"魔力", val:stats.mag,        color:"#a78bfa"},

@@ -400,7 +400,7 @@ export default function ForgeTab() {
                 <SynthPreview
                   base={baseItem} mat={matItem} next={next}
                   cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
-                  getIcon={it=>it.icon} getImage={it=>it.image} getTint={it=>it.tint} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]||r}
+                  getIcon={it=>it.icon} getImage={it=>it.image} getTint={it=>it.tint} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]??r}
                   onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
                   hint="合成元の装備をタップしてください"
                 />
@@ -408,7 +408,7 @@ export default function ForgeTab() {
                 <SynthPreview
                   base={bookItem} mat={bookMatItem} next={nextBookR}
                   cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
-                  getIcon={b=>SKILL_BOOKS[b.id]?.icon} getImage={b=>SKILL_BOOKS[b.id]?.image} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+                  getIcon={b=>SKILL_BOOKS[b.id]?.icon} getImage={b=>SKILL_BOOKS[b.id]?.image} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]??r}
                   onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
                   hint="合成元のスキル書をタップしてください"
                 />
@@ -445,7 +445,7 @@ export default function ForgeTab() {
               onSelect={(uid)=>setSel(prev=>prev===uid?null:uid)}
               getRarity={it=>it.rarity}
               getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
-              getRarityLabel={r=>RARITY_LABEL[r]||r}
+              getRarityLabel={r=>RARITY_LABEL[r]??r}
               getIcon={it=>it.icon}
               getName={it=>it.name}
               emptyText="強化できる装備がない"
@@ -485,7 +485,7 @@ export default function ForgeTab() {
               onSelect={pickSynth}
               getRarity={it=>it.rarity}
               getColor={it=>RARITY_COLOR[it.rarity]||"#888"}
-              getRarityLabel={r=>RARITY_LABEL[r]||r}
+              getRarityLabel={r=>RARITY_LABEL[r]??r}
               getIcon={it=>it.icon}
               getImage={it=>it.image}
               getName={it=>it.name}
@@ -509,7 +509,7 @@ export default function ForgeTab() {
               onSelect={pickBook}
               getRarity={b=>b.rarity}
               getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"}
-              getRarityLabel={r=>BOOK_RARITY_LABEL[r]||r}
+              getRarityLabel={r=>BOOK_RARITY_LABEL[r]??r}
               getIcon={b=>SKILL_BOOKS[b.id]?.icon}
               getImage={b=>SKILL_BOOKS[b.id]?.image}
               getName={b=>SKILL_BOOKS[b.id]?.name||""}
