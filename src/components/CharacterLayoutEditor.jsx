@@ -37,7 +37,14 @@ function getItemPos(layout, item) {
   return g?.[item.key] || { x:0, y:0 };
 }
 
-export default function CharacterLayoutEditor({ layout, onChangeField, onChangeItem, onReset, onClose }) {
+const VARIANT_META = {
+  default:   { varName:"CHARACTER_LAYOUT_DEFAULT",   label:"DEFAULT",   color:"#60a5fa" },
+  mobile:    { varName:"CHARACTER_LAYOUT_MOBILE",    label:"MOBILE(縦)", color:"#4ade80" },
+  landscape: { varName:"CHARACTER_LAYOUT_LANDSCAPE", label:"MOBILE(横)", color:"#fbbf24" },
+};
+
+export default function CharacterLayoutEditor({ layout, variant = "default", onChangeField, onChangeItem, onReset, onClose }) {
+  const meta = VARIANT_META[variant] || VARIANT_META.default;
   const [mode, setMode] = useState("global"); // "global" | "item"
   const [selGlobal, setSelGlobal] = useState(GLOBAL_FIELDS[0].path);
   const [selItemIdx, setSelItemIdx] = useState(0);
@@ -56,7 +63,7 @@ export default function CharacterLayoutEditor({ layout, onChangeField, onChangeI
   };
 
   const handleCopy = () => {
-    const text = `export const CHARACTER_LAYOUT_DEFAULT = ${JSON.stringify(layout, null, 2)};\n`;
+    const text = `export const ${meta.varName} = ${JSON.stringify(layout, null, 2)};\n`;
     navigator.clipboard?.writeText(text);
   };
 
@@ -64,7 +71,7 @@ export default function CharacterLayoutEditor({ layout, onChangeField, onChangeI
     <div style={{ position:"fixed", bottom:16, right:16, zIndex:300, fontFamily:"monospace", width:290, maxWidth:"calc(100vw - 32px)" }}>
       <div style={{ background:"rgba(13,13,21,0.96)", border:"1px solid #2a2a3a", borderRadius:10, padding:14, boxShadow:"0 8px 24px rgba(0,0,0,0.6)" }}>
         <div style={{ display:"flex", alignItems:"center", marginBottom:10 }}>
-          <div style={{ fontSize:11, fontWeight:900, color:"#a78bfa", letterSpacing:1, flex:1 }}>DEBUG: キャラ配置エディタ</div>
+          <div style={{ fontSize:11, fontWeight:900, color:"#a78bfa", letterSpacing:1, flex:1 }}>DEBUG: キャラ配置エディタ <span style={{ color:meta.color, fontSize:9 }}>({meta.label})</span></div>
           <button onClick={onClose} style={{ background:"transparent", border:"none", color:"#666", fontSize:18, cursor:"pointer" }}>×</button>
         </div>
 

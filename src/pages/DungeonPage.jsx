@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import usePlayerStore from "../store/usePlayerStore";
+import useViewport from "../hooks/useViewport";
 import { rollEventType, rollNpcEvent, rollChest } from "../systems/events";
 import { pickMonsters, getBossData, generateBoss, generateMonster, MONSTER_BASE } from "../systems/monsters";
 import { simulateBattle } from "../systems/battle";
@@ -118,8 +119,7 @@ export default function DungeonPage({ onBack }) {
   const dungeon = getDungeon(dungeonId);
   const dungeonState = (player.dungeons || makeInitialDungeons())[dungeonId] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
 
-  const w = window.innerWidth;
-  const [isMobile, setIsMobile] = useState(w < 768);
+  const { isMobile } = useViewport();
   const [rigEditorId, setRigEditorId] = useState(null);
   const [floatRigEditorId, setFloatRigEditorId] = useState(null);
 
@@ -184,15 +184,6 @@ export default function DungeonPage({ onBack }) {
   const luckBuffRef = useRef(0);   // % ボーナス（消耗品luck_up）
   const sessionScaleRef = useRef({ atk: 0, mag: 0 });
   const dungeonClearedRef = useRef(dungeonState.cleared || false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const w = window.innerWidth;
-      setIsMobile(w < 768);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   useEffect(() => { monsterVisibleRef.current = monsterVisible; }, [monsterVisible]);
   useEffect(() => { eventVisibleRef.current = eventVisible; }, [eventVisible]);

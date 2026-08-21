@@ -15,6 +15,7 @@ import { DUNGEONS, isDungeonUnlocked, getGlobalUnlockDepth } from "../systems/du
 import { resetQuestsIfNeeded, QUEST_DEFS } from "../systems/quests";
 import { ACHIEVEMENT_DEFS } from "../systems/achievements";
 import { GUILD_LAYOUT_DEFAULT } from "../data/guildLayout";
+import useViewport from "../hooks/useViewport";
 
 const DIM = "#7a7a9a";
 
@@ -26,9 +27,7 @@ export default function TownPage({ onEnterDungeon }) {
   const [stampingDungeonId, setStampingDungeonId] = useState(null);
   const [guildLayout, setGuildLayout] = useState(GUILD_LAYOUT_DEFAULT);
   const [showLayoutEditor, setShowLayoutEditor] = useState(false);
-  const w = window.innerWidth;
-  const [isMobile, setIsMobile] = useState(w < 768);
-  const [isTablet, setIsTablet] = useState(w >= 768 && w < 1024);
+  const { isMobile, isTablet } = useViewport();
   const player = usePlayerStore();
   const { updatePlayer } = usePlayerStore();
   const lv = expToLevel(player.totalExp);
@@ -46,16 +45,6 @@ export default function TownPage({ onEnterDungeon }) {
 
   const claimedAchievements = player.achievements?.claimed || {};
   const claimableAchievementCount = ACHIEVEMENT_DEFS.filter(a => a.get(player) >= a.target && !claimedAchievements[a.id]).length;
-
-  useEffect(() => {
-    const handleResize = () => {
-      const w = window.innerWidth;
-      setIsMobile(w < 768);
-      setIsTablet(w >= 768 && w < 1024);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   useEffect(() => {
     const { quests: resetQuests, dailyReset, weeklyReset } = resetQuestsIfNeeded(player.quests);
@@ -308,7 +297,7 @@ export default function TownPage({ onEnterDungeon }) {
             </div>
           </div>
         )}
-        {DEBUG && (
+        {DEBUG && tab === "home" && subTab === "home" && (
                 <button onClick={() => setSubTab("debug")} style={{ flex:1, padding:"12px 0", background:"#080810", border:"1px solid #a78bfa44", borderRadius:6, cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
                   <span style={{ fontSize:18 }}>🔧</span>
                   <span style={{ fontSize:10, color:"#a78bfa" }}>DEBUG</span>

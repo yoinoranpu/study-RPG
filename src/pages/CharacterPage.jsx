@@ -5,7 +5,13 @@ import { RARITY_COLOR, RARITY_LABEL, INNATE, getItemStats, getSellPrice } from "
 import { SKILL_BOOKS, getBookSellPrice, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
 import { TRIBE_MAT } from "../systems/events";
 import CharacterLayoutEditor from "../components/CharacterLayoutEditor";
-import { CHARACTER_LAYOUT_DEFAULT } from "../data/characterLayout";
+import { CHARACTER_LAYOUT_DEFAULT, CHARACTER_LAYOUT_MOBILE, CHARACTER_LAYOUT_LANDSCAPE } from "../data/characterLayout";
+import useViewport from "../hooks/useViewport";
+
+function pickCharLayout(isMobile, isLandscape) {
+  if (!isMobile) return CHARACTER_LAYOUT_DEFAULT;
+  return isLandscape ? CHARACTER_LAYOUT_LANDSCAPE : CHARACTER_LAYOUT_MOBILE;
+}
 
 const INSTANT_USE_EFFECTS = ["skill_reset", "mat_pack"];
 
@@ -124,11 +130,14 @@ function BookSlotCell({ i, uid, dz, setSlot, bookByUid, dropTarget, sel, setSel 
 }
 
 export default function CharacterPage() {
-  const w = window.innerWidth;
-  const [isMobile, setIsMobile] = useState(w < 768);
+  const { isMobile, isLandscape } = useViewport();
+  // 縦画面のスマホだけが装備列+ステータス欄を縦積みにする特殊構造(位置ズレの大きなオフセット・
+  // 部屋の背景と中身の高さを分離する仕組み等)を必要とする。横画面は幅に余裕がありデスクトップと
+  // 同じ横並び構造で成立するため、構造分岐にはisMobile単体ではなくこちらを使う
+  const isPortraitPhone = isMobile && !isLandscape;
   const [tab, setTab] = useState("equip");
   const [sel, setSel] = useState(null);
-  const [charLayout, setCharLayout] = useState(CHARACTER_LAYOUT_DEFAULT);
+  const [charLayout, setCharLayout] = useState(() => pickCharLayout(isMobile, isLandscape));
   const [showCharLayoutEditor, setShowCharLayoutEditor] = useState(false);
   const DEBUG = import.meta.env.DEV;
   const player = usePlayerStore();
@@ -141,11 +150,13 @@ export default function CharacterPage() {
   const actSlots = [...(activeSkillSlots||[])];  while (actSlots.length < 4) actSlots.push(null);
   const pasSlots = [...(passiveSkillSlots||[])]; while (pasSlots.length < 6) pasSlots.push(null);
 
+  // モバイル/デスクトップの境界、または画面の向き(縦⇔横)をまたいだ時だけ、その時点の
+  // 既定レイアウトに切り替える(DEBUG配置エディタでの編集中に無関係なリサイズで上書きされ
+  // ないよう、isMobile/isLandscapeの変化だけを見る)
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    setCharLayout(pickCharLayout(isMobile, isLandscape));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile, isLandscape]);
 
   function unequip(key) {
     const eq = player[key];
@@ -295,12 +306,14 @@ export default function CharacterPage() {
     dragStartRef.current = { x:e.clientX, y:e.clientY, payload };
   }
 
-  // height:"100%"だと親(TownPageのoverflowY:auto領域)の高さぴったりに固定され、overflow:"hidden"と
-  // 組み合わさることで中身が親の高さを超えたときに親のスクロールへ委譲されず内部で切り捨てられて
-  // しまう(モバイル幅でステータスプレートが完全に見えなくなるバグの原因)。minHeightにすることで
-  // 中身が親より高い時はその分だけ自然に伸び、親側のスクロールで正しく見えるようにする
+  // 装備中アイテム・ステータス(部屋部分)は固定、ITEM BOXだけが内部スクロールする挙動に
+  // するため、ルートはheight:"100%"(TownPage側のoverflowY:auto領域の高さぴったり)+
+  // overflow:"hidden"で外枠を固定し、下のITEM BOX/スキル一覧側のflex:1,overflowY:"auto"に
+  // 実際のスクロールを持たせる。以前はモバイルで部屋+ステータスの内容が親の高さを超えて
+  // 内部で切り捨てられる問題があったためminHeightにしていたが、モバイル用レイアウトの
+  // 余白調整で部屋部分がコンパクトになったため、height:"100%"に戻しても切り捨ては起きない
   return (
-    <div style={{ display:"flex", flexDirection:"column", minHeight:"100%", fontFamily:"monospace", overflow:"hidden", position:"relative" }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace", overflow:"hidden", position:"relative" }}>
 
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0, background:"linear-gradient(180deg, rgba(8,5,2,0.5), rgba(8,5,2,0.65)), url(/assets/images/tab_bar_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
         {[{id:"equip",img:"/assets/images/tab_icon_equip.png",label:"装備"},{id:"skill",img:"/assets/images/tab_icon_skill.png",label:"スキル"}].map(t=>{
@@ -322,17 +335,26 @@ export default function CharacterPage() {
 
       {tab === "equip" && (
         <>
-          {/* モバイル幅では装備スロット+ステータスプレートが横並びではなく縦積みになるため、
-              デスクトップ用の固定roomHeightのままだとステータスプレートがoverflow:hiddenで
-              完全に見切れて操作不能になっていた。縦積み時の実測必要高さ(約675px)に余裕を
-              持たせてモバイルだけ高さを拡張する */}
-          <div style={{ position:"relative", flexShrink:0, height:isMobile?Math.max(charLayout.roomHeight,720):charLayout.roomHeight, overflow:"hidden" }}>
-            <img src="/assets/images/character_room.jpg" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:`center ${charLayout.roomPanY}%`, display:"block" }} />
-            <div style={{ position:"absolute", inset:0, background:"rgba(10,6,3,0.4)" }} />
+          {/* サイズ・位置(equipSlotSize/specialSlotSize/statsPanelWidth/itemPos等)は
+              すべてcharLayoutから取得しており、isMobile×isLandscapeに応じてDEFAULT
+              (デスクトップ)/MOBILE(スマホ縦画面)/LANDSCAPE(スマホ横画面)を切り替えている。
+              縦積み構造(下記isPortraitPhone分岐)が必要なのは縦画面のスマホだけ:
+              コンテンツがroomHeightより縦に伸びるため、背景画像だけをroomHeightで
+              切り取り、コンテンツは通常フローに乗せて下のITEM BOXと重ならないように
+              している。横画面は幅に余裕がありデスクトップと同じ横並び構造で成立する
+              ため、isMobileではなくisPortraitPhoneで分岐する */}
+          <div style={{ position:"relative", flexShrink:0, height:isPortraitPhone?"auto":charLayout.roomHeight, overflow:isPortraitPhone?"visible":"hidden" }}>
+            <div style={{ position:"absolute", top:0, left:0, right:0, height:charLayout.roomHeight, overflow:"hidden" }}>
+              <img src="/assets/images/character_room.jpg" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:`center ${charLayout.roomPanY}%`, display:"block" }} />
+              <div style={{ position:"absolute", inset:0, background:"rgba(10,6,3,0.4)" }} />
+            </div>
             <div className="rpg-heading" style={{ position:"absolute", top:8, left:12, fontSize:10, color:"#f0d9a0", letterSpacing:2, textShadow:"0 2px 4px rgba(0,0,0,0.9)" }}>⚔ CHARACTER</div>
 
-            <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:isMobile?"column":"row", gap:charLayout.panelGap, padding:`${charLayout.contentPaddingTop}px 10px 10px` }}>
-              <div style={{ padding:"8px 10px", display:"flex", flexDirection:"column", gap:8, minWidth:isMobile?"auto":168 }}>
+            {/* 縦画面スマホは下端の余白(装備列自身のbottom padding＋このdivのbottom padding)を
+                0にして、ITEM BOX側の上padding(8px)だけで間隔を持たせる。HPバーの直後に
+                黒い余白が二重にできるのを防ぐ */}
+            <div style={{ position:isPortraitPhone?"relative":"absolute", inset:isPortraitPhone?undefined:0, display:"flex", flexDirection:isPortraitPhone?"column":"row", gap:charLayout.panelGap, padding:`${charLayout.contentPaddingTop}px 10px ${isPortraitPhone?0:10}px` }}>
+              <div style={{ padding:isPortraitPhone?"8px 10px 0":"8px 10px", display:"flex", flexDirection:"column", gap:8, minWidth:isPortraitPhone?"auto":168 }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                   {EQUIP_SLOTS.map(({key,label,icon,drop})=>{
                     const eq = player[key];
@@ -387,8 +409,15 @@ export default function CharacterPage() {
                 </div>
               </div>
 
-              <div style={{ flex:1, display:"flex", justifyContent:"flex-end" }}>
-              <div style={{ width:isMobile?"100%":charLayout.statsPanelWidth, maxWidth:charLayout.statsPanelWidth+30, display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end" }}>
+              {/* モバイルはステータス欄をitemPosの大きな負オフセットで装備アイコンの上に
+                  重ねて表示する設計のため、通常フローに置いたままだと本来の(ズレ適用前の)
+                  位置分の高さがそのまま余白として下に残ってしまう。position:absoluteだと
+                  基準位置が変わり大きなオフセットが画面外に飛んでしまうため、フロー上の
+                  位置(装備列の直後)はそのままにheight:0にして高さの計算にだけ含めない
+                  ようにし、素材ボックスとの間の黒い余白をなくす(横画面スマホ・デスクトップは
+                  横並びのままなので従来通りflexの2列目として扱う) */}
+              <div style={isPortraitPhone ? { height:0, overflow:"visible", display:"flex", justifyContent:"flex-end" } : { flex:1, display:"flex", justifyContent:"flex-end" }}>
+              <div style={{ width:charLayout.statsPanelWidth, maxWidth:charLayout.statsPanelWidth+30, display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, alignContent:"start", justifyItems:"end" }}>
                 {[
                   {label:"ATK",  jp:"攻撃", val:stats.atk,        color:"#f87171"},
                   {label:"MAG",  jp:"魔力", val:stats.mag,        color:"#a78bfa"},
@@ -415,7 +444,7 @@ export default function CharacterPage() {
 
           <div style={{ flex:1, overflowY:"auto", padding:"8px 10px", background:"linear-gradient(rgba(8,5,2,0.45),rgba(8,5,2,0.45)), url(/assets/images/item_box_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
             <div style={{ fontSize:10, color:"#d8cdb8", letterSpacing:2, marginBottom:6, textShadow:"0 1px 3px rgba(0,0,0,0.9)" }}>ITEM BOX {(itemBox||[]).length}/30 <span style={{ color:"#a89a80" }}>（ドラッグでも装備可）</span></div>
-            <div style={{ display:"grid", gridTemplateColumns:`repeat(${isMobile?4:6},1fr)`, gap:4 }}>
+            <div style={{ display:"grid", gridTemplateColumns:`repeat(${isPortraitPhone?4:6},1fr)`, gap:4 }}>
               {(itemBox||[]).map(it=>{
                 const rc = RARITY_COLOR[it.rarity]||"#888";
                 const isSel = sel===it.uid;
@@ -562,7 +591,7 @@ export default function CharacterPage() {
           {/* パッシブ */}
           <div>
             <div style={{ fontSize:10, color:"#c9b6fb", letterSpacing:2, marginBottom:8, paddingBottom:6, borderBottom:"1px solid rgba(201,182,251,0.3)", textShadow:"0 1px 3px rgba(0,0,0,0.9)" }}>パッシブ書（最大6・ドラッグでもセット可）</div>
-            <div style={{ display:"grid", gridTemplateColumns:isMobile?"repeat(3,1fr)":"repeat(6,1fr)", gap:8, marginBottom:10 }}>
+            <div style={{ display:"grid", gridTemplateColumns:isPortraitPhone?"repeat(3,1fr)":"repeat(6,1fr)", gap:8, marginBottom:10 }}>
               {pasSlots.map((uid,i)=> <BookSlotCell key={i} i={i} uid={uid} dz={`passive-${i}`} setSlot={setPassiveSlot} bookByUid={bookByUid} dropTarget={dropTarget} sel={sel} setSel={setSel} />)}
             </div>
             {ownedPassive.length === 0
@@ -581,6 +610,7 @@ export default function CharacterPage() {
       {showCharLayoutEditor && (
         <CharacterLayoutEditor
           layout={charLayout}
+          variant={isMobile ? (isLandscape ? "landscape" : "mobile") : "default"}
           onChangeField={(path, value) => setCharLayout(prev => ({ ...prev, [path]: value }))}
           onChangeItem={(group, key, axis, value) => setCharLayout(prev => {
             if (group === "specialItemPos") {
@@ -590,7 +620,7 @@ export default function CharacterPage() {
             }
             return { ...prev, [group]: { ...prev[group], [key]: { ...(prev[group]?.[key]||{x:0,y:0}), [axis]: value } } };
           })}
-          onReset={() => setCharLayout(CHARACTER_LAYOUT_DEFAULT)}
+          onReset={() => setCharLayout(pickCharLayout(isMobile, isLandscape))}
           onClose={() => setShowCharLayoutEditor(false)}
         />
       )}

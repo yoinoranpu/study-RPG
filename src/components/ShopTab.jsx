@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { generateShopStock, getShopPrice, makeItem, RARITY_COLOR, RARITY_LABEL, INNATE, SPECIAL_DB } from "../data/items";
 import { getGlobalUnlockDepth } from "../systems/dungeons";
 import { makeInitialStats } from "../systems/achievements";
 import usePlayerStore from "../store/usePlayerStore";
 import useFlashMessage from "../hooks/useFlashMessage";
+import useViewport from "../hooks/useViewport";
 
 const ITEM_BOX_MAX = 30;
 const DIM = "#7a7a9a";
@@ -13,20 +14,8 @@ export default function ShopTab() {
   const [sub, setSub] = useState("weapon");
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [msg, flash] = useFlashMessage(3000);
-  const w = window.innerWidth;
-  const [isMobile, setIsMobile] = useState(w < 768);
-  const [isTablet, setIsTablet] = useState(w >= 768 && w < 1024);
+  const { isMobile, isTablet } = useViewport();
   const { gold, itemBox, dungeons, keyRescueDungeonId, keyRescueClaimed, stats, updatePlayer } = usePlayerStore();
-
-  useEffect(() => {
-    const handleResize = () => {
-      const w = window.innerWidth;
-      setIsMobile(w < 768);
-      setIsTablet(w >= 768 && w < 1024);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const spendGold = (amount) => {
     const prevStats = stats || makeInitialStats();
