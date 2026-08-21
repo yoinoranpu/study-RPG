@@ -6,6 +6,38 @@ const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
 const CATEGORY_COLOR = { "進行度":"#60a5fa", "継続":"#4ade80", "戦闘":"#f87171", "収集":"#a78bfa", "経済":"#fbbf24", "遊び心":"#fb923c" };
 
+// コンポーネント本体の中で定義すると親の再レンダーのたびに作り直されてしまうため、
+// モジュールスコープに引き上げてpropsだけで完結させる
+function AchievementRow({ ach, player, claimed, claim }) {
+  const progress = Math.min(ach.target, ach.get(player));
+  const done = progress >= ach.target;
+  const isClaimed = !!claimed[ach.id];
+  const revealed = !ach.hidden || done;
+  const color = isClaimed ? "#4a4a6a" : done ? "#4ade80" : CATEGORY_COLOR[ach.category];
+
+  if (!revealed) {
+    return (
+      <div style={{ background:"rgba(15,10,5,0.5)", borderLeft:"3px solid #3a3a55", borderRadius:6, padding:"10px 12px", marginBottom:8, opacity:0.6 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <img src="/assets/images/hud_lock.png" alt="" style={{ width:14, height:14, objectFit:"contain" }} />
+          <span style={{ fontSize:11, color:FAINT }}>？？？</span>
+        </div>
+      </div>
+    );
+  }
+
+  const rewardChips = [
+    { text:`${ach.reward.gold}G`, color:"#fbbf24" },
+    { text:`${ach.reward.exp}EXP`, color:"#86efac" },
+  ];
+
+  return (
+    <RewardRow label={ach.label} desc={ach.desc} progress={progress} target={ach.target}
+      claimed={isClaimed} done={done} color={color} rewardChips={rewardChips}
+      onClaim={()=>claim(ach)} />
+  );
+}
+
 export default function AchievementTab() {
   const player = usePlayerStore();
   const { gold, totalExp, achievements, updatePlayer } = player;
@@ -34,36 +66,6 @@ export default function AchievementTab() {
     });
   }
 
-  function AchievementRow({ ach }) {
-    const progress = Math.min(ach.target, ach.get(player));
-    const done = progress >= ach.target;
-    const isClaimed = !!claimed[ach.id];
-    const revealed = !ach.hidden || done;
-    const color = isClaimed ? "#4a4a6a" : done ? "#4ade80" : CATEGORY_COLOR[ach.category];
-
-    if (!revealed) {
-      return (
-        <div style={{ background:"rgba(15,10,5,0.5)", borderLeft:"3px solid #3a3a55", borderRadius:6, padding:"10px 12px", marginBottom:8, opacity:0.6 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <img src="/assets/images/hud_lock.png" alt="" style={{ width:14, height:14, objectFit:"contain" }} />
-            <span style={{ fontSize:11, color:FAINT }}>？？？</span>
-          </div>
-        </div>
-      );
-    }
-
-    const rewardChips = [
-      { text:`${ach.reward.gold}G`, color:"#fbbf24" },
-      { text:`${ach.reward.exp}EXP`, color:"#86efac" },
-    ];
-
-    return (
-      <RewardRow label={ach.label} desc={ach.desc} progress={progress} target={ach.target}
-        claimed={isClaimed} done={done} color={color} rewardChips={rewardChips}
-        onClaim={()=>claim(ach)} />
-    );
-  }
-
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
       <div style={{ position:"relative", flexShrink:0, height:90, overflow:"hidden", borderBottom:"1px solid #1a1a2a" }}>
@@ -86,7 +88,7 @@ export default function AchievementTab() {
         {categories.map(cat => (
           <div key={cat}>
             <div style={{ fontSize:10, color:CATEGORY_COLOR[cat], letterSpacing:2, margin:"10px 0 6px", fontWeight:700 }}>{cat}</div>
-            {sortByRank(ACHIEVEMENT_DEFS.filter(a => a.category === cat)).map(ach => <AchievementRow key={ach.id} ach={ach} />)}
+            {sortByRank(ACHIEVEMENT_DEFS.filter(a => a.category === cat)).map(ach => <AchievementRow key={ach.id} ach={ach} player={player} claimed={claimed} claim={claim} />)}
           </div>
         ))}
       </div>

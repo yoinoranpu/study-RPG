@@ -7,6 +7,28 @@ import RewardRow from "./RewardRow";
 
 const ITEM_BOX_MAX = 30;
 
+// コンポーネント本体の中で定義すると親の再レンダーのたびに作り直されてしまうため、
+// モジュールスコープに引き上げてpropsだけで完結させる
+function QuestRow({ scope, quest, q, player, claim }) {
+  const claimedKey = scope === "daily" ? "claimedDaily" : "claimedWeekly";
+  const progress = Math.min(quest.target, quest.get(q, player));
+  const done = progress >= quest.target;
+  const claimed = !!q[claimedKey]?.[quest.id];
+  const color = claimed ? "#4a4a6a" : done ? "#4ade80" : "#60a5fa";
+  const chestType = quest.reward.chestRarity ? CHEST_TYPES[quest.reward.chestRarity] : null;
+  const rewardChips = [
+    { text:`${quest.reward.gold}G`, color:"#fbbf24" },
+    { text:`${quest.reward.exp}EXP`, color:"#86efac" },
+    ...(chestType ? [{ text:chestType.label, image:chestType.image, color:chestType.color }] : []),
+  ];
+
+  return (
+    <RewardRow label={quest.label} progress={progress} target={quest.target}
+      claimed={claimed} done={done} color={color} rewardChips={rewardChips}
+      onClaim={()=>claim(scope, quest)} />
+  );
+}
+
 export default function QuestTab() {
   const player = usePlayerStore();
   const { quests, gold, totalExp, itemBox, skillBooks, skillBookDex, dungeons, currentDungeonId, updatePlayer } = player;
@@ -45,26 +67,6 @@ export default function QuestTab() {
     });
   }
 
-  function QuestRow({ scope, quest }) {
-    const claimedKey = scope === "daily" ? "claimedDaily" : "claimedWeekly";
-    const progress = Math.min(quest.target, quest.get(q, player));
-    const done = progress >= quest.target;
-    const claimed = !!q[claimedKey]?.[quest.id];
-    const color = claimed ? "#4a4a6a" : done ? "#4ade80" : "#60a5fa";
-    const chestType = quest.reward.chestRarity ? CHEST_TYPES[quest.reward.chestRarity] : null;
-    const rewardChips = [
-      { text:`${quest.reward.gold}G`, color:"#fbbf24" },
-      { text:`${quest.reward.exp}EXP`, color:"#86efac" },
-      ...(chestType ? [{ text:chestType.label, image:chestType.image, color:chestType.color }] : []),
-    ];
-
-    return (
-      <RewardRow label={quest.label} progress={progress} target={quest.target}
-        claimed={claimed} done={done} color={color} rewardChips={rewardChips}
-        onClaim={()=>claim(scope, quest)} />
-    );
-  }
-
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", fontFamily:"monospace" }}>
       <div style={{ position:"relative", flexShrink:0, height:90, overflow:"hidden", borderBottom:"1px solid #1a1a2a" }}>
@@ -79,10 +81,10 @@ export default function QuestTab() {
 
       <div style={{ flex:1, overflowY:"auto", padding:10 }}>
         <div style={{ fontSize:10, color:"#60a5fa", letterSpacing:2, marginBottom:6, fontWeight:700 }}>デイリー</div>
-        {QUEST_DEFS.daily.map(quest => <QuestRow key={quest.id} scope="daily" quest={quest} />)}
+        {QUEST_DEFS.daily.map(quest => <QuestRow key={quest.id} scope="daily" quest={quest} q={q} player={player} claim={claim} />)}
 
         <div style={{ fontSize:10, color:"#a78bfa", letterSpacing:2, margin:"10px 0 6px", fontWeight:700 }}>ウィークリー</div>
-        {QUEST_DEFS.weekly.map(quest => <QuestRow key={quest.id} scope="weekly" quest={quest} />)}
+        {QUEST_DEFS.weekly.map(quest => <QuestRow key={quest.id} scope="weekly" quest={quest} q={q} player={player} claim={claim} />)}
       </div>
     </div>
   );

@@ -37,6 +37,92 @@ function isValidDrop(payload, dz) {
   return false;
 }
 
+// アイテム/装備/消耗品スロット共通の詳細パネル。アイコンを大きめにしつつ
+// maxHeightで縦の圧迫を抑え、はみ出す分は中身だけスクロールさせる。
+// (コンポーネント本体の中で定義すると、ドラッグ中のpointermoveのたびに親が
+// 再レンダーされて毎回作り直される＝マウント解除→再マウントされてしまうため、
+// モジュールスコールに引き上げてpropsだけで完結させる)
+function ItemDetailFrame({ item, subtitle, onClose, footer, children }) {
+  const rc = RARITY_COLOR[item.rarity] || "#888";
+  return (
+    <div className="rpg-panel" style={{ position:"absolute", bottom:8, left:8, right:8, borderRadius:6, padding:"10px 12px", zIndex:10, maxHeight:"40%", display:"flex", flexDirection:"column" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6, flexShrink:0 }}>
+        <div style={{ width:60, height:60, position:"relative", flexShrink:0 }}>
+          <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:rc, opacity:0.5, filter:"blur(7px)" }} />
+          <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+          <div style={{ position:"absolute", inset:"18%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            {item.image ? <img src={item.image} alt="" style={{ width:"82%", height:"82%", objectFit:"contain", filter:item.tint||"none" }} /> : <span style={{ fontSize:26 }}>{item.icon}</span>}
+          </div>
+        </div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#e8e0d0", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+            {item.name}{item.upgradeLevel>0 && <span style={{ color:"#fbbf24" }}> +{item.upgradeLevel}</span>}
+          </div>
+          <div style={{ fontSize:12, color:rc, letterSpacing:1 }}>{subtitle}</div>
+        </div>
+        <button onClick={onClose} style={{ background:"transparent", border:"none", color:DIM, fontSize:18, cursor:"pointer", flexShrink:0, padding:4 }}>×</button>
+      </div>
+      <div style={{ overflowY:"auto", flex:1, minHeight:0 }}>
+        {children}
+      </div>
+      {footer && <div style={{ display:"flex", gap:8, marginTop:8, flexShrink:0 }}>{footer}</div>}
+    </div>
+  );
+}
+
+// スキル書一覧の1行(装備/未装備・売却ボタン付き)
+function BookRow({ owned, slots, setSlot, color, beginDrag, sellBook }) {
+  const book = SKILL_BOOKS[owned.id];
+  const rc = BOOK_RARITY_COLOR[owned.rarity] || "#888";
+  const equipped = slots.includes(owned.uid);
+  const empty = slots.findIndex(s => !s);
+  const sellPrice = getBookSellPrice(owned.rarity);
+  return (
+    <div
+      onPointerDown={(e) => beginDrag(e, { kind:"book", bookType:book.type, uid:owned.uid, icon:book.icon, name:book.name })}
+      style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", display:"flex", alignItems:"center", gap:8, padding:"7px 9px", background:equipped?`${color}30`:"rgba(15,10,5,0.6)", borderLeft:`3px solid ${rc}`, borderRadius:5, marginBottom:4 }}>
+      {book.image ? <img src={book.image} alt="" style={{ width:22, height:22, objectFit:"contain", flexShrink:0 }} /> : <span style={{ fontSize:19 }}>{book.icon}</span>}
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:10, color:"#e8e0d0" }}>
+          {book.name} <span style={{ fontSize:9, color:rc }}>{BOOK_RARITY_LABEL[owned.rarity]}</span>
+        </div>
+        <div style={{ fontSize:10, color:DIM }}>{book.desc}</div>
+      </div>
+      {!equipped && empty>=0 && <button onClick={()=>setSlot(empty, owned.uid)} style={{ padding:"3px 8px", background:`${color}18`, border:`1px solid ${color}`, borderRadius:3, cursor:"pointer", color, fontSize:10, fontFamily:"monospace" }}>セット</button>}
+      {equipped && <span style={{ fontSize:9, color, border:`1px solid ${color}44`, padding:"1px 4px", borderRadius:2 }}>セット中</span>}
+      <button onClick={()=>sellBook(owned.uid)} title="売却" style={{ padding:"3px 8px", background:"#1a0a0a", border:"1px solid #f8717166", borderRadius:3, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace" }}>売却{sellPrice}G</button>
+    </div>
+  );
+}
+
+// アクティブ/パッシブ書スロット共通の枠付きセル(item_slot_frame.pngを流用)
+function BookSlotCell({ i, uid, dz, setSlot, bookByUid, dropTarget, sel, setSel }) {
+  const owned = uid ? bookByUid(uid) : null;
+  const book = owned ? SKILL_BOOKS[owned.id] : null;
+  const rc = owned ? BOOK_RARITY_COLOR[owned.rarity] : "#3a3a55";
+  const isHover = dropTarget === dz;
+  const glowColor = isHover ? "#4ade80" : book ? rc : null;
+  const selKey = `bslot_${dz}`;
+  const isSel = sel === selKey;
+  return (
+    <div data-drop={dz} onClick={() => book && setSel(isSel?null:selKey)}
+      className={`slot-cell${isSel?" slot-selected":""}`}
+      style={{ position:"relative", aspectRatio:"1", cursor:book?"pointer":"default" }}>
+      {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:isHover?0.6:0.4, filter:"blur(6px)" }} />}
+      <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+      <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        {book ? (book.image ? <img src={book.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain" }} /> : <span style={{ fontSize:20 }}>{book.icon}</span>) : <span style={{ fontSize:9, color:FAINT }}>{dz.startsWith("active")?"S":"P"}{i+1}</span>}
+      </div>
+      {book && (
+        <button onClick={(e)=>{ e.stopPropagation(); setSlot(i,null); }} style={{ position:"absolute", top:-4, right:-4, width:16, height:16, borderRadius:"50%", background:"#1a0a0a", border:"1px solid #f87171", color:"#f87171", fontSize:9, lineHeight:"14px", padding:0, cursor:"pointer", zIndex:1 }}>×</button>
+      )}
+      {book && (
+        <div style={{ position:"absolute", bottom:"6%", left:"10%", right:"10%", fontSize:8, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", background:"rgba(0,0,0,0.65)", borderRadius:2, zIndex:1 }}>{book.name}</div>
+      )}
+    </div>
+  );
+}
+
 export default function CharacterPage() {
   const w = window.innerWidth;
   const [isMobile, setIsMobile] = useState(w < 768);
@@ -207,88 +293,6 @@ export default function CharacterPage() {
 
   function beginDrag(e, payload) {
     dragStartRef.current = { x:e.clientX, y:e.clientY, payload };
-  }
-
-  // アイテム/装備/消耗品スロット共通の詳細パネル。アイコンを大きめにしつつ
-  // maxHeightで縦の圧迫を抑え、はみ出す分は中身だけスクロールさせる。
-  function ItemDetailFrame({ item, subtitle, onClose, footer, children }) {
-    const rc = RARITY_COLOR[item.rarity] || "#888";
-    return (
-      <div className="rpg-panel" style={{ position:"absolute", bottom:8, left:8, right:8, borderRadius:6, padding:"10px 12px", zIndex:10, maxHeight:"40%", display:"flex", flexDirection:"column" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6, flexShrink:0 }}>
-          <div style={{ width:60, height:60, position:"relative", flexShrink:0 }}>
-            <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:rc, opacity:0.5, filter:"blur(7px)" }} />
-            <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
-            <div style={{ position:"absolute", inset:"18%", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              {item.image ? <img src={item.image} alt="" style={{ width:"82%", height:"82%", objectFit:"contain", filter:item.tint||"none" }} /> : <span style={{ fontSize:26 }}>{item.icon}</span>}
-            </div>
-          </div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:"#e8e0d0", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-              {item.name}{item.upgradeLevel>0 && <span style={{ color:"#fbbf24" }}> +{item.upgradeLevel}</span>}
-            </div>
-            <div style={{ fontSize:12, color:rc, letterSpacing:1 }}>{subtitle}</div>
-          </div>
-          <button onClick={onClose} style={{ background:"transparent", border:"none", color:DIM, fontSize:18, cursor:"pointer", flexShrink:0, padding:4 }}>×</button>
-        </div>
-        <div style={{ overflowY:"auto", flex:1, minHeight:0 }}>
-          {children}
-        </div>
-        {footer && <div style={{ display:"flex", gap:8, marginTop:8, flexShrink:0 }}>{footer}</div>}
-      </div>
-    );
-  }
-
-  function BookRow({ owned, slots, setSlot, color }) {
-    const book = SKILL_BOOKS[owned.id];
-    const rc = BOOK_RARITY_COLOR[owned.rarity] || "#888";
-    const equipped = slots.includes(owned.uid);
-    const empty = slots.findIndex(s => !s);
-    const sellPrice = getBookSellPrice(owned.rarity);
-    return (
-      <div
-        onPointerDown={(e) => beginDrag(e, { kind:"book", bookType:book.type, uid:owned.uid, icon:book.icon, name:book.name })}
-        style={{ touchAction:"none", cursor:"grab", userSelect:"none", WebkitUserSelect:"none", WebkitTouchCallout:"none", display:"flex", alignItems:"center", gap:8, padding:"7px 9px", background:equipped?`${color}30`:"rgba(15,10,5,0.6)", borderLeft:`3px solid ${rc}`, borderRadius:5, marginBottom:4 }}>
-        {book.image ? <img src={book.image} alt="" style={{ width:22, height:22, objectFit:"contain", flexShrink:0 }} /> : <span style={{ fontSize:19 }}>{book.icon}</span>}
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:10, color:"#e8e0d0" }}>
-            {book.name} <span style={{ fontSize:9, color:rc }}>{BOOK_RARITY_LABEL[owned.rarity]}</span>
-          </div>
-          <div style={{ fontSize:10, color:DIM }}>{book.desc}</div>
-        </div>
-        {!equipped && empty>=0 && <button onClick={()=>setSlot(empty, owned.uid)} style={{ padding:"3px 8px", background:`${color}18`, border:`1px solid ${color}`, borderRadius:3, cursor:"pointer", color, fontSize:10, fontFamily:"monospace" }}>セット</button>}
-        {equipped && <span style={{ fontSize:9, color, border:`1px solid ${color}44`, padding:"1px 4px", borderRadius:2 }}>セット中</span>}
-        <button onClick={()=>sellBook(owned.uid)} title="売却" style={{ padding:"3px 8px", background:"#1a0a0a", border:"1px solid #f8717166", borderRadius:3, cursor:"pointer", color:"#f87171", fontSize:10, fontFamily:"monospace" }}>売却{sellPrice}G</button>
-      </div>
-    );
-  }
-
-  // アクティブ/パッシブ書スロット共通の枠付きセル(item_slot_frame.pngを流用)
-  function BookSlotCell({ i, uid, dz, setSlot }) {
-    const owned = uid ? bookByUid(uid) : null;
-    const book = owned ? SKILL_BOOKS[owned.id] : null;
-    const rc = owned ? BOOK_RARITY_COLOR[owned.rarity] : "#3a3a55";
-    const isHover = dropTarget === dz;
-    const glowColor = isHover ? "#4ade80" : book ? rc : null;
-    const selKey = `bslot_${dz}`;
-    const isSel = sel === selKey;
-    return (
-      <div data-drop={dz} onClick={() => book && setSel(isSel?null:selKey)}
-        className={`slot-cell${isSel?" slot-selected":""}`}
-        style={{ position:"relative", aspectRatio:"1", cursor:book?"pointer":"default" }}>
-        {glowColor && <div style={{ position:"absolute", inset:"10%", borderRadius:"50%", background:glowColor, opacity:isHover?0.6:0.4, filter:"blur(6px)" }} />}
-        <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
-        <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
-          {book ? (book.image ? <img src={book.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain" }} /> : <span style={{ fontSize:20 }}>{book.icon}</span>) : <span style={{ fontSize:9, color:FAINT }}>{dz.startsWith("active")?"S":"P"}{i+1}</span>}
-        </div>
-        {book && (
-          <button onClick={(e)=>{ e.stopPropagation(); setSlot(i,null); }} style={{ position:"absolute", top:-4, right:-4, width:16, height:16, borderRadius:"50%", background:"#1a0a0a", border:"1px solid #f87171", color:"#f87171", fontSize:9, lineHeight:"14px", padding:0, cursor:"pointer", zIndex:1 }}>×</button>
-        )}
-        {book && (
-          <div style={{ position:"absolute", bottom:"6%", left:"10%", right:"10%", fontSize:8, color:rc, textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", background:"rgba(0,0,0,0.65)", borderRadius:2, zIndex:1 }}>{book.name}</div>
-        )}
-      </div>
-    );
   }
 
   return (
@@ -540,22 +544,22 @@ export default function CharacterPage() {
               </div>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:10 }}>
-              {actSlots.map((uid,i)=> <BookSlotCell key={i} i={i} uid={uid} dz={`active-${i}`} setSlot={setActiveSlot} />)}
+              {actSlots.map((uid,i)=> <BookSlotCell key={i} i={i} uid={uid} dz={`active-${i}`} setSlot={setActiveSlot} bookByUid={bookByUid} dropTarget={dropTarget} sel={sel} setSel={setSel} />)}
             </div>
             {ownedActive.length === 0
               ? <div style={{ fontSize:10, color:FAINT, textAlign:"center", padding:8 }}>アクティブ書を持っていない</div>
-              : ownedActive.map(owned => <BookRow key={owned.uid} owned={owned} slots={actSlots} setSlot={setActiveSlot} color="#f87171" />)}
+              : ownedActive.map(owned => <BookRow key={owned.uid} owned={owned} slots={actSlots} setSlot={setActiveSlot} color="#f87171" beginDrag={beginDrag} sellBook={sellBook} />)}
           </div>
 
           {/* パッシブ */}
           <div>
             <div style={{ fontSize:10, color:"#c9b6fb", letterSpacing:2, marginBottom:8, paddingBottom:6, borderBottom:"1px solid rgba(201,182,251,0.3)", textShadow:"0 1px 3px rgba(0,0,0,0.9)" }}>パッシブ書（最大6・ドラッグでもセット可）</div>
             <div style={{ display:"grid", gridTemplateColumns:isMobile?"repeat(3,1fr)":"repeat(6,1fr)", gap:8, marginBottom:10 }}>
-              {pasSlots.map((uid,i)=> <BookSlotCell key={i} i={i} uid={uid} dz={`passive-${i}`} setSlot={setPassiveSlot} />)}
+              {pasSlots.map((uid,i)=> <BookSlotCell key={i} i={i} uid={uid} dz={`passive-${i}`} setSlot={setPassiveSlot} bookByUid={bookByUid} dropTarget={dropTarget} sel={sel} setSel={setSel} />)}
             </div>
             {ownedPassive.length === 0
               ? <div style={{ fontSize:10, color:FAINT, textAlign:"center", padding:8 }}>パッシブ書を持っていない</div>
-              : ownedPassive.map(owned => <BookRow key={owned.uid} owned={owned} slots={pasSlots} setSlot={setPassiveSlot} color="#a78bfa" />)}
+              : ownedPassive.map(owned => <BookRow key={owned.uid} owned={owned} slots={pasSlots} setSlot={setPassiveSlot} color="#a78bfa" beginDrag={beginDrag} sellBook={sellBook} />)}
           </div>
         </div>
       )}
