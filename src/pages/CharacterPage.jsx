@@ -135,6 +135,8 @@ export default function CharacterPage() {
   // 部屋の背景と中身の高さを分離する仕組み等)を必要とする。横画面は幅に余裕がありデスクトップと
   // 同じ横並び構造で成立するため、構造分岐にはisMobile単体ではなくこちらを使う
   const isPortraitPhone = isMobile && !isLandscape;
+  // 横画面スマホは高さが特に乏しいため、装備/スキルタブの切り替え行も横並びにして縦幅を削る
+  const isLandscapePhone = isMobile && isLandscape;
   const [tab, setTab] = useState("equip");
   const [sel, setSel] = useState(null);
   const [charLayout, setCharLayout] = useState(() => pickCharLayout(isMobile, isLandscape));
@@ -319,8 +321,8 @@ export default function CharacterPage() {
         {[{id:"equip",img:"/assets/images/tab_icon_equip.png",label:"装備"},{id:"skill",img:"/assets/images/tab_icon_skill.png",label:"スキル"}].map(t=>{
           const isSel = tab===t.id;
           return (
-            <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} className="rpg-heading" style={{ flex:1, padding:"6px 0", background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:22, height:22, objectFit:"contain", opacity:isSel?1:0.65 }} />
+            <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} className="rpg-heading" style={{ flex:1, padding:isLandscapePhone?"3px 0":"6px 0", background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:isLandscapePhone?"row":"column", alignItems:"center", justifyContent:"center", gap:isLandscapePhone?4:2 }}>
+              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:isLandscapePhone?16:22, height:isLandscapePhone?16:22, objectFit:"contain", opacity:isSel?1:0.65 }} />
               <span style={{ color:isSel?"#e0b555":DIM, fontSize:10 }}>{t.label}</span>
             </button>
           );
@@ -354,7 +356,7 @@ export default function CharacterPage() {
                 0にして、ITEM BOX側の上padding(8px)だけで間隔を持たせる。HPバーの直後に
                 黒い余白が二重にできるのを防ぐ */}
             <div style={{ position:isPortraitPhone?"relative":"absolute", inset:isPortraitPhone?undefined:0, display:"flex", flexDirection:isPortraitPhone?"column":"row", gap:charLayout.panelGap, padding:`${charLayout.contentPaddingTop}px 10px ${isPortraitPhone?0:10}px` }}>
-              <div style={{ padding:isPortraitPhone?"8px 10px 0":"8px 10px", display:"flex", flexDirection:"column", gap:8, minWidth:isPortraitPhone?"auto":168 }}>
+              <div style={{ padding:isPortraitPhone?"8px 10px 0":isLandscapePhone?"4px 6px":"8px 10px", display:"flex", flexDirection:"column", gap:isLandscapePhone?4:8, minWidth:isPortraitPhone?"auto":isLandscapePhone?"auto":168 }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                   {EQUIP_SLOTS.map(({key,label,icon,drop})=>{
                     const eq = player[key];

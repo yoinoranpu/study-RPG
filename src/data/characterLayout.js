@@ -34,13 +34,13 @@ export const CHARACTER_LAYOUT_DEFAULT = {
 // ステータス欄を縦積みにせず、デスクトップと同じ横並び(row)構造をそのまま縮小して使う。
 // ここに置いた数値は暫定の初期値。実機のDEBUG配置エディタで個別に微調整する想定。
 export const CHARACTER_LAYOUT_LANDSCAPE = {
-  roomHeight: 188,
+  roomHeight: 218,
   roomPanY: 50,
-  equipSlotSize: 44,
-  specialSlotSize: 32,
-  statsPanelWidth: 190,
-  contentPaddingTop: 6,
-  panelGap: 8,
+  equipSlotSize: 36,
+  specialSlotSize: 26,
+  statsPanelWidth: 160,
+  contentPaddingTop: 16,
+  panelGap: 12,
   equipItemPos: {
     equippedWeapon: { x: 0, y: 0 },
     equippedArmor:  { x: 0, y: 0 },
@@ -48,17 +48,17 @@ export const CHARACTER_LAYOUT_LANDSCAPE = {
     equippedAcc2:   { x: 0, y: 0 },
   },
   specialItemPos: [
-    { x: 130, y: -44 },
-    { x: 130, y: -44 },
-    { x: 130, y: -44 },
+    { x: 0, y: 0 },
+    { x: 0, y: 0 },
+    { x: 0, y: 0 },
   ],
   statItemPos: {
     ATK:  { x: 0, y: 0 },
     MAG:  { x: 0, y: 0 },
-    DEF:  { x: 0, y: 20 },
-    MDEF: { x: 0, y: 20 },
-    EVA:  { x: 0, y: 40 },
-    CRIT: { x: 0, y: 40 },
+    DEF:  { x: 0, y: 0 },
+    MDEF: { x: 0, y: 0 },
+    EVA:  { x: 0, y: 0 },
+    CRIT: { x: 0, y: 0 },
   },
 };
 

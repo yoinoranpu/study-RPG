@@ -27,7 +27,10 @@ export default function TownPage({ onEnterDungeon }) {
   const [stampingDungeonId, setStampingDungeonId] = useState(null);
   const [guildLayout, setGuildLayout] = useState(GUILD_LAYOUT_DEFAULT);
   const [showLayoutEditor, setShowLayoutEditor] = useState(false);
-  const { isMobile, isTablet } = useViewport();
+  const { isMobile, isTablet, isLandscape } = useViewport();
+  // 横画面スマホは高さが乏しく(例:812×375)、ヘッダー+タブの縦幅がそのまま
+  // コンテンツを圧迫するため、この2つだけ大きく切り詰める
+  const isLandscapePhone = isMobile && isLandscape;
   const player = usePlayerStore();
   const { updatePlayer } = usePlayerStore();
   const lv = expToLevel(player.totalExp);
@@ -67,13 +70,14 @@ export default function TownPage({ onEnterDungeon }) {
   return (
     <div style={{ height:"100vh", background:"#06060f", fontFamily:"monospace", display:"flex", flexDirection:"column", overflow:"hidden" }}>
 
-      {/* ヘッダー */}
-      <div style={{ background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", padding:"14px 16px 10px", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
-        <div className="rpg-heading" style={{ fontSize:10, letterSpacing:5, color:"#c9963d", marginBottom:2, opacity:0.8 }}>STUDY DUNGEON</div>
+      {/* ヘッダー: 横画面スマホは高さが乏しいので「STUDY DUNGEON」の小見出しを省略し、
+          paddingも切り詰めて縦幅を最小限にする */}
+      <div style={{ background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", padding:isLandscapePhone?"4px 14px":"14px 16px 10px", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
+        {!isLandscapePhone && <div className="rpg-heading" style={{ fontSize:10, letterSpacing:5, color:"#c9963d", marginBottom:2, opacity:0.8 }}>STUDY DUNGEON</div>}
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div className="rpg-heading" style={{ fontSize:18, color:"#fff" }}>ギルド</div>
+          <div className="rpg-heading" style={{ fontSize:isLandscapePhone?14:18, color:"#fff" }}>ギルド</div>
           <div style={{ flex:1 }} />
-          <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, padding:"4px 8px", cursor:"pointer", display:"flex", alignItems:"center" }}>
+          <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, padding:isLandscapePhone?"2px 6px":"4px 8px", cursor:"pointer", display:"flex", alignItems:"center" }}>
             <img src="/assets/images/hud_settings.png" alt="設定" style={{ width:14, height:14, objectFit:"contain" }} />
           </button>
           <div style={{ textAlign:"right" }}>
@@ -88,13 +92,13 @@ export default function TownPage({ onEnterDungeon }) {
         </div>
       </div>
 
-      {/* タブ */}
+      {/* タブ: 横画面スマホはアイコンと上下paddingを縮小 */}
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0, background:"linear-gradient(180deg, rgba(8,5,2,0.5), rgba(8,5,2,0.65)), url(/assets/images/tab_bar_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
         {tabs.map(t => {
           const isSel = tab === t.id;
           return (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:isMobile?"6px 2px":"6px 2px", background:"transparent", border:"none", cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:isMobile?1:2 }}>
-              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:isMobile?26:28, height:isMobile?26:28, objectFit:"contain", opacity:isSel?1:0.65 }} />
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:isLandscapePhone?"3px 2px":"6px 2px", background:"transparent", border:"none", cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:isMobile?1:2 }}>
+              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:isLandscapePhone?18:isMobile?26:28, height:isLandscapePhone?18:isMobile?26:28, objectFit:"contain", opacity:isSel?1:0.65 }} />
               {!isMobile && <span style={{ fontSize:10, color:isSel?"#f0d9a0":DIM }}>{t.label}</span>}
             </button>
           );
