@@ -29,7 +29,7 @@ export const CHARACTER_LAYOUT_DEFAULT = {
     CRIT: { x: 0, y: 80 },
   },
   hpItemPos: {
-    hp: { x: 0, y: 0 },
+    hp: { x: 0, y: -120 },
   },
 };
 
@@ -62,7 +62,7 @@ export const CHARACTER_LAYOUT_LANDSCAPE = {
     CRIT: { x: -10, y: -20 },
   },
   hpItemPos: {
-    hp: { x: 0, y: -197 },
+    hp: { x: 100, y: -282 },
   },
 };
 
