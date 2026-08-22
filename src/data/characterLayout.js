@@ -30,35 +30,33 @@ export const CHARACTER_LAYOUT_DEFAULT = {
   },
 };
 
-// スマホ(横画面)用。横画面は縦画面と違い幅に余裕がある一方で高さが乏しいため、装備列と
-// ステータス欄を縦積みにせず、デスクトップと同じ横並び(row)構造をそのまま縮小して使う。
-// ここに置いた数値は暫定の初期値。実機のDEBUG配置エディタで個別に微調整する想定。
+// スマホ(横画面)用。ユーザーが実機のDEBUG配置エディタで調整した値。
 export const CHARACTER_LAYOUT_LANDSCAPE = {
-  roomHeight: 218,
+  roomHeight: 120,
   roomPanY: 50,
-  equipSlotSize: 36,
-  specialSlotSize: 26,
+  equipSlotSize: 70,
+  specialSlotSize: 60,
   statsPanelWidth: 160,
-  contentPaddingTop: 16,
+  contentPaddingTop: 24,
   panelGap: 12,
   equipItemPos: {
-    equippedWeapon: { x: 0, y: 0 },
-    equippedArmor:  { x: 0, y: 0 },
-    equippedAcc1:   { x: 0, y: 0 },
-    equippedAcc2:   { x: 0, y: 0 },
+    equippedWeapon: { x: 0,   y: 0 },
+    equippedArmor:  { x: -20, y: 0 },
+    equippedAcc1:   { x: 155, y: -101 },
+    equippedAcc2:   { x: 135, y: -101 },
   },
   specialItemPos: [
-    { x: 0, y: 0 },
-    { x: 0, y: 0 },
-    { x: 0, y: 0 },
+    { x: 320, y: -190 },
+    { x: 325, y: -190 },
+    { x: 330, y: -190 },
   ],
   statItemPos: {
-    ATK:  { x: 0, y: 0 },
-    MAG:  { x: 0, y: 0 },
-    DEF:  { x: 0, y: 0 },
-    MDEF: { x: 0, y: 0 },
-    EVA:  { x: 0, y: 0 },
-    CRIT: { x: 0, y: 0 },
+    ATK:  { x: -10, y: -20 },
+    MAG:  { x: -10, y: -20 },
+    DEF:  { x: -10, y: -20 },
+    MDEF: { x: -10, y: -20 },
+    EVA:  { x: -10, y: -20 },
+    CRIT: { x: -10, y: -20 },
   },
 };
 
