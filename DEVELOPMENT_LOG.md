@@ -4,6 +4,13 @@
 
 ## 進行中(今ここ)
 
+**ウェブ版で全画面にならず余白が出る・無駄なスクロールができるバグを修正**
+
+- 「ウェブで開いたときに全画面にならない、余白があったり無駄にスクロールができちゃう」との指摘
+- `src/index.css`の`#root`セレクタが、Viteの初期テンプレート(ブログ風ランディングページ)由来の設定(`width:1126px; max-width:100%; margin:0 auto; border-inline:1px solid var(--border); min-height:100svh`)のまま残っており、ゲーム本編(`TownPage.jsx`が独自に`height:"100vh"`でフル画面レイアウトを組んでいる)と衝突していた。1280px幅のウィンドウで実測したところ、`#root`が1126pxに制限され左右に約77pxずつ余白が出ていることをDOM計測で確認(以前別の調査で見えていた「なぜか77pxオフセットしている」という現象の正体もこれだった)
+- `App.css`にも同じテンプレート由来の未使用CSS(`.hero`/`#center`/`#next-steps`/`#docs`/`#spacer`/`.ticks`等、Vite+Reactスターターの「Next steps」リンク集や3Dロゴ演出用)が大量に残っていることも判明したが、これらはゲーム側のDOMに対応する要素がなく実害はないため今回は据え置き(将来的に消してよいデッドコード)
+- `#root`を`width:100%; box-sizing:border-box;`のみに簡略化。実機の代わりに1920×1080・1280×800・375×812で確認: いずれも`#root`が`window.innerWidth`とぴったり一致し、`document.documentElement.scrollWidth/scrollHeight`が`window.innerWidth/innerHeight`を超えない(＝余分なスクロールが発生しない)ことをDOM計測で確認。コンソールエラーなし
+
 **HPバー位置をデスクトップ・横画面それぞれユーザーが調整した値に反映**
 
 - HPオフセット機構を追加した直後、ユーザーがデスクトップ版(`CHARACTER_LAYOUT_DEFAULT`)で`hpItemPos.hp: {x:0,y:-120}`、横画面版(`CHARACTER_LAYOUT_LANDSCAPE`)で`{x:100,y:-282}`にそれぞれ調整して送ってきたので反映。横画面はCHARACTERの見出し横、装備アイコンの上部に綺麗に収まる配置になった
