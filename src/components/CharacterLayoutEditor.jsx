@@ -29,6 +29,7 @@ const ITEMS = [
   { key:"MDEF", label:"MDEF", group:"statItemPos" },
   { key:"EVA",  label:"EVA",  group:"statItemPos" },
   { key:"CRIT", label:"CRIT", group:"statItemPos" },
+  { key:"hp",   label:"HP",   group:"hpItemPos" },
 ];
 
 function getItemPos(layout, item) {

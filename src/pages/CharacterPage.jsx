@@ -402,7 +402,7 @@ export default function CharacterPage() {
                     );
                   })}
                 </div>
-                <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:4, position:"relative", left:charLayout.hpItemPos?.hp?.x||0, top:charLayout.hpItemPos?.hp?.y||0 }}>
                   <span style={{ fontSize:10, color:"#f87171", fontWeight:700 }}>HP</span>
                   <div style={{ flex:1, height:4, background:"#1a0a0a", borderRadius:2, overflow:"hidden" }}>
                     <div style={{ height:"100%", width:`${(player.hp/stats.maxHp)*100}%`, background: player.hp/stats.maxHp>0.5?"#4ade80":player.hp/stats.maxHp>0.25?"#fbbf24":"#f87171", borderRadius:2 }} />

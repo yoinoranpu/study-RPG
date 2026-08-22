@@ -28,6 +28,9 @@ export const CHARACTER_LAYOUT_DEFAULT = {
     EVA:  { x: 0, y: 80 },
     CRIT: { x: 0, y: 80 },
   },
+  hpItemPos: {
+    hp: { x: 0, y: 0 },
+  },
 };
 
 // スマホ(横画面)用。ユーザーが実機のDEBUG配置エディタで調整した値。
@@ -58,6 +61,9 @@ export const CHARACTER_LAYOUT_LANDSCAPE = {
     EVA:  { x: -10, y: -20 },
     CRIT: { x: -10, y: -20 },
   },
+  hpItemPos: {
+    hp: { x: 0, y: -197 },
+  },
 };
 
 // スマホ(縦画面)用。ユーザーが実機のDEBUG配置エディタで調整した値。
@@ -87,5 +93,8 @@ export const CHARACTER_LAYOUT_MOBILE = {
     MDEF: { x: -2,  y: -345 },
     EVA:  { x: 91,  y: -345 },
     CRIT: { x: -2,  y: -301 },
+  },
+  hpItemPos: {
+    hp: { x: 0, y: 0 },
   },
 };
