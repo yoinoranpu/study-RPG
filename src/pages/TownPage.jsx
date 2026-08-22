@@ -116,8 +116,12 @@ export default function TownPage({ onEnterDungeon }) {
       <div style={{ flex:1, overflowY:"auto", padding: ["character","shop","forge"].includes(tab) ? 0 : 14 }}>
 
         {/* ホーム */}
+        {/* スマホ縦画面は画面が縦に長く、コンテンツが画面下端まで届かず黒い余白が
+            目立つ余ることがあったため、外枠をminHeight:100%にして、中身のうち
+            ギルドの詰め所シーン(最後の要素)をflex:1+中央寄せにして余った縦幅を
+            そこで自然に吸収するようにしている */}
         {tab === "home" && subTab === "home" && (
-          <div style={{ position:"relative", margin:"-14px", overflow:"hidden" }}>
+          <div style={{ position:"relative", margin:"-14px", overflow:"hidden", minHeight:"100%", display:"flex", flexDirection:"column" }}>
             {/* 背景：画像は横幅いっぱいに自然なアスペクト比で表示（モバイルでは高さ制限） */}
             <div style={{ position:"absolute", inset:0, background:"#08080f" }} />
             <div style={{ position:"absolute", top:0, left:0, right:0, maxHeight:isMobile?"120px":isTablet?"160px":"auto", overflow:"hidden" }}>
@@ -128,10 +132,10 @@ export default function TownPage({ onEnterDungeon }) {
               }} />
             </div>
 
-            <div style={{ position:"relative", zIndex:1, padding:isMobile?"100px 10px 10px":"150px 14px 14px", display:"flex", flexDirection:"column", gap:isMobile?6:10 }}>
+            <div style={{ position:"relative", zIndex:1, flex:1, padding:isMobile?"100px 10px 10px":"150px 14px 14px", display:"flex", flexDirection:"column", gap:isMobile?6:10 }}>
             <div className="rpg-panel" style={{ padding:14 }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
-                <img src="/assets/images/hud_player.png" alt="" style={{ width:28, height:28, objectFit:"contain" }} />
+                <img src="/assets/images/player_walk_1.png" alt="" style={{ width:28, height:28, objectFit:"contain" }} />
                 <div style={{ flex:1 }}>
                   <div className="rpg-heading" style={{ fontSize:14, color:"#e8e0d0" }}>Lv {lv}</div>
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3 }}>
@@ -171,7 +175,9 @@ export default function TownPage({ onEnterDungeon }) {
               </div>
             )}
 
-            {/* ギルドの詰め所：壁に掲示板+クエスト掲示板、床に本+トロフィー */}
+            {/* ギルドの詰め所：壁に掲示板+クエスト掲示板、床に本+トロフィー。
+                flex:1+中央寄せで、画面が縦長で余った分の高さをここで吸収する */}
+            <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
             <div style={{ position:"relative", width:"100%", aspectRatio:"1408/768" }}>
               <img src="/assets/images/guild_wall.png" alt="" style={{ width:"100%", height:"100%", display:"block" }} />
 
@@ -253,6 +259,7 @@ export default function TownPage({ onEnterDungeon }) {
                 </div>
                 <div className="rpg-heading" style={{ fontSize:"clamp(8px,2vw,11px)", color:"#e8dcc0", marginTop:4, textShadow:"0 1px 3px #000" }}>実績</div>
               </button>
+            </div>
             </div>
             </div>
           </div>
