@@ -70,25 +70,32 @@ export default function TownPage({ onEnterDungeon }) {
   return (
     <div style={{ height:"100vh", background:"#06060f", fontFamily:"monospace", display:"flex", flexDirection:"column", overflow:"hidden" }}>
 
-      {/* ヘッダー: 横画面スマホは高さが乏しいので「STUDY DUNGEON」の小見出しを省略し、
-          paddingも切り詰めて縦幅を最小限にする */}
-      <div style={{ background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", padding:isLandscapePhone?"4px 14px":"14px 16px 10px", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
-        {!isLandscapePhone && <div className="rpg-heading" style={{ fontSize:10, letterSpacing:5, color:"#c9963d", marginBottom:2, opacity:0.8 }}>STUDY DUNGEON</div>}
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div className="rpg-heading" style={{ fontSize:isLandscapePhone?14:18, color:"#fff" }}>ギルド</div>
+      {/* ヘッダー: スマホは画面の縦幅が貴重なため「STUDY DUNGEON」の小見出しを省略し、
+          paddingも切り詰める。横画面はさらに切り詰めてレベルバーも省略し1行に収める */}
+      <div style={{ background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", padding:isLandscapePhone?"3px 12px":isMobile?"6px 12px":"14px 16px 10px", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
+        {!isMobile && <div className="rpg-heading" style={{ fontSize:10, letterSpacing:5, color:"#c9963d", marginBottom:2, opacity:0.8 }}>STUDY DUNGEON</div>}
+        <div style={{ display:"flex", alignItems:"center", gap:isMobile?6:10 }}>
+          <div className="rpg-heading" style={{ fontSize:isLandscapePhone?12:isMobile?14:18, color:"#fff" }}>ギルド</div>
           <div style={{ flex:1 }} />
-          <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, padding:isLandscapePhone?"2px 6px":"4px 8px", cursor:"pointer", display:"flex", alignItems:"center" }}>
+          <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:isMobile?"none":"1px solid #333", borderRadius:4, padding:isMobile?2:"4px 8px", cursor:"pointer", display:"flex", alignItems:"center" }}>
             <img src="/assets/images/hud_settings.png" alt="設定" style={{ width:14, height:14, objectFit:"contain" }} />
           </button>
-          <div style={{ textAlign:"right" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:6, justifyContent:"flex-end" }}>
-              <span style={{ fontSize:10, color:"#86efac" }}>Lv {lv}</span>
-              <div style={{ width:44, height:4, background:"#0a1a0a", borderRadius:2, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${lvPct*100}%`, background:"#4ade80", borderRadius:2 }} />
-              </div>
+          {isLandscapePhone ? (
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:10, color:"#86efac" }}>Lv{lv}</span>
+              <span style={{ fontSize:11, color:"#fbbf24", fontWeight:700 }}>G{player.gold.toLocaleString()}</span>
             </div>
-            <div style={{ fontSize:12, color:"#fbbf24", marginTop:1 }}>G {player.gold.toLocaleString()}</div>
-          </div>
+          ) : (
+            <div style={{ textAlign:"right" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:6, justifyContent:"flex-end" }}>
+                <span style={{ fontSize:10, color:"#86efac" }}>Lv {lv}</span>
+                <div style={{ width:44, height:4, background:"#0a1a0a", borderRadius:2, overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${lvPct*100}%`, background:"#4ade80", borderRadius:2 }} />
+                </div>
+              </div>
+              <div style={{ fontSize:12, color:"#fbbf24", marginTop:1 }}>G {player.gold.toLocaleString()}</div>
+            </div>
+          )}
         </div>
       </div>
 
