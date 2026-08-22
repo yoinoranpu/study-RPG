@@ -137,7 +137,12 @@ export default function ForgeTab() {
   const [sel, setSel] = useState(null);
   const [matSel, setMatSel] = useState(null);
   const [msg, flash] = useFlashMessage(3000);
-  const { isMobile, isTablet } = useViewport();
+  const { isMobile, isTablet, isLandscape } = useViewport();
+  // SynthPreviewの縦積み(flexDirection:column)は縦画面の「幅が狭すぎてテキストが
+  // 潰れる」問題への対策であり、横画面は幅に余裕があるため元の横1行のままの方が
+  // 高さを節約できる。isMobile単体ではなくisPortraitPhoneで判定する
+  const isPortraitPhone = isMobile && !isLandscape;
+  const isLandscapePhone = isMobile && isLandscape;
   const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex, stats } = usePlayerStore();
 
   const upgradeItem = itemBox.find(it => it.uid === sel);
@@ -397,7 +402,7 @@ export default function ForgeTab() {
                   cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
                   getIcon={it=>it.icon} getImage={it=>it.image} getTint={it=>it.tint} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]??r}
                   onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
-                  hint="合成元の装備をタップしてください" isMobile={isMobile}
+                  hint="合成元の装備をタップしてください" isMobile={isPortraitPhone}
                 />
               ) : tab === "book" && bookItem ? (
                 <SynthPreview
@@ -405,7 +410,7 @@ export default function ForgeTab() {
                   cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
                   getIcon={b=>SKILL_BOOKS[b.id]?.icon} getImage={b=>SKILL_BOOKS[b.id]?.image} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]??r}
                   onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
-                  hint="合成元のスキル書をタップしてください" isMobile={isMobile}
+                  hint="合成元のスキル書をタップしてください" isMobile={isPortraitPhone}
                 />
               ) : (
                 <div style={{ fontSize:13, color:"#e8d8c0" }}>{bubbleText()}</div>

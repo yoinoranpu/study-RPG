@@ -95,6 +95,6 @@ export const CHARACTER_LAYOUT_MOBILE = {
     CRIT: { x: -2,  y: -301 },
   },
   hpItemPos: {
-    hp: { x: 0, y: 0 },
+    hp: { x: 0, y: -75 },
   },
 };

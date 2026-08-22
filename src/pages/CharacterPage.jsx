@@ -444,9 +444,11 @@ export default function CharacterPage() {
             </div>
           </div>
 
-          <div style={{ flex:1, overflowY:"auto", padding:"8px 10px", background:"linear-gradient(rgba(8,5,2,0.45),rgba(8,5,2,0.45)), url(/assets/images/item_box_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
-            <div style={{ fontSize:10, color:"#d8cdb8", letterSpacing:2, marginBottom:6, textShadow:"0 1px 3px rgba(0,0,0,0.9)" }}>ITEM BOX {(itemBox||[]).length}/30 <span style={{ color:"#a89a80" }}>（ドラッグでも装備可）</span></div>
-            <div style={{ display:"grid", gridTemplateColumns:`repeat(${isPortraitPhone?4:6},1fr)`, gap:4 }}>
+          {/* 横画面スマホは縦の余白が乏しいため、列数を増やして1マスを小さくし、
+              同じ個数でも行数(＝高さ)を減らして一覧性を上げる */}
+          <div style={{ flex:1, overflowY:"auto", padding:isLandscapePhone?"4px 8px":"8px 10px", background:"linear-gradient(rgba(8,5,2,0.45),rgba(8,5,2,0.45)), url(/assets/images/item_box_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
+            <div style={{ fontSize:10, color:"#d8cdb8", letterSpacing:2, marginBottom:isLandscapePhone?3:6, textShadow:"0 1px 3px rgba(0,0,0,0.9)" }}>ITEM BOX {(itemBox||[]).length}/30 <span style={{ color:"#a89a80" }}>（ドラッグでも装備可）</span></div>
+            <div style={{ display:"grid", gridTemplateColumns:`repeat(${isPortraitPhone?4:isLandscapePhone?9:6},1fr)`, gap:isLandscapePhone?3:4 }}>
               {(itemBox||[]).map(it=>{
                 const rc = RARITY_COLOR[it.rarity]||"#888";
                 const isSel = sel===it.uid;

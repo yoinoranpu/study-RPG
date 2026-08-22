@@ -14,7 +14,9 @@ export default function ShopTab() {
   const [sub, setSub] = useState("weapon");
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [msg, flash] = useFlashMessage(3000);
-  const { isMobile, isTablet } = useViewport();
+  const { isMobile, isTablet, isLandscape } = useViewport();
+  // 横画面スマホは縦の余白が特に乏しいため、店主の吹き出しを大きく圧縮する
+  const isLandscapePhone = isMobile && isLandscape;
   const { gold, itemBox, dungeons, keyRescueDungeonId, keyRescueClaimed, stats, updatePlayer } = usePlayerStore();
 
   const spendGold = (amount) => {
@@ -91,18 +93,58 @@ export default function ShopTab() {
       </div>
 
       <div style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", height:"100%" }}>
-        {/* ① ステージ：店主(大)＋吹き出し */}
+        {/* ① ステージ：店主(大)＋吹き出し。横画面は縦の余白が乏しいため店主を縮小し、
+            吹き出しの各項目(ステータス/固有能力/アビリティ)を個別ブロックではなく
+            1つのflexWrap行にまとめてスクロールなしで収まるようにする */}
         <div style={{ flexShrink:0, display:"flex", alignItems:"flex-end", padding:"14px 10px 0" }}>
           <div style={{
-            width:168, height:208, flexShrink:0, marginBottom:-2,
+            width:isLandscapePhone?90:168, height:isLandscapePhone?111:208, flexShrink:0, marginBottom:-2,
             backgroundImage:`url("/assets/images/shopkeeper.png")`,
             backgroundSize:"cover", backgroundPosition:"center 20%", backgroundRepeat:"no-repeat",
             WebkitMaskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
             maskImage:"linear-gradient(to bottom, transparent 0%, black 14%, black 100%)",
           }} />
           <div style={{ position:"relative", flex:1, minWidth:0, marginLeft:2, marginBottom:16 }}>
-            <div className="rpg-panel" style={{ borderRadius:6, padding:"12px 14px" }}>
-              {selectedItem ? (
+            <div className="rpg-panel" style={{ borderRadius:6, padding:isLandscapePhone?"8px 10px":"12px 14px" }}>
+              {selectedItem ? isLandscapePhone ? (
+                <>
+                  <div style={{ display:"flex", alignItems:"flex-start", gap:8 }}>
+                    <div style={{ width:36, height:36, position:"relative", flexShrink:0 }}>
+                      <div style={{ position:"absolute", inset:"8%", borderRadius:"50%", background:RARITY_COLOR[selectedItem.rarity]||"#888", opacity:0.45, filter:"blur(6px)" }} />
+                      <img src="/assets/images/item_slot_frame.png" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }} />
+                      <div style={{ position:"absolute", inset:"19%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        {selectedItem.image ? <img src={selectedItem.image} alt="" style={{ width:"78%", height:"78%", objectFit:"contain", filter:selectedItem.tint||"none" }} /> : <span style={{ fontSize:16 }}>{selectedItem.icon}</span>}
+                      </div>
+                    </div>
+                    <div style={{ flex:1, minWidth:0, display:"flex", flexWrap:"wrap", alignItems:"baseline", columnGap:8, rowGap:2 }}>
+                      <span style={{ fontSize:12, fontWeight:700, color:"#e8e0d0" }}>{selectedItem.name}</span>
+                      <span style={{ fontSize:9, color:RARITY_COLOR[selectedItem.rarity]||"#888" }}>{RARITY_LABEL[selectedItem.rarity]}</span>
+                      {selectedIsSold && <span style={{ fontSize:9, color:DIM }}>SOLD</span>}
+                      {(selectedItem.atk||0)>0  && <span style={{ fontSize:10, color:"#f87171" }}>ATK{selectedItem.atk}</span>}
+                      {(selectedItem.mag||0)>0  && <span style={{ fontSize:10, color:"#a78bfa" }}>MAG{selectedItem.mag}</span>}
+                      {(selectedItem.def||0)>0  && <span style={{ fontSize:10, color:"#60a5fa" }}>DEF{selectedItem.def}</span>}
+                      {(selectedItem.mdef||0)>0 && <span style={{ fontSize:10, color:"#38bdf8" }}>MDEF{selectedItem.mdef}</span>}
+                      {(selectedItem.hp||0)>0   && <span style={{ fontSize:10, color:"#f87171" }}>HP{selectedItem.hp}</span>}
+                      {(selectedItem.crit||0)>0 && <span style={{ fontSize:10, color:"#fbbf24" }}>CRIT{selectedItem.crit}%</span>}
+                      {(selectedItem.eva||0)>0  && <span style={{ fontSize:10, color:"#34d399" }}>EVA{selectedItem.eva}%</span>}
+                      {selectedInnate && selectedInnate.key !== "none" && (
+                        <span style={{ fontSize:10, color:"#fb923c" }}>◆{selectedInnate.label}</span>
+                      )}
+                      {(selectedItem.abilities||[]).map((ab,j) => (
+                        <span key={j} style={{ fontSize:10, color:"#a78bfa" }}>✦{ab.label}{ab.value}{ab.suffix}</span>
+                      ))}
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:2, flexShrink:0 }}>
+                      <span style={{ fontSize:12, color:selectedIsSold?FAINT:"#fbbf24", fontWeight:700 }}>{selectedPrice.toLocaleString()}G</span>
+                      <button onClick={() => buy(selectedItem, selectedIdx)} disabled={!selectedCanBuy}
+                        style={{ padding:"3px 10px", minHeight:"28px", background:selectedCanBuy?"#1a1000":"#0a0a0a", border:`1px solid ${selectedCanBuy?"#fbbf24":"#3a3a3a"}`, borderRadius:4, cursor:selectedCanBuy?"pointer":"default", color:selectedCanBuy?"#fbbf24":FAINT, fontSize:10, fontFamily:"monospace" }}>
+                        {selectedIsSold ? "SOLD" : (itemBox||[]).length >= ITEM_BOX_MAX ? "BOX満杯" : gold < selectedPrice ? "G不足" : "購入"}
+                      </button>
+                    </div>
+                  </div>
+                  {msg && <div style={{ fontSize:10, color:"#4ade80", marginTop:3 }}>{msg}</div>}
+                </>
+              ) : (
                 <>
                   <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
                     <div style={{ width:56, height:56, position:"relative", flexShrink:0 }}>
@@ -159,7 +201,7 @@ export default function ShopTab() {
               ) : (
                 <div style={{ fontSize:13, color:"#d8c8a8" }}>いらっしゃい！在庫なしみたいだ、また今度来ておくれ</div>
               )}
-              {msg && <div style={{ fontSize:11, color:"#4ade80", marginTop:6 }}>{msg}</div>}
+              {msg && <div style={{ fontSize:isLandscapePhone?10:11, color:"#4ade80", marginTop:isLandscapePhone?3:6 }}>{msg}</div>}
             </div>
           </div>
         </div>
