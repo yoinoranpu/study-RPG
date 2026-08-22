@@ -62,9 +62,21 @@ export default function CharacterLayoutEditor({ layout, variant = "default", onC
     onChangeItem(item.group, item.key, axis, cur + delta);
   };
 
-  const handleCopy = () => {
-    const text = `export const ${meta.varName} = ${JSON.stringify(layout, null, 2)};\n`;
-    navigator.clipboard?.writeText(text);
+  const [copyStatus, setCopyStatus] = useState(null); // null | "ok" | "fallback"
+  const jsonText = `export const ${meta.varName} = ${JSON.stringify(layout, null, 2)};\n`;
+
+  // navigator.clipboard.writeTextはHTTPS(またはlocalhost)でないと使えず、
+  // スマホから開発サーバーのLAN IP(http://192.168.x.x:5173等)にアクセスした場合は
+  // navigator.clipboardごとundefinedになり無反応で失敗する。その場合はテキスト
+  // エリアを表示し、手動で選択してコピーしてもらう
+  const handleCopy = async () => {
+    try {
+      if (!navigator.clipboard) throw new Error("clipboard API unavailable");
+      await navigator.clipboard.writeText(jsonText);
+      setCopyStatus("ok");
+    } catch {
+      setCopyStatus("fallback");
+    }
   };
 
   return (
@@ -131,6 +143,19 @@ export default function CharacterLayoutEditor({ layout, variant = "default", onC
           <button onClick={onReset} style={{ flex:1, padding:"8px 0", background:"transparent", border:"1px solid #f8717133", borderRadius:6, cursor:"pointer", color:"#f87171", fontSize:9, fontFamily:"monospace", opacity:0.7 }}>初期値に戻す</button>
           <button onClick={handleCopy} style={{ flex:2, padding:"8px 0", background:"#0a1a0a", border:"1px solid #4ade80", borderRadius:6, cursor:"pointer", color:"#4ade80", fontSize:10, fontFamily:"monospace", letterSpacing:1 }}>JSONをコピー</button>
         </div>
+
+        {copyStatus === "ok" && (
+          <div style={{ fontSize:9, color:"#4ade80", marginTop:6 }}>✓ コピーしました</div>
+        )}
+        {copyStatus === "fallback" && (
+          <div style={{ marginTop:8 }}>
+            <div style={{ fontSize:9, color:"#fbbf24", marginBottom:4 }}>
+              自動コピーできませんでした(HTTPSでない場合の既知の制限)。下のテキストを長押しして全選択→コピーしてください
+            </div>
+            <textarea readOnly value={jsonText} onFocus={(e) => e.target.select()}
+              style={{ width:"100%", height:120, background:"#080810", border:"1px solid #2a2a3a", borderRadius:4, color:"#a8a8c8", fontSize:9, fontFamily:"monospace", padding:6, boxSizing:"border-box", resize:"vertical" }} />
+          </div>
+        )}
       </div>
     </div>
   );
