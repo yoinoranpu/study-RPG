@@ -119,7 +119,11 @@ export default function DungeonPage({ onBack }) {
   const dungeon = getDungeon(dungeonId);
   const dungeonState = (player.dungeons || makeInitialDungeons())[dungeonId] || { floor:1, maxFloor:1, floorMapping:0, cleared:false };
 
-  const { isMobile } = useViewport();
+  const { isMobile, isLandscape } = useViewport();
+  // 横画面レイアウトは「物理的に横向きにした上でボタンで有効化」する方式。
+  // 縦持ちのまま自動で反映されると誤操作しやすいため、手動トグルにしている
+  const [wantLandscape, setWantLandscape] = useState(false);
+  const dungeonLandscapeMode = isMobile && isLandscape && wantLandscape;
   const [rigEditorId, setRigEditorId] = useState(null);
   const [floatRigEditorId, setFloatRigEditorId] = useState(null);
 
@@ -864,6 +868,13 @@ export default function DungeonPage({ onBack }) {
         <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:"1px solid #333", borderRadius:4, padding:isMobile?"3px 6px":"4px 10px", cursor:"pointer", minHeight:isMobile?"32px":"auto", display:"flex", alignItems:"center" }}>
           <img src="/assets/images/hud_settings.png" alt="設定" style={{ width:12, height:12, objectFit:"contain" }} />
         </button>
+        {/* 横画面レイアウトへの切り替えボタン：物理的に横向きにしている時だけ表示。
+            自動切り替えだと縦持ちのまま意図せず崩れることがあるため手動トグルにしている */}
+        {isMobile && isLandscape && (
+          <button onClick={() => setWantLandscape(v => !v)} style={{ background:wantLandscape?"#0a2a1a":"transparent", border:`1px solid ${wantLandscape?"#4ade80":"#333"}`, borderRadius:4, padding:"3px 6px", cursor:"pointer", color:wantLandscape?"#4ade80":"#666", fontSize:8, minHeight:"32px", display:"flex", alignItems:"center", gap:3 }}>
+            📱 横画面{wantLandscape?"ON":"OFF"}
+          </button>
+        )}
         <div style={{ color:"#60a5fa", fontSize:isMobile?10:12, letterSpacing:2 }}>{dungeon.name} B{floor}F</div>
         <div style={{ flex:1 }} />
         {!isMobile && <div style={{ color:"#86efac", fontSize:10 }}>Lv{lv}</div>}
@@ -877,16 +888,20 @@ export default function DungeonPage({ onBack }) {
         </div>
       </div>
 
-      <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16, padding:16, position:"relative", zIndex:1 }}>
-        <div style={{ position:"relative", width:180, height:180 }}>
-          <svg width={180} height={180} style={{ transform:"rotate(-90deg)" }}>
-            <circle cx={90} cy={90} r={78} fill="none" stroke="#1a1a1a" strokeWidth={8} />
-            <circle cx={90} cy={90} r={78} fill="none" stroke={accent} strokeWidth={8}
-              strokeDasharray={`${2*Math.PI*78*pct} ${2*Math.PI*78}`} strokeLinecap="round"
+      {/* 横画面モードは高さが乏しいぶん幅に余裕があるため、円形タイマーと
+          コントロール類(イベント/マッピング/ボタン)を縦積みから横並びに変える。
+          コントロール類は内側のcolumn divにまとめておくことで、外側の
+          flexDirectionをrow/columnに切り替えるだけで両対応できるようにしている */}
+      <div style={{ flex:1, display:"flex", flexDirection:dungeonLandscapeMode?"row":"column", alignItems:"center", justifyContent:"center", gap:dungeonLandscapeMode?28:16, padding:16, position:"relative", zIndex:1 }}>
+        <div style={{ position:"relative", width:dungeonLandscapeMode?140:180, height:dungeonLandscapeMode?140:180, flexShrink:0 }}>
+          <svg width={dungeonLandscapeMode?140:180} height={dungeonLandscapeMode?140:180} style={{ transform:"rotate(-90deg)" }}>
+            <circle cx={dungeonLandscapeMode?70:90} cy={dungeonLandscapeMode?70:90} r={dungeonLandscapeMode?60:78} fill="none" stroke="#1a1a1a" strokeWidth={8} />
+            <circle cx={dungeonLandscapeMode?70:90} cy={dungeonLandscapeMode?70:90} r={dungeonLandscapeMode?60:78} fill="none" stroke={accent} strokeWidth={8}
+              strokeDasharray={`${2*Math.PI*(dungeonLandscapeMode?60:78)*pct} ${2*Math.PI*(dungeonLandscapeMode?60:78)}`} strokeLinecap="round"
               style={{ transition:"stroke-dasharray 0.5s linear", filter:`drop-shadow(0 0 6px ${accent})` }} />
           </svg>
           <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-            <div style={{ fontSize:isMobile?24:36, fontWeight:900, color:"#fff", letterSpacing:2 }}>
+            <div style={{ fontSize:dungeonLandscapeMode?20:isMobile?24:36, fontWeight:900, color:"#fff", letterSpacing:2 }}>
               {String(mins).padStart(2,"0")}:{String(secs).padStart(2,"0")}
             </div>
             <div style={{ fontSize:isMobile?8:10, color:accent, marginTop:4 }}>
@@ -895,34 +910,39 @@ export default function DungeonPage({ onBack }) {
           </div>
         </div>
 
-        <div style={{ display:"flex", gap:6 }}>
-          {Array.from({ length:BASE_MAX_EVENTS }).map((_,i) => (
-            <div key={i} style={{ width:12, height:12, borderRadius:3, background:i<eventCount?"#fbbf24":"#1a1a1a", border:`1px solid ${i<eventCount?"#fbbf2488":"#333"}`, boxShadow:i<eventCount?"0 0 4px #fbbf2488":"none", transition:"all 0.3s" }} />
-          ))}
-          <span style={{ fontSize:8, color:"#4a4a6a", marginLeft:4 }}>EVENTS {eventCount}/{BASE_MAX_EVENTS}</span>
-        </div>
-
-        <div style={{ width:"100%", maxWidth:280 }}>
-          <div style={{ display:"flex", justifyContent:"space-between", fontSize:9, color:"#4a4a6a", marginBottom:4 }}>
-            <span>マッピング B{floor}F</span><span>{Math.floor(mapping)}%</span>
-          </div>
-          <div style={{ height:6, background:"#1a1a1a", borderRadius:3, overflow:"hidden" }}>
-            <div style={{ height:"100%", width:`${mapping}%`, background:"#60a5fa", borderRadius:3, transition:"width 0.5s" }} />
-          </div>
-        </div>
-
-        <button onClick={() => setIsRunning(r => !r)} style={{ padding:isMobile?"10px 24px":"14px 40px", background:isRunning?"#2a0a0a":"#0a2a0a", border:`2px solid ${isRunning?"#f87171":"#4ade80"}`, borderRadius:8, cursor:"pointer", color:isRunning?"#f87171":"#4ade80", fontSize:isMobile?14:16, letterSpacing:isMobile?2:4, fontWeight:900, minHeight:"44px", minWidth:"44px" }}>
-          {isRunning ? "STOP" : "START"}
-        </button>
-
-        {escapeItem && isRunning && (
-          <button onClick={useEscapeScroll} style={{ padding:"8px 20px", background:"#1a1000", border:"1px solid #fbbf2488", borderRadius:6, cursor:"pointer", color:"#fbbf24", fontSize:10, fontFamily:"monospace" }}>
-            📜 {escapeItem.name}を使って帰還
-          </button>
-        )}
-
-        {DEBUG && (
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:dungeonLandscapeMode?10:16 }}>
           <div style={{ display:"flex", gap:6 }}>
+            {Array.from({ length:BASE_MAX_EVENTS }).map((_,i) => (
+              <div key={i} style={{ width:12, height:12, borderRadius:3, background:i<eventCount?"#fbbf24":"#1a1a1a", border:`1px solid ${i<eventCount?"#fbbf2488":"#333"}`, boxShadow:i<eventCount?"0 0 4px #fbbf2488":"none", transition:"all 0.3s" }} />
+            ))}
+            <span style={{ fontSize:8, color:"#4a4a6a", marginLeft:4 }}>EVENTS {eventCount}/{BASE_MAX_EVENTS}</span>
+          </div>
+
+          <div style={{ width:"100%", maxWidth:280 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:9, color:"#4a4a6a", marginBottom:4 }}>
+              <span>マッピング B{floor}F</span><span>{Math.floor(mapping)}%</span>
+            </div>
+            <div style={{ height:6, background:"#1a1a1a", borderRadius:3, overflow:"hidden" }}>
+              <div style={{ height:"100%", width:`${mapping}%`, background:"#60a5fa", borderRadius:3, transition:"width 0.5s" }} />
+            </div>
+          </div>
+
+          <button onClick={() => setIsRunning(r => !r)} style={{ padding:isMobile?"10px 24px":"14px 40px", background:isRunning?"#2a0a0a":"#0a2a0a", border:`2px solid ${isRunning?"#f87171":"#4ade80"}`, borderRadius:8, cursor:"pointer", color:isRunning?"#f87171":"#4ade80", fontSize:isMobile?14:16, letterSpacing:isMobile?2:4, fontWeight:900, minHeight:"44px", minWidth:"44px" }}>
+            {isRunning ? "STOP" : "START"}
+          </button>
+
+          {escapeItem && isRunning && (
+            <button onClick={useEscapeScroll} style={{ padding:"8px 20px", background:"#1a1000", border:"1px solid #fbbf2488", borderRadius:6, cursor:"pointer", color:"#fbbf24", fontSize:10, fontFamily:"monospace" }}>
+              📜 {escapeItem.name}を使って帰還
+            </button>
+          )}
+        </div>
+
+        {/* DEBUGツール行はposition:absoluteで通常のflowから外している。横画面モードは
+            円形タイマー+コントロール類をrowでcenter寄せしているため、これが通常のflex
+            子要素のままだと横幅の合計が広がりすぎて中央寄せ全体が画面外にはみ出してしまう */}
+        {DEBUG && (
+          <div style={{ position:"absolute", left:8, bottom:8, display:"flex", flexWrap:"wrap", gap:6, maxWidth:"calc(100% - 16px)", zIndex:3 }}>
             <button onClick={fireEvent} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #a78bfa44", borderRadius:4, cursor:"pointer", color:"#a78bfa", fontSize:9, fontFamily:"monospace" }}>DEBUG: イベント</button>
             <button onClick={() => addMapping(25)} style={{ padding:"6px 16px", background:"#1a0a1a", border:"1px solid #60a5fa44", borderRadius:4, cursor:"pointer", color:"#60a5fa", fontSize:9, fontFamily:"monospace" }}>DEBUG: マップ+25%</button>
             <select onChange={(e) => { debugSpawnMonster(e.target.value); e.target.value=""; }} defaultValue=""
