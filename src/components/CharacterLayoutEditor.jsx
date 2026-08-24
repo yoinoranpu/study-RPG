@@ -39,9 +39,8 @@ function getItemPos(layout, item) {
 }
 
 const VARIANT_META = {
-  default:   { varName:"CHARACTER_LAYOUT_DEFAULT",   label:"DEFAULT",   color:"#60a5fa" },
-  mobile:    { varName:"CHARACTER_LAYOUT_MOBILE",    label:"MOBILE(縦)", color:"#4ade80" },
-  landscape: { varName:"CHARACTER_LAYOUT_LANDSCAPE", label:"MOBILE(横)", color:"#fbbf24" },
+  default: { varName:"CHARACTER_LAYOUT_DEFAULT", label:"DEFAULT", color:"#60a5fa" },
+  mobile:  { varName:"CHARACTER_LAYOUT_MOBILE",  label:"MOBILE",  color:"#4ade80" },
 };
 
 export default function CharacterLayoutEditor({ layout, variant = "default", onChangeField, onChangeItem, onReset, onClose }) {

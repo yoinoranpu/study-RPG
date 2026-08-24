@@ -28,7 +28,7 @@ const DIM = "#7a7a9a";
 const FAINT = "#5c5c82";
 
 // ─── 選択グリッド共通部品：レアリティ別グループ化＋検索＋拡大カード ───
-function ItemPicker({ items, selectedUid, matUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getImage, getName, emptyText, isMaxed }) {
+function ItemPicker({ items, selectedUid, matUid, onSelect, getRarity, getColor, getRarityLabel, getIcon, getImage, getName, emptyText, isMaxed, isEquipped }) {
   const groups = {};
   items.forEach(it => { const r = getRarity(it); (groups[r] = groups[r] || []).push(it); });
   const dual = matUid !== undefined; // 合成/スキル書タブ(ベース+素材の2択)かどうか
@@ -66,6 +66,7 @@ function ItemPicker({ items, selectedUid, matUid, onSelect, getRarity, getColor,
                       <div style={{ position:"absolute", top:1, left:1, fontSize:8, color:"#0a0a0a", fontWeight:700, background:isBase?"#fbbf24":"#4ade80", borderRadius:"50%", width:13, height:13, lineHeight:"13px", textAlign:"center", zIndex:1 }}>{isBase?"1":"2"}</div>
                     )}
                     {maxed && !isSel && <div style={{ position:"absolute", top:1, right:2, fontSize:7, color:"#fbbf24", fontWeight:700, background:"rgba(0,0,0,0.75)", borderRadius:2, padding:"1px 3px", zIndex:1 }}>MAX</div>}
+                    {isEquipped?.(it) && <div style={{ position:"absolute", bottom:1, left:1, fontSize:7, color:"#4ade80", fontWeight:700, background:"rgba(0,0,0,0.75)", borderRadius:2, padding:"1px 3px", zIndex:1 }}>装備中</div>}
                   </div>
                   <div style={{ fontSize:9, color:(maxed&&!isSel)?DIM:"#e8e0d0", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%" }}>{getName(it).slice(0,7)}</div>
                 </div>
@@ -137,15 +138,41 @@ export default function ForgeTab() {
   const [sel, setSel] = useState(null);
   const [matSel, setMatSel] = useState(null);
   const [msg, flash] = useFlashMessage(3000);
-  const { isMobile, isTablet, isLandscape } = useViewport();
-  // SynthPreviewの縦積み(flexDirection:column)は縦画面の「幅が狭すぎてテキストが
-  // 潰れる」問題への対策であり、横画面は幅に余裕があるため元の横1行のままの方が
-  // 高さを節約できる。isMobile単体ではなくisPortraitPhoneで判定する
-  const isPortraitPhone = isMobile && !isLandscape;
-  const isLandscapePhone = isMobile && isLandscape;
-  const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex, stats } = usePlayerStore();
+  const { isMobile, isTablet } = useViewport();
+  const player = usePlayerStore();
+  const { itemBox, gold, materials, updatePlayer, skillBooks, activeSkillSlots, passiveSkillSlots, skillBookDex, stats } = player;
 
-  const upgradeItem = itemBox.find(it => it.uid === sel);
+  // 装備中の武器/防具/アクセ2つは元々itemBoxから抜けてplayer側のフィールドに
+  // 移動する仕組みのため、itemBoxだけを見ていると強化/合成の一覧に出てこない。
+  // 装備中も含めた一覧(allEquipment)と、更新時にitemBoxか装備スロットどちらを
+  // 書き換えるべきかを判定するヘルパーで対応する
+  const equippedList = [player.equippedWeapon, player.equippedArmor, player.equippedAcc1, player.equippedAcc2].filter(Boolean);
+  const allEquipment = [...itemBox, ...equippedList];
+  function equippedSlotKey(uid) {
+    if (player.equippedWeapon?.uid === uid) return "equippedWeapon";
+    if (player.equippedArmor?.uid === uid) return "equippedArmor";
+    if (player.equippedAcc1?.uid === uid)  return "equippedAcc1";
+    if (player.equippedAcc2?.uid === uid)  return "equippedAcc2";
+    return null;
+  }
+  // actions: [{uid, next}] のnextは更新後のアイテム、nullなら削除(消費)。
+  // 対象がitemBoxか装備スロットかを自動判定してupdatePlayerに渡すpayloadを組み立てる
+  function applyEquipmentUpdates(actions) {
+    const payload = {};
+    let newItemBox = itemBox;
+    for (const { uid, next } of actions) {
+      const slotKey = equippedSlotKey(uid);
+      if (slotKey) {
+        payload[slotKey] = next;
+      } else {
+        newItemBox = next ? newItemBox.map(x => x.uid === uid ? next : x) : newItemBox.filter(x => x.uid !== uid);
+      }
+    }
+    if (newItemBox !== itemBox) payload.itemBox = newItemBox;
+    return payload;
+  }
+
+  const upgradeItem = allEquipment.find(it => it.uid === sel);
   const matOpts = upgradeItem ? MAT_UP[upgradeItem.type] || [] : [];
   const cost = upgradeItem ? upgradeCost(upgradeItem.upgradeLevel) : 0;
   const forgeStone = itemBox.find(it => it.effect === "forge_up_2");
@@ -156,7 +183,7 @@ export default function ForgeTab() {
     const updated = { ...upgradeItem, upgradeLevel: newLv };
     const prevStats = stats || makeInitialStats();
     updatePlayer({
-      itemBox: itemBox.filter(x => x.uid !== forgeStone.uid).map(x => x.uid === upgradeItem.uid ? updated : x),
+      ...applyEquipmentUpdates([{ uid: forgeStone.uid, next: null }, { uid: upgradeItem.uid, next: updated }]),
       stats: { ...prevStats, maxUpgradeLevelEver: Math.max(prevStats.maxUpgradeLevelEver||0, newLv) },
     });
     flash(`💠 ${forgeStone.name}を使って+${newLv}に強化！`);
@@ -179,7 +206,7 @@ export default function ForgeTab() {
     const updated = { ...upgradeItem, upgradeLevel: newLv, bonuses: newB };
     const prevStats = stats || makeInitialStats();
     updatePlayer({
-      itemBox: itemBox.map(x => x.uid === upgradeItem.uid ? updated : x),
+      ...applyEquipmentUpdates([{ uid: upgradeItem.uid, next: updated }]),
       gold: gold - cost,
       materials: { ...materials, [mo.mat]: (materials[mo.mat] || 0) - 1 },
       stats: { ...prevStats, maxUpgradeLevelEver: Math.max(prevStats.maxUpgradeLevelEver||0, newLv) },
@@ -187,12 +214,12 @@ export default function ForgeTab() {
     flash(`+${newLv}に強化！${msMsg}`);
   }
 
-  const baseItem = itemBox.find(it => it.uid === sel);
-  const matItem  = itemBox.find(it => it.uid === matSel);
+  const baseItem = allEquipment.find(it => it.uid === sel);
+  const matItem  = allEquipment.find(it => it.uid === matSel);
   // 素材は「同じ種類・同じサブタイプ(剣は剣、弓は弓)・同じレアリティ」のみ許可
   // アクセサリーはsubtype自体が無いのでtype一致だけで従来通り（undefined同士は一致する）
   const synthCandidates = baseItem
-    ? itemBox.filter(it => it.uid !== baseItem.uid && it.type === baseItem.type && it.subtype === baseItem.subtype && it.rarity === baseItem.rarity)
+    ? allEquipment.filter(it => it.uid !== baseItem.uid && it.type === baseItem.type && it.subtype === baseItem.subtype && it.rarity === baseItem.rarity)
     : [];
   const next = baseItem ? nextRarity(baseItem.rarity) : null;
   const synthCost = baseItem ? SYNTHESIS_COST[baseItem.rarity] : null;
@@ -203,13 +230,13 @@ export default function ForgeTab() {
     if (sel === uid) { setSel(null); setMatSel(null); return; }
     if (matSel === uid) { setMatSel(null); return; }
     if (!sel) {
-      const it = itemBox.find(i => i.uid === uid);
+      const it = allEquipment.find(i => i.uid === uid);
       if (it && !nextRarity(it.rarity)) { flash("これ以上合成できません"); return; }
       setSel(uid);
       return;
     }
     if (synthCandidates.some(c => c.uid === uid)) { setMatSel(uid); return; }
-    const it = itemBox.find(i => i.uid === uid);
+    const it = allEquipment.find(i => i.uid === uid);
     if (it && !nextRarity(it.rarity)) { flash("これ以上合成できません"); return; }
     setSel(uid); setMatSel(null);
   }
@@ -243,7 +270,7 @@ export default function ForgeTab() {
     synthesized.abilities = newAbilities.slice(0, newSlots);
     const prevStats = stats || makeInitialStats();
     updatePlayer({
-      itemBox: itemBox.filter(x => x.uid !== matItem.uid).map(x => x.uid === baseItem.uid ? synthesized : x),
+      ...applyEquipmentUpdates([{ uid: matItem.uid, next: null }, { uid: baseItem.uid, next: synthesized }]),
       gold: gold - synthCost.gold,
       stats: {
         ...prevStats,
@@ -402,7 +429,7 @@ export default function ForgeTab() {
                   cost={synthCost?.gold} canAfford={gold >= (synthCost?.gold||0)} onSynth={synthesize}
                   getIcon={it=>it.icon} getImage={it=>it.image} getTint={it=>it.tint} getName={it=>it.name} getColor={it=>RARITY_COLOR[it.rarity]||"#888"} getRarityLabel={r=>RARITY_LABEL[r]??r}
                   onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
-                  hint="合成元の装備をタップしてください" isMobile={isPortraitPhone}
+                  hint="合成元の装備をタップしてください" isMobile={isMobile}
                 />
               ) : tab === "book" && bookItem ? (
                 <SynthPreview
@@ -410,7 +437,7 @@ export default function ForgeTab() {
                   cost={bookSynthCost} canAfford={gold >= (bookSynthCost||0)} onSynth={synthesizeBook}
                   getIcon={b=>SKILL_BOOKS[b.id]?.icon} getImage={b=>SKILL_BOOKS[b.id]?.image} getName={b=>SKILL_BOOKS[b.id]?.name||""} getColor={b=>BOOK_RARITY_COLOR[b.rarity]||"#888"} getRarityLabel={r=>BOOK_RARITY_LABEL[r]??r}
                   onClickBase={()=>{ setSel(null); setMatSel(null); }} onClickMat={()=>setMatSel(null)}
-                  hint="合成元のスキル書をタップしてください" isMobile={isPortraitPhone}
+                  hint="合成元のスキル書をタップしてください" isMobile={isMobile}
                 />
               ) : (
                 <div style={{ fontSize:13, color:"#e8d8c0" }}>{bubbleText()}</div>
@@ -440,7 +467,7 @@ export default function ForgeTab() {
         {tab === "upgrade" && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             <ItemPicker
-              items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
+              items={allEquipment.filter(it=>["weapon","armor","accessory"].includes(it.type))}
               selectedUid={sel}
               onSelect={(uid)=>setSel(prev=>prev===uid?null:uid)}
               getRarity={it=>it.rarity}
@@ -449,6 +476,7 @@ export default function ForgeTab() {
               getIcon={it=>it.icon}
               getName={it=>it.name}
               emptyText="強化できる装備がない"
+              isEquipped={it=>!!equippedSlotKey(it.uid)}
             />
 
             <div style={{ padding:"6px 2px", borderTop:"1px solid rgba(251,146,60,0.25)" }}>
@@ -479,7 +507,7 @@ export default function ForgeTab() {
             </div>
 
             <ItemPicker
-              items={itemBox.filter(it=>["weapon","armor","accessory"].includes(it.type))}
+              items={allEquipment.filter(it=>["weapon","armor","accessory"].includes(it.type))}
               selectedUid={sel}
               matUid={matSel}
               onSelect={pickSynth}
@@ -490,6 +518,7 @@ export default function ForgeTab() {
               getImage={it=>it.image}
               getName={it=>it.name}
               isMaxed={it=>!nextRarity(it.rarity)}
+              isEquipped={it=>!!equippedSlotKey(it.uid)}
               emptyText="合成できる装備がない"
             />
           </div>

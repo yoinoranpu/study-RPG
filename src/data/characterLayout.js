@@ -33,42 +33,15 @@ export const CHARACTER_LAYOUT_DEFAULT = {
   },
 };
 
-// スマホ(横画面)用。ユーザーが実機のDEBUG配置エディタで調整した値。
-export const CHARACTER_LAYOUT_LANDSCAPE = {
-  roomHeight: 120,
-  roomPanY: 50,
-  equipSlotSize: 70,
-  specialSlotSize: 60,
-  statsPanelWidth: 160,
-  contentPaddingTop: 24,
-  panelGap: 12,
-  equipItemPos: {
-    equippedWeapon: { x: 0,   y: 0 },
-    equippedArmor:  { x: -20, y: 0 },
-    equippedAcc1:   { x: 155, y: -101 },
-    equippedAcc2:   { x: 135, y: -101 },
-  },
-  specialItemPos: [
-    { x: 320, y: -190 },
-    { x: 325, y: -190 },
-    { x: 330, y: -190 },
-  ],
-  statItemPos: {
-    ATK:  { x: -10, y: -20 },
-    MAG:  { x: -10, y: -20 },
-    DEF:  { x: -10, y: -20 },
-    MDEF: { x: -10, y: -20 },
-    EVA:  { x: -10, y: -20 },
-    CRIT: { x: -10, y: -20 },
-  },
-  hpItemPos: {
-    hp: { x: 100, y: -282 },
-  },
-};
-
 // スマホ(縦画面)用。ユーザーが実機のDEBUG配置エディタで調整した値。
+// キャラ画面は横画面対応を廃止したため、スマホは向きに関わらず常にこのレイアウトを使う。
+// roomHeightは背景画像(character_room.jpg)を切り取る高さで、装備列の実際の
+// 中身の高さ(≒305px、itemPos等のズレを適用する前の通常フロー基準)より小さいと、
+// 画像が届かない下端が背景色(黒)のまま露出する。以前はHPバーがちょうどその境目に
+// 自然な位置で描画されていて目立たなかったが、hpItemPosで上に引き上げた結果、
+// 露出していた黒い余白がそのまま見えるようになっていた
 export const CHARACTER_LAYOUT_MOBILE = {
-  roomHeight: 230,
+  roomHeight: 305,
   roomPanY: 40,
   equipSlotSize: 65,
   specialSlotSize: 45,

@@ -27,10 +27,7 @@ export default function TownPage({ onEnterDungeon }) {
   const [stampingDungeonId, setStampingDungeonId] = useState(null);
   const [guildLayout, setGuildLayout] = useState(GUILD_LAYOUT_DEFAULT);
   const [showLayoutEditor, setShowLayoutEditor] = useState(false);
-  const { isMobile, isTablet, isLandscape } = useViewport();
-  // 横画面スマホは高さが乏しく(例:812×375)、ヘッダー+タブの縦幅がそのまま
-  // コンテンツを圧迫するため、この2つだけ大きく切り詰める
-  const isLandscapePhone = isMobile && isLandscape;
+  const { isMobile, isTablet } = useViewport();
   const player = usePlayerStore();
   const { updatePlayer } = usePlayerStore();
   const lv = expToLevel(player.totalExp);
@@ -71,41 +68,35 @@ export default function TownPage({ onEnterDungeon }) {
     <div style={{ height:"100vh", background:"#06060f", fontFamily:"monospace", display:"flex", flexDirection:"column", overflow:"hidden" }}>
 
       {/* ヘッダー: スマホは画面の縦幅が貴重なため「STUDY DUNGEON」の小見出しを省略し、
-          paddingも切り詰める。横画面はさらに切り詰めてレベルバーも省略し1行に収める */}
-      <div style={{ background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", padding:isLandscapePhone?"3px 12px":isMobile?"6px 12px":"14px 16px 10px", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
+          paddingも切り詰める。ギルド/キャラ/ショップ/鍛冶屋タブは横画面対応を廃止し、
+          縦画面と同じレイアウトのまま(横向きにしても崩れないが最適化はしない) */}
+      <div style={{ background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", padding:isMobile?"6px 12px":"14px 16px 10px", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
         {!isMobile && <div className="rpg-heading" style={{ fontSize:10, letterSpacing:5, color:"#c9963d", marginBottom:2, opacity:0.8 }}>STUDY DUNGEON</div>}
         <div style={{ display:"flex", alignItems:"center", gap:isMobile?6:10 }}>
-          <div className="rpg-heading" style={{ fontSize:isLandscapePhone?12:isMobile?14:18, color:"#fff" }}>ギルド</div>
+          <div className="rpg-heading" style={{ fontSize:isMobile?14:18, color:"#fff" }}>ギルド</div>
           <div style={{ flex:1 }} />
           <button onClick={() => setShowSettings(true)} style={{ background:"transparent", border:isMobile?"none":"1px solid #333", borderRadius:4, padding:isMobile?2:"4px 8px", cursor:"pointer", display:"flex", alignItems:"center" }}>
             <img src="/assets/images/hud_settings.png" alt="設定" style={{ width:14, height:14, objectFit:"contain" }} />
           </button>
-          {isLandscapePhone ? (
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:10, color:"#86efac" }}>Lv{lv}</span>
-              <span style={{ fontSize:11, color:"#fbbf24", fontWeight:700 }}>G{player.gold.toLocaleString()}</span>
-            </div>
-          ) : (
-            <div style={{ textAlign:"right" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:6, justifyContent:"flex-end" }}>
-                <span style={{ fontSize:10, color:"#86efac" }}>Lv {lv}</span>
-                <div style={{ width:44, height:4, background:"#0a1a0a", borderRadius:2, overflow:"hidden" }}>
-                  <div style={{ height:"100%", width:`${lvPct*100}%`, background:"#4ade80", borderRadius:2 }} />
-                </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6, justifyContent:"flex-end" }}>
+              <span style={{ fontSize:10, color:"#86efac" }}>Lv {lv}</span>
+              <div style={{ width:44, height:4, background:"#0a1a0a", borderRadius:2, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${lvPct*100}%`, background:"#4ade80", borderRadius:2 }} />
               </div>
-              <div style={{ fontSize:12, color:"#fbbf24", marginTop:1 }}>G {player.gold.toLocaleString()}</div>
             </div>
-          )}
+            <div style={{ fontSize:12, color:"#fbbf24", marginTop:1 }}>G {player.gold.toLocaleString()}</div>
+          </div>
         </div>
       </div>
 
-      {/* タブ: 横画面スマホはアイコンと上下paddingを縮小 */}
+      {/* タブ */}
       <div style={{ display:"flex", borderBottom:"1px solid #1a1a2a", flexShrink:0, background:"linear-gradient(180deg, rgba(8,5,2,0.5), rgba(8,5,2,0.65)), url(/assets/images/tab_bar_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
         {tabs.map(t => {
           const isSel = tab === t.id;
           return (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:isLandscapePhone?"3px 2px":"6px 2px", background:"transparent", border:"none", cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:isMobile?1:2 }}>
-              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:isLandscapePhone?18:isMobile?26:28, height:isLandscapePhone?18:isMobile?26:28, objectFit:"contain", opacity:isSel?1:0.65 }} />
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex:1, padding:"6px 2px", background:"transparent", border:"none", cursor:"pointer", fontFamily:"monospace", display:"flex", flexDirection:"column", alignItems:"center", gap:isMobile?1:2 }}>
+              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:isMobile?26:28, height:isMobile?26:28, objectFit:"contain", opacity:isSel?1:0.65 }} />
               {!isMobile && <span style={{ fontSize:10, color:isSel?"#f0d9a0":DIM }}>{t.label}</span>}
             </button>
           );

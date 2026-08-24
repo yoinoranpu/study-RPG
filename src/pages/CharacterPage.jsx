@@ -5,12 +5,12 @@ import { RARITY_COLOR, RARITY_LABEL, INNATE, getItemStats, getSellPrice } from "
 import { SKILL_BOOKS, getBookSellPrice, BOOK_RARITY_COLOR, BOOK_RARITY_LABEL } from "../data/skills";
 import { TRIBE_MAT } from "../systems/events";
 import CharacterLayoutEditor from "../components/CharacterLayoutEditor";
-import { CHARACTER_LAYOUT_DEFAULT, CHARACTER_LAYOUT_MOBILE, CHARACTER_LAYOUT_LANDSCAPE } from "../data/characterLayout";
+import { CHARACTER_LAYOUT_DEFAULT, CHARACTER_LAYOUT_MOBILE } from "../data/characterLayout";
 import useViewport from "../hooks/useViewport";
 
-function pickCharLayout(isMobile, isLandscape) {
-  if (!isMobile) return CHARACTER_LAYOUT_DEFAULT;
-  return isLandscape ? CHARACTER_LAYOUT_LANDSCAPE : CHARACTER_LAYOUT_MOBILE;
+// キャラ画面は横画面対応を廃止し、スマホなら向きに関わらず常に縦画面用レイアウトを使う
+function pickCharLayout(isMobile) {
+  return isMobile ? CHARACTER_LAYOUT_MOBILE : CHARACTER_LAYOUT_DEFAULT;
 }
 
 const INSTANT_USE_EFFECTS = ["skill_reset", "mat_pack"];
@@ -130,16 +130,12 @@ function BookSlotCell({ i, uid, dz, setSlot, bookByUid, dropTarget, sel, setSel 
 }
 
 export default function CharacterPage() {
-  const { isMobile, isLandscape } = useViewport();
-  // 縦画面のスマホだけが装備列+ステータス欄を縦積みにする特殊構造(位置ズレの大きなオフセット・
-  // 部屋の背景と中身の高さを分離する仕組み等)を必要とする。横画面は幅に余裕がありデスクトップと
-  // 同じ横並び構造で成立するため、構造分岐にはisMobile単体ではなくこちらを使う
-  const isPortraitPhone = isMobile && !isLandscape;
-  // 横画面スマホは高さが特に乏しいため、装備/スキルタブの切り替え行も横並びにして縦幅を削る
-  const isLandscapePhone = isMobile && isLandscape;
+  const { isMobile } = useViewport();
+  // キャラ画面は横画面対応を廃止したため、スマホは向きに関わらず常に縦積みレイアウトを使う
+  const isPortraitPhone = isMobile;
   const [tab, setTab] = useState("equip");
   const [sel, setSel] = useState(null);
-  const [charLayout, setCharLayout] = useState(() => pickCharLayout(isMobile, isLandscape));
+  const [charLayout, setCharLayout] = useState(() => pickCharLayout(isMobile));
   const [showCharLayoutEditor, setShowCharLayoutEditor] = useState(false);
   const DEBUG = import.meta.env.DEV;
   const player = usePlayerStore();
@@ -152,13 +148,13 @@ export default function CharacterPage() {
   const actSlots = [...(activeSkillSlots||[])];  while (actSlots.length < 4) actSlots.push(null);
   const pasSlots = [...(passiveSkillSlots||[])]; while (pasSlots.length < 6) pasSlots.push(null);
 
-  // モバイル/デスクトップの境界、または画面の向き(縦⇔横)をまたいだ時だけ、その時点の
-  // 既定レイアウトに切り替える(DEBUG配置エディタでの編集中に無関係なリサイズで上書きされ
-  // ないよう、isMobile/isLandscapeの変化だけを見る)
+  // モバイル/デスクトップの境界をまたいだ時だけ、その時点の既定レイアウトに切り替える
+  // (DEBUG配置エディタでの編集中に無関係なリサイズで上書きされないよう、isMobile自体の
+  // 変化だけを見る)
   useEffect(() => {
-    setCharLayout(pickCharLayout(isMobile, isLandscape));
+    setCharLayout(pickCharLayout(isMobile));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, isLandscape]);
+  }, [isMobile]);
 
   function unequip(key) {
     const eq = player[key];
@@ -321,8 +317,8 @@ export default function CharacterPage() {
         {[{id:"equip",img:"/assets/images/tab_icon_equip.png",label:"装備"},{id:"skill",img:"/assets/images/tab_icon_skill.png",label:"スキル"}].map(t=>{
           const isSel = tab===t.id;
           return (
-            <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} className="rpg-heading" style={{ flex:1, padding:isLandscapePhone?"3px 0":"6px 0", background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:isLandscapePhone?"row":"column", alignItems:"center", justifyContent:"center", gap:isLandscapePhone?4:2 }}>
-              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:isLandscapePhone?16:22, height:isLandscapePhone?16:22, objectFit:"contain", opacity:isSel?1:0.65 }} />
+            <button key={t.id} onClick={()=>{setTab(t.id);setSel(null);}} className="rpg-heading" style={{ flex:1, padding:"6px 0", background:"transparent", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2 }}>
+              <img src={t.img} alt="" className={`slot-cell${isSel?" slot-selected":""}`} style={{ width:22, height:22, objectFit:"contain", opacity:isSel?1:0.65 }} />
               <span style={{ color:isSel?"#e0b555":DIM, fontSize:10 }}>{t.label}</span>
             </button>
           );
@@ -338,13 +334,12 @@ export default function CharacterPage() {
       {tab === "equip" && (
         <>
           {/* サイズ・位置(equipSlotSize/specialSlotSize/statsPanelWidth/itemPos等)は
-              すべてcharLayoutから取得しており、isMobile×isLandscapeに応じてDEFAULT
-              (デスクトップ)/MOBILE(スマホ縦画面)/LANDSCAPE(スマホ横画面)を切り替えている。
-              縦積み構造(下記isPortraitPhone分岐)が必要なのは縦画面のスマホだけ:
+              すべてcharLayoutから取得しており、isMobileに応じてDEFAULT(デスクトップ)/
+              MOBILE(スマホ)を切り替えている。キャラ画面は横画面対応を廃止したため、
+              スマホは向きに関わらず常に縦積み構造(isPortraitPhone、実質isMobileと同義)。
               コンテンツがroomHeightより縦に伸びるため、背景画像だけをroomHeightで
               切り取り、コンテンツは通常フローに乗せて下のITEM BOXと重ならないように
-              している。横画面は幅に余裕がありデスクトップと同じ横並び構造で成立する
-              ため、isMobileではなくisPortraitPhoneで分岐する */}
+              している */}
           <div style={{ position:"relative", flexShrink:0, height:isPortraitPhone?"auto":charLayout.roomHeight, overflow:isPortraitPhone?"visible":"hidden" }}>
             <div style={{ position:"absolute", top:0, left:0, right:0, height:charLayout.roomHeight, overflow:"hidden" }}>
               <img src="/assets/images/character_room.jpg" alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:`center ${charLayout.roomPanY}%`, display:"block" }} />
@@ -356,7 +351,7 @@ export default function CharacterPage() {
                 0にして、ITEM BOX側の上padding(8px)だけで間隔を持たせる。HPバーの直後に
                 黒い余白が二重にできるのを防ぐ */}
             <div style={{ position:isPortraitPhone?"relative":"absolute", inset:isPortraitPhone?undefined:0, display:"flex", flexDirection:isPortraitPhone?"column":"row", gap:charLayout.panelGap, padding:`${charLayout.contentPaddingTop}px 10px ${isPortraitPhone?0:10}px` }}>
-              <div style={{ padding:isPortraitPhone?"8px 10px 0":isLandscapePhone?"4px 6px":"8px 10px", display:"flex", flexDirection:"column", gap:isLandscapePhone?4:8, minWidth:isPortraitPhone?"auto":isLandscapePhone?"auto":168 }}>
+              <div style={{ padding:isPortraitPhone?"8px 10px 0":"8px 10px", display:"flex", flexDirection:"column", gap:8, minWidth:isPortraitPhone?"auto":168 }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                   {EQUIP_SLOTS.map(({key,label,icon,drop})=>{
                     const eq = player[key];
@@ -446,9 +441,9 @@ export default function CharacterPage() {
 
           {/* 横画面スマホは縦の余白が乏しいため、列数を増やして1マスを小さくし、
               同じ個数でも行数(＝高さ)を減らして一覧性を上げる */}
-          <div style={{ flex:1, overflowY:"auto", padding:isLandscapePhone?"4px 8px":"8px 10px", background:"linear-gradient(rgba(8,5,2,0.45),rgba(8,5,2,0.45)), url(/assets/images/item_box_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
-            <div style={{ fontSize:10, color:"#d8cdb8", letterSpacing:2, marginBottom:isLandscapePhone?3:6, textShadow:"0 1px 3px rgba(0,0,0,0.9)" }}>ITEM BOX {(itemBox||[]).length}/30 <span style={{ color:"#a89a80" }}>（ドラッグでも装備可）</span></div>
-            <div style={{ display:"grid", gridTemplateColumns:`repeat(${isPortraitPhone?4:isLandscapePhone?9:6},1fr)`, gap:isLandscapePhone?3:4 }}>
+          <div style={{ flex:1, overflowY:"auto", padding:"8px 10px", background:"linear-gradient(rgba(8,5,2,0.45),rgba(8,5,2,0.45)), url(/assets/images/item_box_bg.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
+            <div style={{ fontSize:10, color:"#d8cdb8", letterSpacing:2, marginBottom:6, textShadow:"0 1px 3px rgba(0,0,0,0.9)" }}>ITEM BOX {(itemBox||[]).length}/30 <span style={{ color:"#a89a80" }}>（ドラッグでも装備可）</span></div>
+            <div style={{ display:"grid", gridTemplateColumns:`repeat(${isPortraitPhone?4:6},1fr)`, gap:4 }}>
               {(itemBox||[]).map(it=>{
                 const rc = RARITY_COLOR[it.rarity]||"#888";
                 const isSel = sel===it.uid;
@@ -614,7 +609,7 @@ export default function CharacterPage() {
       {showCharLayoutEditor && (
         <CharacterLayoutEditor
           layout={charLayout}
-          variant={isMobile ? (isLandscape ? "landscape" : "mobile") : "default"}
+          variant={isMobile ? "mobile" : "default"}
           onChangeField={(path, value) => setCharLayout(prev => ({ ...prev, [path]: value }))}
           onChangeItem={(group, key, axis, value) => setCharLayout(prev => {
             if (group === "specialItemPos") {
@@ -624,7 +619,7 @@ export default function CharacterPage() {
             }
             return { ...prev, [group]: { ...prev[group], [key]: { ...(prev[group]?.[key]||{x:0,y:0}), [axis]: value } } };
           })}
-          onReset={() => setCharLayout(pickCharLayout(isMobile, isLandscape))}
+          onReset={() => setCharLayout(pickCharLayout(isMobile))}
           onClose={() => setShowCharLayoutEditor(false)}
         />
       )}

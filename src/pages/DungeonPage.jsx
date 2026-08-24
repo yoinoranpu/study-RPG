@@ -431,7 +431,7 @@ export default function DungeonPage({ onBack }) {
         // 瞬間全回復ではなく、HPバーがじわじわ満ちていく様子を見せる
         if (healTimerRef.current) clearInterval(healTimerRef.current);
         const startHp = hpRef.current;
-        const targetHp = player.maxHp || 100;
+        const targetHp = calcPlayerStats(player).maxHp || 100;
         const steps = 20;
         let i = 0;
         healTimerRef.current = setInterval(() => {
@@ -616,7 +616,10 @@ export default function DungeonPage({ onBack }) {
   const pct    = totalSec > 0 ? seconds / totalSec : 0;
   const accent = phase === "break" ? "#a78bfa" : "#4ade80";
   const lv     = expToLevel(player.totalExp);
-  const maxHp  = player.maxHp || 100;
+  // player.maxHpは保存された古い値で、レベルアップ/装備変更後に追従しないことがある
+  // (回復処理は既にcalcPlayerStatsで再計算した値を上限にしているため、表示側もそれに
+  // 合わせないとHPが上限を超えて見える(例:108/100)不具合になる)
+  const maxHp  = calcPlayerStats(player).maxHp || 100;
 
   if (showResult) return (
     <div style={{ height:"100vh", background:"#06060f", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12, fontFamily:"monospace", padding:20, overflowY:"auto" }}>
