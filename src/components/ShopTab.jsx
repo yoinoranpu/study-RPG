@@ -56,17 +56,24 @@ export default function ShopTab() {
   const selectedCanBuy = selectedItem && !selectedIsSold && gold >= selectedPrice && (itemBox||[]).length < ITEM_BOX_MAX;
   const selectedInnate = selectedItem ? INNATE[selectedItem.innate] : null;
 
+  // プレイ中お金が余りがちで消費先が乏しいとのフィードバックを受け、小・中ポーションだけは
+  // 売り切れなし(何度でも購入可能)にして、確実に使えるお金の受け皿にする。他のアイテムは
+  // 従来通り1日1回まで
+  const UNLIMITED_ITEM_IDS = new Set(["C001", "C002"]);
+
   function buy(tmpl, index) {
     const price = getShopPrice(tmpl);
     if (gold < price) { flash("Gが不足！"); return; }
     if ((itemBox||[]).length >= ITEM_BOX_MAX) { flash("BOXが満杯！"); return; }
     const newItem = makeItem(tmpl);
     updatePlayer({ gold: gold - price, itemBox: [...(itemBox||[]), newItem], stats: spendGold(price) });
-    setSoldOut(s => {
-      const next = new Set([...s, `${sub}_${index}`]);
-      localStorage.setItem(`shop_soldout_${today}`, JSON.stringify([...next]));
-      return next;
-    });
+    if (!UNLIMITED_ITEM_IDS.has(tmpl.id)) {
+      setSoldOut(s => {
+        const next = new Set([...s, `${sub}_${index}`]);
+        localStorage.setItem(`shop_soldout_${today}`, JSON.stringify([...next]));
+        return next;
+      });
+    }
     flash(`${tmpl.name}を購入！`);
   }
 
