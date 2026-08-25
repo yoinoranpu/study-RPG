@@ -182,6 +182,12 @@ export const ARMOR_DB = [
   // 魔導ローブ(A004)の画像をtintで色替え。ローブ(魔法職向け防具)がuncommon止まりで選択肢がなかったので追加。
   { id:"A008", name:"聖なるローブ", icon:"✨", image:"/assets/images/A004魔導ローブ.png", tint:"hue-rotate(180deg) saturate(1.6) brightness(1.5)", rarity:"rare", type:"armor", subtype:"robe", baseDef:8,  baseMdef:20, baseHp:0,  innate:"guardian", shopWeight:0,  dropWeight:3  },
   { id:"A009", name:"業火のローブ", icon:"🔥", image:"/assets/images/A004魔導ローブ.png", tint:"hue-rotate(145deg) saturate(1.8) brightness(1.05)", rarity:"epic", type:"armor", subtype:"robe", baseDef:12, baseMdef:28, baseHp:10, innate:"vampiric", shopWeight:0,  dropWeight:2  },
+
+  // ────── Legendary ──────
+  // 竜鱗鎧(A006)の画像をtintで色替え。重鎧がepic止まりで選択肢がなかったので追加。
+  { id:"A010", name:"竜帝の鎧",     icon:"👑", image:"/assets/images/A006竜鱗鎧.png", tint:"hue-rotate(35deg) saturate(1.6) brightness(1.2)", rarity:"legendary", type:"armor", subtype:"heavy", baseDef:34, baseMdef:20, baseHp:30, innate:"guardian", shopWeight:0, dropWeight:1 },
+  // 業火のローブ(A009 / 元画像A004魔導ローブ)の画像をtintで色替え。ローブがepic止まりで選択肢がなかったので追加。
+  { id:"A011", name:"賢者の法衣",   icon:"📜", image:"/assets/images/A004魔導ローブ.png", tint:"hue-rotate(260deg) saturate(1.4) brightness(1.3)", rarity:"legendary", type:"armor", subtype:"robe",  baseDef:16, baseMdef:40, baseHp:15, innate:"vampiric", shopWeight:0, dropWeight:1 },
 ];
 
 // ─── アクセサリーデータ ───
@@ -195,6 +201,11 @@ export const ACCESSORY_DB = [
   // 盗賊の指輪(AC005)・初心者の護符(AC002)の画像をtintで色替え。指輪はepic帯、護符はrare帯が空いていたので補完。
   { id:"AC007", name:"紅玉の指輪",  icon:"💍", image:"/assets/images/AC005盗賊の指輪.png", tint:"hue-rotate(70deg) saturate(1.3) brightness(1.1)", rarity:"epic", type:"accessory", innate:"armor_pierce", baseCrit:5, baseEva:0, shopWeight:0, dropWeight:2 },
   { id:"AC008", name:"月光の護符",  icon:"🌙", image:"/assets/images/AC002初心者の護符.png", tint:"sepia(0.7) hue-rotate(200deg) saturate(2.8) brightness(1.15)", rarity:"rare", type:"accessory", innate:"guardian", baseCrit:0, baseEva:3, shopWeight:0, dropWeight:3 },
+
+  // ────── Legendary ──────
+  // 竜の護符(AC006)の画像をtintで色替え。指輪・護符ともにepic止まりで選択肢がなかったので追加。
+  { id:"AC009", name:"竜神の指輪",  icon:"💍", image:"/assets/images/AC005盗賊の指輪.png", tint:"hue-rotate(320deg) saturate(2.2) brightness(1.1)", rarity:"legendary", type:"accessory", innate:"vampiric",     baseCrit:7, baseEva:0, shopWeight:0, dropWeight:1 },
+  { id:"AC010", name:"永劫の護符",  icon:"⏳", image:"/assets/images/AC002初心者の護符.png", tint:"sepia(0.5) hue-rotate(20deg) saturate(2.6) brightness(1.2)",  rarity:"legendary", type:"accessory", innate:"thunder_stun", baseCrit:0, baseEva:7, shopWeight:0, dropWeight:1 },
 ];
 
 // ─── 消耗品データ ───

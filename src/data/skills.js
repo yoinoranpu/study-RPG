@@ -184,6 +184,12 @@ export const SKILL_BOOKS = {
     active:{ type:"counter", dmgMul:1.5, trigger:"onHit" },
     scaleKeys:["dmgMul"],
   },
+  sb_golem: {
+    id:"sb_golem", name:"ゴーレム召喚の書", icon:"🗿", type:"active", tree:"defense",
+    desc:"ゴーレムを召喚（前衛・最高HPの盾役）",
+    active:{ type:"summon", summonType:"golem" },
+    scaleKeys:[],
+  },
 
   // ─── アクティブ：探索系 ───
   sb_trap: {
