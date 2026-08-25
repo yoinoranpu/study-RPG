@@ -4,6 +4,11 @@ import { initStatusState, rankMul, applyStatus, checkSkipTurn, tickStatuses, STA
 export const calcDamage = (atk, def) =>
   Math.max(1, Math.floor(atk * (100 / (100 + def))));
 
+// 敵の全体攻撃(action.aoe===true)は、前衛の壁役(タレット等)が単体攻撃を肩代わりする
+// 戦法を迂回してプレイヤー本人にも必ず届く強力な行動のため、単体攻撃よりダメージを
+// 割り引いて「回数(前衛が守る)」より「範囲(全員に届く)」で脅威になるようにする
+const AOE_DAMAGE_MUL = 0.65;
+
 const SUMMON_TEMPLATES = {
   familiar: { name:"使い魔",     hp:15,  atkMul:0.4, statRef:"mag", position:"back",  speed:90, color:"#c084fc" },
   wolf:     { name:"オオカミ",   hp:50,  atkMul:0.6, statRef:"atk", position:"front", speed:70, color:"#a78bfa" },
@@ -409,6 +414,52 @@ export const simulateBattle = (player, monsters, options = {}) => {
     const action = enemy.actions.find(a => { ac += a.pct; return rv < ac; }) || enemy.actions[0];
     if (action.type === "skip") { pushTurn({ actor:"monster", source:enemy.idx, type:"skip", logText:`${enemy.name}:${action.label}`, logColor:"#3a3a3a" }); return; }
     if (action.type === "def")  { pushTurn({ actor:"monster", source:enemy.idx, type:"defend", logText:`${enemy.name}:${action.label}`, logColor:"#60a5fa" }); return; }
+
+    // 全体攻撃(action.aoe===true)：前衛が単体攻撃を肩代わりする仕組みを迂回して
+    // プレイヤー本人+生存中の味方全員に着弾する。単体攻撃より強力になりすぎない
+    // よう、ダメージにAOE_DAMAGE_MULを掛けて割り引く
+    if (action.aoe) {
+      const isMagic = action.type === "matk";
+      const atkS = isMagic ? eMag(enemy) : eAtk(enemy);
+      const isCrit = Math.random()*100 < enemy.crit;
+      const targets = [...aliveAllies(), ...(playerEntity.hp > 0 ? [playerEntity] : [])];
+      pushTurn({ actor:"monster", source:enemy.idx, type:"info", logText:`${enemy.name}の${action.label}！全体を襲う…`, logColor:isMagic?"#a78bfa":"#f87171" });
+      targets.forEach(t => {
+        if (t === playerEntity) {
+          if (Math.random()*100 < eEva(playerEntity)) { pushTurn({ actor:"monster", source:enemy.idx, type:"miss", logText:"✨ 攻撃を回避した！", logColor:"#34d399" }); return; }
+          const defS = isMagic ? eMdef(playerEntity) : eDef(playerEntity);
+          let dmg = Math.floor(calcDamage(atkS, defS) * AOE_DAMAGE_MUL);
+          if (isCrit) dmg = Math.floor(dmg * 1.5);
+          if (has("sb_tetsuwall")) dmg = Math.floor(dmg * 0.85);
+          if (innate.guardianPct > 0) dmg = Math.floor(dmg * (1 - innate.guardianPct / 100));
+          playerEntity.hp = Math.max(0, playerEntity.hp - dmg);
+          onPlayerHurt();
+          if (playerEntity.hp <= 0 && has("sb_undying") && !deathSaveUsed) {
+            deathSaveUsed = true;
+            playerEntity.hp = Math.max(1, Math.floor(playerEntity.maxHp * 0.10));
+            pushTurn({ actor:"monster", source:enemy.idx, type:"attack", dmg, isCrit, label:action.label, hpLeft:playerEntity.hp, logText:`あなたに${dmg}ダメージ`, logColor:isMagic?"#a78bfa":"#f87171" });
+            pushTurn({ actor:"player", target:-1, type:"info", logText:`💫 不屈！HP${playerEntity.hp}で耐えた！`, logColor:"#fb923c" });
+            return;
+          }
+          pushTurn({ actor:"monster", source:enemy.idx, type:"attack", dmg, isCrit, label:action.label, hpLeft:playerEntity.hp, logText:`あなたに${dmg}ダメージ`, logColor:isMagic?"#a78bfa":"#f87171" });
+          if (action.status) tryApplyStatus(playerEntity, action.status, eMag(enemy));
+        } else {
+          let dmg = Math.floor(calcDamage(atkS, 0) * AOE_DAMAGE_MUL);
+          if (isCrit) dmg = Math.floor(dmg * 1.5);
+          t.hp = Math.max(0, t.hp - dmg);
+          pushTurn({ actor:"monster", source:enemy.idx, type:"attackAlly", allyUid:t.uid, dmg, logText:`${t.name}に${dmg}ダメージ`, logColor:"#f87171" });
+          if (t.hp <= 0) {
+            const snapshot = allies.filter(al=>al.hp>0).map(al=>({ summonType:al.summonType, position:al.position, hp:al.hp, maxHp:al.maxHp }));
+            pushTurn({ actor:"monster", source:enemy.idx, type:"allyDown", allyUid:t.uid, summonSnapshot:snapshot, logText:`💥 ${t.name}が倒れた…`, logColor:"#666" });
+          }
+        }
+      });
+      const hasCounterAoe = activeBooks.some(b => b.active?.type === "counter");
+      if (hasCounterAoe && playerEntity.hp > 0 && enemy.hp > 0) {
+        dealToEnemy(enemy, Math.floor(atkS * AOE_DAMAGE_MUL * 1.5), false, "カウンター");
+      }
+      return;
+    }
 
     const victim = pickPlayerSideTarget();
     if (!victim) return;

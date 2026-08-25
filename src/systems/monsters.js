@@ -39,7 +39,7 @@ export const MONSTER_BASE = [
   { id:"skeleton", name:"スケルトン", tribe:"不死", star:1, dungeonTier:1, hp:40, atk:12, def:12, mag:0, mdef:18, eva:5, crit:5, expMul:1.0, gMul:1.0,
     actions:[{type:"atk",pct:70,label:"骨の剣"},{type:"def",pct:20,label:"骨で防ぐ"},{type:"skip",pct:10,label:"骨が鳴る"}]},
   { id:"death_knight", name:"デスナイト", tribe:"不死", star:4, dungeonTier:1, hp:160, atk:32, def:26, mag:20, mdef:22, eva:10, crit:15, expMul:2.3, gMul:2.3,
-    actions:[{type:"atk",pct:50,label:"冥府の剣"},{type:"matk",pct:30,label:"死の波動"},{type:"def",pct:20,label:"不死の鎧"}]},
+    actions:[{type:"atk",pct:50,label:"冥府の剣"},{type:"matk",pct:30,label:"死の波動",aoe:true},{type:"def",pct:20,label:"不死の鎧"}]},
   { id:"imp", name:"インプ", tribe:"悪魔", star:1, dungeonTier:1, hp:30, atk:10, def:5, mag:18, mdef:10, eva:15, crit:10, expMul:1.1, gMul:1.3,
     actions:[{type:"matk",pct:60,label:"火炎弾"},{type:"atk",pct:30,label:"引っかく"},{type:"skip",pct:10,label:"飛び回る"}]},
   { id:"demon_soldier", name:"魔界兵", tribe:"悪魔", star:4, dungeonTier:1, hp:180, atk:36, def:30, mag:25, mdef:25, eva:10, crit:18, expMul:2.4, gMul:2.4,
@@ -51,7 +51,7 @@ export const MONSTER_BASE = [
   { id:"kobold", name:"コボルト", tribe:"竜", star:1, dungeonTier:1, hp:30, atk:10, def:8, mag:5, mdef:6, eva:8, crit:4, expMul:1.1, gMul:1.2,
     actions:[{type:"atk",pct:70,label:"爪攻撃"},{type:"atk",pct:20,label:"噛みつく"},{type:"skip",pct:10,label:"ドラゴンポーズ"}]},
   { id:"fire_dragon", name:"火竜", tribe:"竜", star:3, dungeonTier:1, hp:220, atk:45, def:30, mag:40, mdef:25, eva:12, crit:18, expMul:2.8, gMul:3.2,
-    actions:[{type:"matk",pct:50,label:"炎ブレス"},{type:"atk",pct:40,label:"炎爪"},{type:"def",pct:10,label:"炎を纏う"}]},
+    actions:[{type:"matk",pct:50,label:"炎ブレス",aoe:true},{type:"atk",pct:40,label:"炎爪"},{type:"def",pct:10,label:"炎を纏う"}]},
 
   // ─── ダンジョン2 新規 ───
   { id:"acid_slime", name:"酸スライム", tribe:"粘体", star:2, dungeonTier:2, hp:55, atk:16, def:14, mag:16, mdef:15, eva:4, crit:3, expMul:1.4, gMul:1.4,
@@ -59,7 +59,7 @@ export const MONSTER_BASE = [
   { id:"armored_boar", name:"重装イノシシ", tribe:"獣", star:2, dungeonTier:2, hp:70, atk:22, def:18, mag:5, mdef:10, eva:8, crit:6, expMul:1.5, gMul:1.4,
     actions:[{type:"atk",pct:75,label:"猛突進"},{type:"atk",pct:15,label:"牙で突く"},{type:"def",pct:10,label:"身構える"}]},
   { id:"goblin_shaman", name:"ゴブリンシャーマン", tribe:"ゴブリン", star:2, dungeonTier:2, hp:55, atk:10, def:10, mag:24, mdef:16, eva:6, crit:4, expMul:1.5, gMul:1.5,
-    actions:[{type:"matk",pct:60,label:"呪いの杖"},{type:"atk",pct:20,label:"殴打"},{type:"def",pct:20,label:"呪符を貼る"}]},
+    actions:[{type:"matk",pct:60,label:"呪いの杖",aoe:true},{type:"atk",pct:20,label:"殴打"},{type:"def",pct:20,label:"呪符を貼る"}]},
   { id:"wraith_knight", name:"亡霊騎士", tribe:"不死", star:3, dungeonTier:2, hp:75, atk:20, def:16, mag:14, mdef:20, eva:10, crit:8, expMul:1.6, gMul:1.5,
     actions:[{type:"atk",pct:60,label:"亡霊の剣"},{type:"matk",pct:25,label:"怨念"},{type:"def",pct:15,label:"実体を薄める"}]},
   { id:"imp_captain", name:"小悪魔隊長", tribe:"悪魔", star:3, dungeonTier:2, hp:65, atk:18, def:12, mag:22, mdef:16, eva:14, crit:10, expMul:1.6, gMul:1.6,
@@ -75,7 +75,7 @@ export const MONSTER_BASE = [
   { id:"blood_wolf_chief", name:"血狼の首領", tribe:"獣", star:4, dungeonTier:3, hp:180, atk:40, def:24, mag:10, mdef:16, eva:20, crit:16, expMul:2.7, gMul:2.6,
     actions:[{type:"atk",pct:65,label:"血染めの牙"},{type:"atk",pct:25,label:"疾風の爪"},{type:"def",pct:10,label:"血の加護"}]},
   { id:"goblin_pope", name:"ゴブリン教皇", tribe:"ゴブリン", star:4, dungeonTier:3, hp:170, atk:22, def:24, mag:40, mdef:32, eva:8, crit:10, expMul:2.8, gMul:2.8,
-    actions:[{type:"matk",pct:55,label:"邪教の呪詛"},{type:"atk",pct:20,label:"杖打"},{type:"def",pct:25,label:"邪神の加護"}]},
+    actions:[{type:"matk",pct:55,label:"邪教の呪詛",aoe:true},{type:"atk",pct:20,label:"杖打"},{type:"def",pct:25,label:"邪神の加護"}]},
   { id:"fallen_queen", name:"亡国の女王", tribe:"不死", star:4, dungeonTier:3, hp:200, atk:36, def:28, mag:36, mdef:34, eva:12, crit:16, expMul:3.0, gMul:2.8,
     actions:[{type:"atk",pct:45,label:"亡国の剣"},{type:"matk",pct:35,label:"死の宣告"},{type:"def",pct:20,label:"冥府の盾"}]},
   { id:"fallen_angel", name:"堕天使", tribe:"悪魔", star:4, dungeonTier:3, hp:190, atk:38, def:26, mag:38, mdef:28, eva:18, crit:18, expMul:3.0, gMul:3.0,
@@ -83,7 +83,7 @@ export const MONSTER_BASE = [
   { id:"cursed_tree", name:"古の魔樹", tribe:"植物", star:4, dungeonTier:3, hp:260, atk:18, def:45, mag:45, mdef:55, eva:0, crit:4, expMul:3.2, gMul:2.8,
     actions:[{type:"matk",pct:60,label:"呪いの実"},{type:"def",pct:30,label:"樹皮の鎧"},{type:"skip",pct:10,label:"根を伸ばす"}]},
   { id:"black_dragon", name:"黒竜", tribe:"竜", star:4, dungeonTier:3, hp:240, atk:48, def:32, mag:42, mdef:28, eva:14, crit:20, expMul:3.4, gMul:3.4,
-    actions:[{type:"matk",pct:50,label:"暗黒ブレス"},{type:"atk",pct:40,label:"竜爪撃"},{type:"def",pct:10,label:"竜鱗を硬化"}]},
+    actions:[{type:"matk",pct:50,label:"暗黒ブレス",aoe:true},{type:"atk",pct:40,label:"竜爪撃"},{type:"def",pct:10,label:"竜鱗を硬化"}]},
 ];
 // ─── ボスモンスターデータ ───
 // 3ダンジョン×30階（各ダンジョン5階ごと=6体）に再構成。
