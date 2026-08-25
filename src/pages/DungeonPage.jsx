@@ -53,7 +53,7 @@ function ChestOpenSection({ chests, onAllOpened }) {
 
   return (
     <div style={{ width:"100%", maxWidth:320 }}>
-      <div style={{ fontSize:8, color:"#fbbf24", letterSpacing:2, marginBottom:8 }}>宝箱 {current}/{chests.length}</div>
+      <div className="rpg-heading" style={{ fontSize:8, color:"#fbbf24", letterSpacing:2, marginBottom:8 }}>宝箱 {current}/{chests.length}</div>
       <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:10, justifyContent:"center" }}>
         {chests.map((chest, i) => {
           const isOpened = i < current;
@@ -101,8 +101,8 @@ function ChestOpenSection({ chests, onAllOpened }) {
       )}
       {!allOpened ? (
         <div style={{ display:"flex", gap:8 }}>
-          <button onClick={openNext} style={{ flex:2, padding:"12px 0", background:"#0a1a0a", border:"1px solid #fbbf24", borderRadius:4, cursor:"pointer", color:"#fbbf24", fontSize:13, fontFamily:"monospace", fontWeight:700 }}>📦 開封！</button>
-          <button onClick={openAll} style={{ flex:1, padding:"12px 0", background:"#080810", border:"1px solid #333", borderRadius:4, cursor:"pointer", color:"#555", fontSize:10, fontFamily:"monospace" }}>全開封</button>
+          <button onClick={openNext} className="rpg-heading" style={{ flex:2, padding:"12px 0", minHeight:"44px", background:"#0a1a0a", border:"2px solid #fbbf24", borderRadius:6, cursor:"pointer", color:"#fbbf24", fontSize:13, fontWeight:700 }}>📦 開封！</button>
+          <button onClick={openAll} style={{ flex:1, padding:"12px 0", minHeight:"44px", background:"#080810", border:"1px solid #333", borderRadius:6, cursor:"pointer", color:"#666", fontSize:10, fontFamily:"monospace" }}>全開封</button>
         </div>
       ) : (
         <div style={{ textAlign:"center", fontSize:9, color:"#4ade80" }}>全ての宝箱を開封した！</div>
@@ -625,11 +625,14 @@ export default function DungeonPage({ onBack }) {
   // 合わせないとHPが上限を超えて見える(例:108/100)不具合になる)
   const maxHp  = calcPlayerStats(player).maxHp || 100;
 
+  // リザルト画面：他の画面(ギルド/キャラ/ショップ/鍛冶屋)と見た目を統一するため、
+  // 汎用の暗い箱ではなくrpg-panel(木枠テクスチャ)+rpg-heading(ドット絵フォント)に
+  // 統一。獲得素材の箱はギルド画面の「所持素材」ボックスと同じ配色に揃えている
   if (showResult) return (
-    <div style={{ height:"100vh", background:"#06060f", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12, fontFamily:"monospace", padding:20, overflowY:"auto" }}>
-      <div style={{ fontSize:9, letterSpacing:6, color:"#60a5fa" }}>EXPLORATION RESULT</div>
-      <div style={{ fontSize:24, fontWeight:900, color:"#fff", letterSpacing:2 }}>探索終了</div>
-      <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:8, padding:"16px 24px", width:"100%", maxWidth:320 }}>
+    <div style={{ height:"100vh", background:"linear-gradient(180deg,#120820 0%,#06060f 100%)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:14, fontFamily:"monospace", padding:20, overflowY:"auto" }}>
+      <div className="rpg-heading" style={{ fontSize:10, letterSpacing:5, color:"#c9963d", opacity:0.8 }}>EXPLORATION RESULT</div>
+      <div className="rpg-heading" style={{ fontSize:26, color:"#fff", letterSpacing:2, textShadow:"0 2px 6px rgba(0,0,0,0.8)" }}>探索終了</div>
+      <div className="rpg-panel" style={{ borderRadius:6, padding:"18px 22px", width:"100%", maxWidth:320 }}>
         {[
           { label:"獲得EXP",  val:`+${sessionExpDisplay}`,        color:"#86efac" },
           { label:"獲得G",    val:`+${sessionGoldDisplay}`,       color:"#fbbf24" },
@@ -638,14 +641,14 @@ export default function DungeonPage({ onBack }) {
           { label:"倒した敵", val:`${defeatedCount}体`,           color:"#f87171" },
         ].map(({ label, val, color }) => (
           <div key={label} style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-            <span style={{ color:"#4a4a6a", fontSize:11 }}>{label}</span>
+            <span style={{ color:"#d8cdb8", fontSize:11 }}>{label}</span>
             <span style={{ color, fontSize:13, fontWeight:700 }}>{val}</span>
           </div>
         ))}
       </div>
       {Object.keys(sessionMatsDisplay).length > 0 && (
-        <div style={{ background:"#0d0d15", border:"1px solid #2a2a3a", borderRadius:6, padding:"10px 16px", width:"100%", maxWidth:320 }}>
-          <div style={{ fontSize:8, color:"#fb923c", marginBottom:6, letterSpacing:2 }}>獲得素材</div>
+        <div style={{ background:"#0d0d1a", border:"1px solid #3a3a55", borderRadius:8, padding:"10px 16px", width:"100%", maxWidth:320 }}>
+          <div className="rpg-heading" style={{ fontSize:8, color:"#fb923c", marginBottom:6, letterSpacing:2 }}>獲得素材</div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
             {Object.entries(sessionMatsDisplay).map(([name, cnt]) => (
               <div key={name} style={{ background:"#080810", border:"1px solid #fb923c33", borderRadius:3, padding:"3px 8px", fontSize:9, color:"#fb923c" }}>{name}×{cnt}</div>
@@ -657,7 +660,7 @@ export default function DungeonPage({ onBack }) {
         <ChestOpenSection chests={sessionChestsDisplay} onAllOpened={() => setChestsAllOpened(true)} />
       )}
       {(sessionChestsDisplay.length === 0 || chestsAllOpened) && (
-        <button onClick={handleResultClose} style={{ padding:"12px 32px", background:"#0a2a0a", border:"1px solid #4ade80", borderRadius:6, cursor:"pointer", color:"#4ade80", fontSize:12, letterSpacing:3, fontWeight:700 }}>
+        <button onClick={handleResultClose} className="rpg-heading" style={{ padding:"12px 32px", minHeight:"44px", background:"#0a2a0a", border:"2px solid #4ade80", borderRadius:8, cursor:"pointer", color:"#4ade80", fontSize:14, letterSpacing:3, fontWeight:900 }}>
           街へ帰還 →
         </button>
       )}
